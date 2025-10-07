@@ -21,6 +21,10 @@ public class Player {
     public List<Card> getHoleCards() {
         return holeCards;
     }
+    
+    public Boolean hasMinimumChips(Integer min) {
+    	return this.chips >= min;
+    }
 
     public String getName() { return name; }
     public int getChips() { return chips; }

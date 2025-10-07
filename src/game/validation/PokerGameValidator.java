@@ -4,12 +4,11 @@ import game.Player;
 import cards.Deck;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class PokerGameValidator {
 
-    public static void validatePlayers(List<Player> players) {
+    public static void validatePlayers(HashSet<Player> players) {
         if (players == null || players.size() < 2) {
             throw new IllegalArgumentException("Poker game requires at least 2 players.");
         }
