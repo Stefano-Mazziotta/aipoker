@@ -1,16 +1,20 @@
-package game.validation;
+package game;
 
-import game.Player;
 import cards.Deck;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class PokerGameValidator {
+	
+	private static int MINIMUM_PLAYERS = 2;
+	private static int MAXIMUM_PLAYERS = 10;
 
     public static void validatePlayers(HashSet<Player> players) {
-        if (players == null || players.size() < 2) {
-            throw new IllegalArgumentException("Poker game requires at least 2 players.");
+    	boolean hasPlayers = players != null;
+    	boolean validTotalPlayers = players.size() >= MINIMUM_PLAYERS && players.size() <= MAXIMUM_PLAYERS;
+        if (!hasPlayers || !validTotalPlayers) {
+            throw new IllegalArgumentException("Poker game requires at least 2 players and a maximum of 10 players.");
         }
 
         Set<String> names = new HashSet<>();
@@ -18,8 +22,8 @@ public class PokerGameValidator {
             if (player == null) {
                 throw new IllegalArgumentException("Player cannot be null.");
             }
-            if (player.getChips() <= 0) {
-                throw new IllegalArgumentException("Player " + player.getName() + " must have chips to play.");
+            if (player.getCash() <= 0) {
+                throw new IllegalArgumentException("Player " + player.getName() + " must have cash to play.");
             }
             if (!names.add(player.getName())) {
                 throw new IllegalArgumentException("Duplicate player name detected: " + player.getName());
@@ -31,6 +35,5 @@ public class PokerGameValidator {
         if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null.");
         }
-        // optional: verify 52 cards at start
     }
 }
