@@ -1,70 +1,44 @@
 package game;
 
+import java.util.*;
+
 public class Round {
-    private final Table table;
+    private final List<Player> players;
+    private int pot;
+    private List<Player> activePlayers;
 
-    public Round(Table table) {
-        this.table = table;
+    public Round(List<Player> players) {
+        this.players = new ArrayList<>(players);
+        this.activePlayers = new ArrayList<>(players);
+        this.pot = 0;
     }
 
-    public void play() {
-        table.resetRound();
-        table.getDeck().shuffle();
-        dealHoleCards();
-
-        // game steps
-        BettingRound preFlop = new BettingRound(table, "Pre-Flop");
-        preFlop.play();
-
-        dealFlop();
-        BettingRound flop = new BettingRound(table, "Flop");
-        flop.play();
-
-        dealTurn();
-        BettingRound turn = new BettingRound(table, "Turn");
-        turn.play();
-
-        dealRiver();
-        BettingRound river = new BettingRound(table, "River");
-        river.play();
-
-        determineWinner();
+    public void addToPot(int amount) {
+        this.pot += amount;
     }
 
-    private void dealHoleCards() {
-        for (int i = 0; i < 2; i++) {
-            for (Player p : table.getPlayers()) {
-                p.addCard(table.getDeck().dealCard());
-            }
-        }
+    public int getPot() {
+        return pot;
     }
 
-    private void dealFlop() {
-        for (int i = 0; i < 3; i++)
-            table.getCommunityCards().add(table.getDeck().dealCard());
+    public List<Player> getActivePlayers() {
+        return activePlayers;
     }
 
-    private void dealTurn() {
-        table.getCommunityCards().add(table.getDeck().dealCard());
+    public void removePlayer(Player player) {
+        activePlayers.remove(player);
     }
 
-    private void dealRiver() {
-        table.getCommunityCards().add(table.getDeck().dealCard());
+    public boolean hasMultipleActivePlayers() {
+        return activePlayers.size() > 1;
     }
 
-    private void determineWinner() {
-        Player best = null;
-        int bestScore = -1;
-        for (Player p : table.getPlayers()) {
-            if (!p.isFolded()) {
-                int score = HandEvaluator.evaluateBestHand(p.getHoleCards(), table.getCommunityCards());
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = p;
-                }
-            }
-        }
-        table.setWinner(best);
-        System.out.println("Winner: " + best.getName());
+    public List<Player> getPlayers() {
+        return players;
+    }
+
+    public void distributePot(Player winner) {
+        winner.addCash(pot);
+        pot = 0;
     }
 }
