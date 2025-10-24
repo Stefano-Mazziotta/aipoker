@@ -51,7 +51,11 @@ public class Player {
     public void setFolded(boolean folded) {
         this.folded = folded;
     }
-
+    
+    public boolean isBroke(int bindAmount) {
+    	return cash < bindAmount;
+    }
+    
     @Override
     public String toString() {
         return name + " ($" + cash + ")";

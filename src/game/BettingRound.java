@@ -3,12 +3,10 @@ package game;
 import java.util.*;
 
 public class BettingRound {
-    private final Table table;
     private final Round round;
     private final String name;
 
-    public BettingRound(Table table, Round round, String name) {
-        this.table = table;
+    public BettingRound(Round round, String name) {
         this.round = round;
         this.name = name;
     }
@@ -25,9 +23,10 @@ public class BettingRound {
             if (player.isFolded()) continue;
 
             System.out.println(player.getName() + "'s turn (Cash: $" + player.getCash() + ")");
-            
+            player.subtractCash(50);
+            this.round.addToPot(50);
             // Simple betting logic - all players check
-            System.out.println(player.getName() + " checks");
+            //System.out.println(player.getName() + " checks");
         }
     }
 }
