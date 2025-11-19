@@ -86,9 +86,12 @@ This project serves as a **learning resource** and **production template** for b
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Java 17+** (JDK 17 or higher)
+- **Java 17+** (JDK 17 or higher) **← REQUIRED**
 - **Maven 3.8+** or **Gradle 7+**
 - **SQLite3** (included with most systems)
+
+> ⚠️ **Important**: This project requires **Java 17 or higher** due to modern language features (records, switch expressions).  
+> If you have Java 11 or older, see [`JAVA17_SETUP.md`](./JAVA17_SETUP.md) for installation instructions.
 
 ### Installation
 
@@ -96,6 +99,9 @@ This project serves as a **learning resource** and **production template** for b
 # Clone the repository
 git clone https://github.com/yourusername/aipoker.git
 cd aipoker
+
+# Check Java version (must be 17+)
+java -version
 
 # Build the project
 ./build.sh
@@ -199,20 +205,20 @@ feature/                               # e.g., player/, game/, lobby/
 ┌─────────────────────────────────────────────────────────┐
 │                  APPLICATION LAYER                      │
 │                    (Use Cases)                          │
-│  RegisterPlayer | StartGame | PlayerAction | etc.      │
+│  RegisterPlayer | StartGame | PlayerAction | etc.       │
 └────────────────────┬────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────┐
 │                   DOMAIN LAYER                          │
 │              (Business Logic - Pure Java)               │
-│  Player | Game | Lobby | Card | Chips | etc.          │
+│  Player | Game | Lobby | Card | Chips | etc.            │
 └────────────────────┬────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────┐
 │                 SECONDARY ADAPTERS                      │
-│           (SQLite, PostgreSQL, Redis, etc.)            │
+│           (SQLite, PostgreSQL, Redis, etc.)             │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -613,3 +619,5 @@ Built to demonstrate enterprise software architecture principles in a real-world
 ---
 
 Made with ♠️ ♥️ ♣️ ♦️ by the AiPoker Team
+
+bash build.sh 2>&1

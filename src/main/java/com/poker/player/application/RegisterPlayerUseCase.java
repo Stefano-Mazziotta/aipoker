@@ -27,7 +27,7 @@ public class RegisterPlayerUseCase {
         playerRepository.save(player);
 
         return new PlayerResponse(
-            player.getId().getValue(),
+            player.getId().getValue().toString(),
             player.getName(),
             player.getChipsAmount()
         );

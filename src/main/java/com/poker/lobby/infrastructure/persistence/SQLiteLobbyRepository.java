@@ -80,7 +80,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
             for (PlayerId playerId : lobby.getPlayers()) {
                 stmt.setString(1, lobby.getId().getValue());
-                stmt.setString(2, playerId.getValue());
+                stmt.setString(2, playerId.getValue().toString());
                 stmt.executeUpdate();
             }
         }
@@ -149,7 +149,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
                         "WHERE lp.player_id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, playerId.getValue());
+                stmt.setString(1, playerId.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
                 
                 while (rs.next()) {
@@ -248,7 +248,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
             ResultSet rs = stmt.executeQuery();
             
             while (rs.next()) {
-                lobby.addPlayer(new PlayerId(rs.getString("player_id")));
+                lobby.addPlayer(PlayerId.from(rs.getString("player_id")));
             }
         }
     }

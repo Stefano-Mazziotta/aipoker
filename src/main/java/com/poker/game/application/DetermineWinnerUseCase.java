@@ -19,7 +19,7 @@ public class DetermineWinnerUseCase {
 
     public WinnerResponse execute(DetermineWinnerCommand command) {
         // Load game
-        Game game = gameRepository.findById(new GameId(command.gameId()))
+        Game game = gameRepository.findById(GameId.from(command.gameId()))
             .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
         // Determine winner
@@ -30,7 +30,7 @@ public class DetermineWinnerUseCase {
         playerRepository.save(winner);
 
         return new WinnerResponse(
-            winner.getId().getValue(),
+            winner.getId().getValue().toString(),
             winner.getName(),
             winner.getChipsAmount(),
             game.getCurrentPot().getAmount()

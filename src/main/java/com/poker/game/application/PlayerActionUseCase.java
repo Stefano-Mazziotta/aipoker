@@ -16,12 +16,12 @@ public class PlayerActionUseCase {
 
     public ActionResponse execute(PlayerActionCommand command) {
         // Load game
-        Game game = gameRepository.findById(new GameId(command.gameId()))
+        Game game = gameRepository.findById(GameId.from(command.gameId()))
             .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
         // Find player
         Player player = game.getPlayers().stream()
-            .filter(p -> p.getId().getValue().equals(command.playerId()))
+            .filter(p -> p.getId().getValue().toString().equals(command.playerId()))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Player not in game"));
 

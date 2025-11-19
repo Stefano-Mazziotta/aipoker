@@ -22,7 +22,7 @@ public class StartGameUseCase {
     public GameResponse execute(StartGameCommand command) {
         // Load all players
         List<Player> players = command.playerIds().stream()
-            .map(id -> playerRepository.findById(new PlayerId(id))
+            .map(id -> playerRepository.findById(PlayerId.from(id))
                 .orElseThrow(() -> new IllegalArgumentException("Player not found: " + id)))
             .collect(Collectors.toList());
 
@@ -44,7 +44,7 @@ public class StartGameUseCase {
         gameRepository.save(game);
 
         return new GameResponse(
-            game.getId().getValue(),
+            game.getId().getValue().toString(),
             game.getState().name(),
             game.getPlayers().stream().map(p -> p.getName()).collect(Collectors.toList()),
             game.getCurrentPot().getAmount()

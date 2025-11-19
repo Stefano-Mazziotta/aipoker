@@ -52,7 +52,7 @@ public class PokerApplication {
         
         // Game use cases
         StartGameUseCase startGame = new StartGameUseCase(gameRepository, playerRepository);
-        PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository, playerRepository);
+        PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository);
         DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository);
         DetermineWinnerUseCase determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository);
         
@@ -83,7 +83,7 @@ public class PokerApplication {
         // Create protocol handler with all use cases
         ProtocolHandler protocolHandler = new ProtocolHandler(
             registerPlayer, startGame, playerAction, dealCards,
-            determineWinner, createLobby, joinLobby, getLeaderboard
+            determineWinner, createLobby, joinLobby, getLeaderboard, new MessageFormatter()
         );
         
         // Create client handler factory

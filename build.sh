@@ -7,9 +7,27 @@ echo "========================================="
 
 # Check Java version
 echo -e "\nChecking Java version..."
-java -version 2>&1 | grep -q "version"
-if [ $? -ne 0 ]; then
+JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | cut -d'.' -f1)
+if [ -z "$JAVA_VERSION" ]; then
     echo "❌ Java not found. Please install Java 17 or higher."
+    exit 1
+fi
+
+# Extract major version (handles both 1.8 and 11+ formats)
+if [ "$JAVA_VERSION" = "1" ]; then
+    JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | cut -d'.' -f2)
+fi
+
+echo "Found Java version: $JAVA_VERSION"
+
+if [ "$JAVA_VERSION" -lt 17 ]; then
+    echo "❌ Java 17 or higher is required. Found Java $JAVA_VERSION"
+    echo "   This project uses Java 17+ features (records, switch expressions)"
+    echo ""
+    echo "   Please install Java 17 or higher:"
+    echo "   • Ubuntu/Debian: sudo apt install openjdk-17-jdk"
+    echo "   • macOS: brew install openjdk@17"
+    echo "   • Or download from: https://adoptium.net/"
     exit 1
 fi
 
@@ -23,7 +41,8 @@ mkdir -p bin
 echo -e "\nCompiling source code..."
 find src/main/java -name "*.java" > sources.txt
 
-javac -d bin \
+javac -source 17 -target 17 \
+      -d bin \
       -sourcepath src/main/java \
       -cp "lib/*" \
       @sources.txt

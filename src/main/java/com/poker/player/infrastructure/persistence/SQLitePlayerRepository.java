@@ -40,7 +40,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
                      "VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))";
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, player.getId().getValue());
+            stmt.setString(1, player.getId().getValue().toString());
             stmt.setString(2, player.getName());
             stmt.setInt(3, player.getChipsAmount());
             stmt.setBoolean(4, player.isFolded());
@@ -56,7 +56,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
             stmt.setString(1, player.getName());
             stmt.setInt(2, player.getChipsAmount());
             stmt.setBoolean(3, player.isFolded());
-            stmt.setString(4, player.getId().getValue());
+            stmt.setString(4, player.getId().getValue().toString());
             stmt.executeUpdate();
         }
     }
@@ -69,7 +69,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
             String sql = "SELECT * FROM players WHERE id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, id.getValue());
+                stmt.setString(1, id.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
                 
                 if (rs.next()) {
@@ -140,7 +140,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
             String sql = "SELECT COUNT(*) FROM players WHERE id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, id.getValue());
+                stmt.setString(1, id.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
                 return rs.next() && rs.getInt(1) > 0;
             }
@@ -159,7 +159,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
             String sql = "DELETE FROM players WHERE id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, id.getValue());
+                stmt.setString(1, id.getValue().toString());
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
@@ -196,7 +196,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
     }
 
     private Player mapToPlayer(ResultSet rs) throws SQLException {
-        PlayerId id = new PlayerId(rs.getString("id"));
+        PlayerId id = PlayerId.from(rs.getString("id"));
         String name = rs.getString("name");
         int chips = rs.getInt("chips");
         boolean folded = rs.getBoolean("folded");

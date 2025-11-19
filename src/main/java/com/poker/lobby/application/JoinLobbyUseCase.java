@@ -20,7 +20,7 @@ public class JoinLobbyUseCase {
             .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
 
         // Add player to lobby
-        PlayerId playerId = new PlayerId(command.playerId());
+        PlayerId playerId = PlayerId.from(command.playerId());
         lobby.addPlayer(playerId);
         
         // Save updated lobby

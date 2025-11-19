@@ -19,7 +19,7 @@ public class DealCardsUseCase {
         gameRepository.save(game);
         
         return new CardsResponse(
-            game.getId().getValue(),
+            game.getId().getValue().toString(),
             game.getState().name(),
             game.getCommunityCards().size(),
             formatCards(game.getCommunityCards())
@@ -32,7 +32,7 @@ public class DealCardsUseCase {
         gameRepository.save(game);
         
         return new CardsResponse(
-            game.getId().getValue(),
+            game.getId().getValue().toString(),
             game.getState().name(),
             game.getCommunityCards().size(),
             formatCards(game.getCommunityCards())
@@ -45,7 +45,7 @@ public class DealCardsUseCase {
         gameRepository.save(game);
         
         return new CardsResponse(
-            game.getId().getValue(),
+            game.getId().getValue().toString(),
             game.getState().name(),
             game.getCommunityCards().size(),
             formatCards(game.getCommunityCards())
@@ -53,7 +53,7 @@ public class DealCardsUseCase {
     }
 
     private Game loadGame(String gameId) {
-        return gameRepository.findById(new GameId(gameId))
+        return gameRepository.findById(GameId.from(gameId))
             .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
     }
 

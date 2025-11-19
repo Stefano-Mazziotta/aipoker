@@ -53,7 +53,7 @@ public class SQLiteGameRepository implements GameRepository {
                      "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))";
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, game.getId().getValue());
+            stmt.setString(1, game.getId().getValue().toString());
             stmt.setString(2, game.getState().name());
             stmt.setInt(3, game.getBlinds().getSmallBlind());
             stmt.setInt(4, game.getBlinds().getBigBlind());
@@ -71,7 +71,7 @@ public class SQLiteGameRepository implements GameRepository {
             stmt.setString(1, game.getState().name());
             stmt.setInt(2, game.getCurrentPot().getAmount());
             stmt.setInt(3, game.getDealerPosition());
-            stmt.setString(4, game.getId().getValue());
+            stmt.setString(4, game.getId().getValue().toString());
             stmt.executeUpdate();
         }
     }
@@ -80,7 +80,7 @@ public class SQLiteGameRepository implements GameRepository {
         // Delete existing relationships
         String deleteSql = "DELETE FROM game_players WHERE game_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
-            stmt.setString(1, game.getId().getValue());
+            stmt.setString(1, game.getId().getValue().toString());
             stmt.executeUpdate();
         }
         
@@ -89,8 +89,8 @@ public class SQLiteGameRepository implements GameRepository {
         try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
             List<Player> players = game.getPlayers();
             for (int i = 0; i < players.size(); i++) {
-                stmt.setString(1, game.getId().getValue());
-                stmt.setString(2, players.get(i).getId().getValue());
+                stmt.setString(1, game.getId().getValue().toString());
+                stmt.setString(2, players.get(i).getId().getValue().toString());
                 stmt.setInt(3, i);
                 stmt.executeUpdate();
             }
@@ -105,7 +105,7 @@ public class SQLiteGameRepository implements GameRepository {
             String sql = "SELECT * FROM games WHERE id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, id.getValue());
+                stmt.setString(1, id.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
                 
                 if (rs.next()) {
@@ -183,7 +183,7 @@ public class SQLiteGameRepository implements GameRepository {
                         "WHERE gp.player_id = ? ORDER BY g.created_at DESC";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, playerId.getValue());
+                stmt.setString(1, playerId.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
                 
                 while (rs.next()) {
@@ -207,7 +207,7 @@ public class SQLiteGameRepository implements GameRepository {
             String sql = "SELECT COUNT(*) FROM games WHERE id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, id.getValue());
+                stmt.setString(1, id.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
                 return rs.next() && rs.getInt(1) > 0;
             }
@@ -226,7 +226,7 @@ public class SQLiteGameRepository implements GameRepository {
             String sql = "DELETE FROM games WHERE id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, id.getValue());
+                stmt.setString(1, id.getValue().toString());
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
@@ -262,7 +262,7 @@ public class SQLiteGameRepository implements GameRepository {
     }
 
     private Game reconstructGame(Connection conn, ResultSet rs) throws SQLException {
-        GameId id = new GameId(rs.getString("id"));
+        GameId id = GameId.from(rs.getString("id"));
         GameState state = GameState.valueOf(rs.getString("state"));
         int smallBlind = rs.getInt("small_blind");
         int bigBlind = rs.getInt("big_blind");
@@ -282,11 +282,11 @@ public class SQLiteGameRepository implements GameRepository {
         String sql = "SELECT player_id FROM game_players WHERE game_id = ? ORDER BY position";
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, gameId.getValue());
+            stmt.setString(1, gameId.getValue().toString());
             ResultSet rs = stmt.executeQuery();
             
             while (rs.next()) {
-                PlayerId playerId = new PlayerId(rs.getString("player_id"));
+                PlayerId playerId = PlayerId.from(rs.getString("player_id"));
                 playerRepository.findById(playerId).ifPresent(players::add);
             }
         }

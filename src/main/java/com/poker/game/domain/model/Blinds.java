@@ -11,7 +11,7 @@ public class Blinds {
     private final int smallBlind;
     private final int bigBlind;
 
-    private Blinds(int smallBlind, int bigBlind) {
+    public Blinds(int smallBlind, int bigBlind) {
         if (smallBlind <= 0) {
             throw new ValidationException("Small blind must be positive: " + smallBlind);
         }
