@@ -1,0 +1,62 @@
+package com.poker.game.application;
+
+import com.poker.game.domain.model.*;
+import com.poker.game.domain.repository.GameRepository;
+import com.poker.player.domain.model.*;
+
+/**
+ * Use case for executing player actions during a game.
+ */
+public class PlayerActionUseCase {
+    private final GameRepository gameRepository;
+
+    public PlayerActionUseCase(GameRepository gameRepository) {
+        this.gameRepository = gameRepository;
+    }
+
+    public ActionResponse execute(PlayerActionCommand command) {
+        // Load game
+        Game game = gameRepository.findById(new GameId(command.gameId()))
+            .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        // Find player
+        Player player = game.getPlayers().stream()
+            .filter(p -> p.getId().getValue().equals(command.playerId()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Player not in game"));
+
+        // Create betting round and execute action
+        Round round = game.getCurrentRound();
+        BettingRound bettingRound = new BettingRound(round, game.getState());
+        
+        bettingRound.executePlayerAction(
+            player,
+            command.action(),
+            command.amount()
+        );
+
+        // Save game state
+        gameRepository.save(game);
+
+        return new ActionResponse(
+            game.getState().name(),
+            round.getCurrentBet(),
+            round.getPot().getAmount(),
+            player.isFolded()
+        );
+    }
+
+    public record PlayerActionCommand(
+        String gameId,
+        String playerId,
+        PlayerAction action,
+        int amount
+    ) {}
+    
+    public record ActionResponse(
+        String gameState,
+        int currentBet,
+        int pot,
+        boolean playerFolded
+    ) {}
+}
