@@ -30,6 +30,25 @@ public class Card {
         // Returns something like "A♥" or "10♠"
         return rank.toString() + suit.toString();
     }
+    
+    /**
+     * Parse a card from its string representation (e.g., "A♥", "10♠")
+     */
+    public static Card fromString(String cardString) {
+        if (cardString == null || cardString.isEmpty()) {
+            return null;
+        }
+        
+        // Extract suit (last character)
+        String suitStr = cardString.substring(cardString.length() - 1);
+        Suit suit = Suit.fromSymbol(suitStr);
+        
+        // Extract rank (everything except last character)
+        String rankStr = cardString.substring(0, cardString.length() - 1);
+        Rank rank = Rank.fromString(rankStr);
+        
+        return new Card(rank, suit);
+    }
 
     @Override
     public boolean equals(Object o) {

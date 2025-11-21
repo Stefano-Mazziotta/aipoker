@@ -5,7 +5,9 @@ import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.util.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -25,15 +27,15 @@ class RegisterPlayerUseCaseTest {
     @Test
     void testRegisterPlayer() {
         var command = new RegisterPlayerUseCase.RegisterPlayerCommand("Alice", 1000);
-        
+
         var response = useCase.execute(command);
-        
+
         assertNotNull(response.id());
         assertEquals("Alice", response.name());
         assertEquals(1000, response.chips());
-        
+
         // Verify persistence
-        Optional<Player> saved = repository.findById(new PlayerId(response.id()));
+        Optional<Player> saved = repository.findById(PlayerId.from(response.id()));
         assertTrue(saved.isPresent());
         assertEquals("Alice", saved.get().getName());
     }
@@ -41,14 +43,15 @@ class RegisterPlayerUseCaseTest {
     @Test
     void testRegisterPlayerWithDuplicateNameThrows() {
         useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 500));
-        
-        assertThrows(IllegalArgumentException.class, () -> 
-            useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 600))
+
+        assertThrows(IllegalArgumentException.class, ()
+                -> useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 600))
         );
     }
 
     // Simple in-memory repository for testing
     static class InMemoryPlayerRepository implements PlayerRepository {
+
         private final Map<PlayerId, Player> players = new HashMap<>();
 
         @Override
@@ -64,8 +67,8 @@ class RegisterPlayerUseCaseTest {
         @Override
         public Optional<Player> findByName(String name) {
             return players.values().stream()
-                .filter(p -> p.getName().equals(name))
-                .findFirst();
+                    .filter(p -> p.getName().equals(name))
+                    .findFirst();
         }
 
         @Override
@@ -86,9 +89,9 @@ class RegisterPlayerUseCaseTest {
         @Override
         public List<Player> findTopByChips(int limit) {
             return players.values().stream()
-                .sorted((p1, p2) -> Integer.compare(p2.getChipsAmount(), p1.getChipsAmount()))
-                .limit(limit)
-                .toList();
+                    .sorted((p1, p2) -> Integer.compare(p2.getChipsAmount(), p1.getChipsAmount()))
+                    .limit(limit)
+                    .toList();
         }
     }
 }

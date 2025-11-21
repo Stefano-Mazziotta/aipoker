@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# IDEs
+.idea
+.vscode
+.settings
+.classpath
+.project
+
+# Build artifacts
+target/
+bin/
+*.class
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# Documentation
+*.md
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.yml

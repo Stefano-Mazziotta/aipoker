@@ -1,8 +1,8 @@
 package com.poker.game.domain.model;
 
+import com.poker.game.domain.exception.IllegalActionException;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
-import com.poker.game.domain.exception.IllegalActionException;
 
 /**
  * Entity managing betting logic for a game phase.
@@ -36,23 +36,31 @@ public class BettingRound {
                 break;
                 
             case CALL:
-                int callAmount = currentBet;
-                if (!player.canAfford(callAmount)) {
+                // Calculate how much the player actually needs to call
+                int playerCurrentBet = round.getPlayerBet(player);
+                int amountToCall = currentBet - playerCurrentBet;
+                
+                if (!player.canAfford(amountToCall)) {
                     throw new IllegalActionException("Insufficient chips to call");
                 }
-                player.subtractChips(callAmount);
-                round.addToPot(callAmount);
+                player.subtractChips(amountToCall);
+                round.addToPot(amountToCall);
+                round.recordPlayerBet(player, amountToCall);
                 break;
                 
             case RAISE:
+                int playerBet = round.getPlayerBet(player);
+                int totalRaiseAmount = amount - playerBet;
+                
                 if (amount <= currentBet) {
                     throw new IllegalActionException("Raise amount must be greater than current bet");
                 }
-                if (!player.canAfford(amount)) {
+                if (!player.canAfford(totalRaiseAmount)) {
                     throw new IllegalActionException("Insufficient chips to raise");
                 }
-                player.subtractChips(amount);
-                round.addToPot(amount);
+                player.subtractChips(totalRaiseAmount);
+                round.addToPot(totalRaiseAmount);
+                round.recordPlayerBet(player, totalRaiseAmount);
                 currentBet = amount;
                 round.setCurrentBet(amount);
                 break;
@@ -61,9 +69,12 @@ public class BettingRound {
                 int allInAmount = player.getChipsAmount();
                 player.subtractChips(allInAmount);
                 round.addToPot(allInAmount);
-                if (allInAmount > currentBet) {
-                    currentBet = allInAmount;
-                    round.setCurrentBet(allInAmount);
+                round.recordPlayerBet(player, allInAmount);
+                
+                int playerTotalBet = round.getPlayerBet(player);
+                if (playerTotalBet > currentBet) {
+                    currentBet = playerTotalBet;
+                    round.setCurrentBet(playerTotalBet);
                 }
                 break;
         }

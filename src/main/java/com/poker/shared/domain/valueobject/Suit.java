@@ -24,4 +24,13 @@ public enum Suit {
     public String toString() {
         return symbol;
     }
+    
+    public static Suit fromSymbol(String symbol) {
+        for (Suit suit : values()) {
+            if (suit.symbol.equals(symbol)) {
+                return suit;
+            }
+        }
+        throw new IllegalArgumentException("Unknown suit symbol: " + symbol);
+    }
 }

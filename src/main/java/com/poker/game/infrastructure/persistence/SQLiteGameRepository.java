@@ -49,8 +49,11 @@ public class SQLiteGameRepository implements GameRepository {
 
     private void insertGame(Connection conn, Game game) throws SQLException {
         String sql = "INSERT INTO games (id, state, small_blind, big_blind, pot, " +
-                     "dealer_position, created_at, updated_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))";
+                     "dealer_position, community_card_1, community_card_2, community_card_3, " +
+                     "community_card_4, community_card_5, created_at, updated_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))";
+        
+        List<Card> communityCards = game.getCommunityCards();
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, game.getId().getValue().toString());
@@ -59,19 +62,43 @@ public class SQLiteGameRepository implements GameRepository {
             stmt.setInt(4, game.getBlinds().getBigBlind());
             stmt.setInt(5, game.getCurrentPot().getAmount());
             stmt.setInt(6, game.getDealerPosition());
+            
+            // Set community cards (null if not dealt yet)
+            for (int i = 0; i < 5; i++) {
+                if (i < communityCards.size()) {
+                    stmt.setString(7 + i, communityCards.get(i).toString());
+                } else {
+                    stmt.setNull(7 + i, java.sql.Types.VARCHAR);
+                }
+            }
+            
             stmt.executeUpdate();
         }
     }
 
     private void updateGame(Connection conn, Game game) throws SQLException {
         String sql = "UPDATE games SET state = ?, pot = ?, dealer_position = ?, " +
+                     "community_card_1 = ?, community_card_2 = ?, community_card_3 = ?, " +
+                     "community_card_4 = ?, community_card_5 = ?, " +
                      "updated_at = datetime('now') WHERE id = ?";
+        
+        List<Card> communityCards = game.getCommunityCards();
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, game.getState().name());
             stmt.setInt(2, game.getCurrentPot().getAmount());
             stmt.setInt(3, game.getDealerPosition());
-            stmt.setString(4, game.getId().getValue().toString());
+            
+            // Set community cards (null if not dealt yet)
+            for (int i = 0; i < 5; i++) {
+                if (i < communityCards.size()) {
+                    stmt.setString(4 + i, communityCards.get(i).toString());
+                } else {
+                    stmt.setNull(4 + i, java.sql.Types.VARCHAR);
+                }
+            }
+            
+            stmt.setString(9, game.getId().getValue().toString());
             stmt.executeUpdate();
         }
     }
@@ -84,14 +111,43 @@ public class SQLiteGameRepository implements GameRepository {
             stmt.executeUpdate();
         }
         
+        // Get player bets from current round if available
+        Map<String, Integer> playerBets = new HashMap<>();
+        if (game.getCurrentRound() != null) {
+            playerBets = game.getCurrentRound().getAllPlayerBets();
+        }
+        
         // Insert current players
-        String insertSql = "INSERT INTO game_players (game_id, player_id, position) VALUES (?, ?, ?)";
+        String insertSql = "INSERT INTO game_players (game_id, player_id, position, chips_at_start, current_chips, is_folded, is_all_in, current_bet, hole_card_1, hole_card_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
             List<Player> players = game.getPlayers();
             for (int i = 0; i < players.size(); i++) {
+                Player player = players.get(i);
+                String playerId = player.getId().getValue().toString();
+                int currentBet = playerBets.getOrDefault(playerId, 0);
+                List<Card> holeCards = player.getHand().getCards();
+                
                 stmt.setString(1, game.getId().getValue().toString());
-                stmt.setString(2, players.get(i).getId().getValue().toString());
+                stmt.setString(2, playerId);
                 stmt.setInt(3, i);
+                stmt.setInt(4, player.getChipsAmount()); // chips_at_start
+                stmt.setInt(5, player.getChipsAmount()); // current_chips
+                stmt.setBoolean(6, player.isFolded()); // is_folded
+                stmt.setBoolean(7, false); // is_all_in - TODO: track this
+                stmt.setInt(8, currentBet); // current_bet from round
+                
+                // Save hole cards
+                if (holeCards.size() >= 1) {
+                    stmt.setString(9, holeCards.get(0).toString());
+                } else {
+                    stmt.setNull(9, java.sql.Types.VARCHAR);
+                }
+                if (holeCards.size() >= 2) {
+                    stmt.setString(10, holeCards.get(1).toString());
+                } else {
+                    stmt.setNull(10, java.sql.Types.VARCHAR);
+                }
+                
                 stmt.executeUpdate();
             }
         }
@@ -266,20 +322,32 @@ public class SQLiteGameRepository implements GameRepository {
         GameState state = GameState.valueOf(rs.getString("state"));
         int smallBlind = rs.getInt("small_blind");
         int bigBlind = rs.getInt("big_blind");
+        int pot = rs.getInt("pot");
         int dealerPosition = rs.getInt("dealer_position");
+        
+        // Load community cards
+        List<Card> communityCards = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            String cardStr = rs.getString("community_card_" + i);
+            if (cardStr != null && !cardStr.isEmpty()) {
+                communityCards.add(Card.fromString(cardStr));
+            }
+        }
         
         Blinds blinds = new Blinds(smallBlind, bigBlind);
         
-        // Load players
+        // Load players and their bets
         List<Player> players = loadGamePlayers(conn, id);
+        Map<String, Integer> playerBets = loadPlayerBets(conn, id);
         
-        // Reconstruct game
-        return Game.reconstitute(id, players, blinds, state, dealerPosition);
+        // Reconstruct game with pot, current bet, player bets, and community cards
+        int currentBet = (state == GameState.PRE_FLOP) ? bigBlind : 0;
+        return Game.reconstitute(id, players, blinds, state, dealerPosition, pot, currentBet, playerBets, communityCards);
     }
 
     private List<Player> loadGamePlayers(Connection conn, GameId gameId) throws SQLException {
         List<Player> players = new ArrayList<>();
-        String sql = "SELECT player_id FROM game_players WHERE game_id = ? ORDER BY position";
+        String sql = "SELECT player_id, hole_card_1, hole_card_2 FROM game_players WHERE game_id = ? ORDER BY position";
         
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, gameId.getValue().toString());
@@ -287,11 +355,48 @@ public class SQLiteGameRepository implements GameRepository {
             
             while (rs.next()) {
                 PlayerId playerId = PlayerId.from(rs.getString("player_id"));
-                playerRepository.findById(playerId).ifPresent(players::add);
+                Optional<Player> playerOpt = playerRepository.findById(playerId);
+                
+                if (playerOpt.isPresent()) {
+                    Player player = playerOpt.get();
+                    
+                    // Restore hole cards
+                    String card1Str = rs.getString("hole_card_1");
+                    String card2Str = rs.getString("hole_card_2");
+                    
+                    if (card1Str != null && !card1Str.isEmpty()) {
+                        player.receiveCard(Card.fromString(card1Str));
+                    }
+                    if (card2Str != null && !card2Str.isEmpty()) {
+                        player.receiveCard(Card.fromString(card2Str));
+                    }
+                    
+                    players.add(player);
+                }
             }
         }
         
         return players;
+    }
+    
+    private Map<String, Integer> loadPlayerBets(Connection conn, GameId gameId) throws SQLException {
+        Map<String, Integer> playerBets = new HashMap<>();
+        String sql = "SELECT player_id, current_bet FROM game_players WHERE game_id = ?";
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, gameId.getValue().toString());
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                String playerId = rs.getString("player_id");
+                int currentBet = rs.getInt("current_bet");
+                if (currentBet > 0) {
+                    playerBets.put(playerId, currentBet);
+                }
+            }
+        }
+        
+        return playerBets;
     }
 
     private void rollback(Connection conn) {

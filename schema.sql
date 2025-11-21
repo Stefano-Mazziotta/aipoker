@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS players (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_players_name ON players(name);
+CREATE INDEX IF NOT EXISTS idx_players_name ON players(name);
 
 -- ====================
 -- GAMES
@@ -25,12 +25,18 @@ CREATE TABLE IF NOT EXISTS games (
     big_blind INTEGER NOT NULL,
     pot INTEGER DEFAULT 0,
     dealer_position INTEGER,
+    community_card_1 TEXT,            -- Serialized card (e.g., "A♥")
+    community_card_2 TEXT,
+    community_card_3 TEXT,
+    community_card_4 TEXT,
+    community_card_5 TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at TIMESTAMP,
     finished_at TIMESTAMP
 );
 
-CREATE INDEX idx_games_state ON games(state);
+CREATE INDEX IF NOT EXISTS idx_games_state ON games(state);
 
 -- ====================
 -- GAME PLAYERS (Many-to-Many)
@@ -51,8 +57,8 @@ CREATE TABLE IF NOT EXISTS game_players (
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_game_players_game ON game_players(game_id);
-CREATE INDEX idx_game_players_player ON game_players(player_id);
+CREATE INDEX IF NOT EXISTS idx_game_players_game ON game_players(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_players_player ON game_players(player_id);
 
 -- ====================
 -- GAME HISTORY (Audit Trail)
@@ -70,7 +76,7 @@ CREATE TABLE IF NOT EXISTS game_history (
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_game_history_game ON game_history(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_history_game ON game_history(game_id);
 
 -- ====================
 -- LOBBIES
@@ -85,13 +91,14 @@ CREATE TABLE IF NOT EXISTS lobbies (
     status TEXT NOT NULL CHECK(status IN ('OPEN', 'FULL', 'STARTED', 'CLOSED')),
     current_players INTEGER DEFAULT 0,
     game_id TEXT,                     -- Associated game if started
+    started BOOLEAN DEFAULT 0,        -- Compatibility with SQLiteLobbyRepository
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at TIMESTAMP,
     FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_lobbies_status ON lobbies(status);
-CREATE INDEX idx_lobbies_name ON lobbies(name);
+CREATE INDEX IF NOT EXISTS idx_lobbies_status ON lobbies(status);
+CREATE INDEX IF NOT EXISTS idx_lobbies_name ON lobbies(name);
 
 -- ====================
 -- LOBBY PLAYERS (Many-to-Many)
@@ -106,8 +113,8 @@ CREATE TABLE IF NOT EXISTS lobby_players (
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_lobby_players_lobby ON lobby_players(lobby_id);
-CREATE INDEX idx_lobby_players_player ON lobby_players(player_id);
+CREATE INDEX IF NOT EXISTS idx_lobby_players_lobby ON lobby_players(lobby_id);
+CREATE INDEX IF NOT EXISTS idx_lobby_players_player ON lobby_players(player_id);
 
 -- ====================
 -- PLAYER STATISTICS
@@ -141,14 +148,15 @@ CREATE TABLE IF NOT EXISTS rankings (
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_rankings_period ON rankings(period, rank);
-CREATE INDEX idx_rankings_player ON rankings(player_id);
+CREATE INDEX IF NOT EXISTS idx_rankings_period ON rankings(period, rank);
+CREATE INDEX IF NOT EXISTS idx_rankings_player ON rankings(player_id);
 
 -- ====================
 -- TRIGGERS
 -- ====================
 
 -- Auto-update players.updated_at on UPDATE
+DROP TRIGGER IF EXISTS update_players_timestamp;
 CREATE TRIGGER update_players_timestamp 
 AFTER UPDATE ON players
 BEGIN
@@ -156,6 +164,7 @@ BEGIN
 END;
 
 -- Update lobby current_players count
+DROP TRIGGER IF EXISTS increment_lobby_players;
 CREATE TRIGGER increment_lobby_players
 AFTER INSERT ON lobby_players
 BEGIN
@@ -164,6 +173,7 @@ BEGIN
     WHERE id = NEW.lobby_id;
 END;
 
+DROP TRIGGER IF EXISTS decrement_lobby_players;
 CREATE TRIGGER decrement_lobby_players
 AFTER DELETE ON lobby_players
 BEGIN

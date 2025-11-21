@@ -1,10 +1,11 @@
 package com.poker.game.domain.model;
 
-import com.poker.player.domain.model.*;
-import com.poker.shared.domain.valueobject.*;
-import org.junit.*;
-import static org.junit.Assert.*;
+import com.poker.player.domain.model.Player;
+import org.junit.jupiter.api.Test;
+
 import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for Game aggregate.
@@ -12,10 +13,10 @@ import java.util.*;
 public class GameTest {
 
     @Test
-    public void testGameCreation() {
+    void testGameCreation() {
         List<Player> players = Arrays.asList(
-            Player.create("Alice", 1000),
-            Player.create("Bob", 1000)
+                Player.create("Alice", 1000),
+                Player.create("Bob", 1000)
         );
 
         Game game = Game.create(players, new Blinds(10, 20));
@@ -25,16 +26,16 @@ public class GameTest {
         assertEquals(2, game.getPlayers().size());
         assertEquals(10, game.getBlinds().getSmallBlind());
         assertEquals(20, game.getBlinds().getBigBlind());
-        
+
         System.out.println("✓ Game creation test passed!");
     }
 
     @Test
-    public void testGameStart() {
+    void testGameStart() {
         List<Player> players = Arrays.asList(
-            Player.create("Player1", 1000),
-            Player.create("Player2", 1000),
-            Player.create("Player3", 1000)
+                Player.create("Player1", 1000),
+                Player.create("Player2", 1000),
+                Player.create("Player3", 1000)
         );
 
         Game game = Game.create(players, new Blinds(5, 10));
@@ -42,20 +43,20 @@ public class GameTest {
 
         assertEquals(GameState.PRE_FLOP, game.getState());
         assertEquals(15, game.getCurrentPot().getAmount()); // Small + Big blind
-        
+
         // Check that players received hole cards
         for (Player player : game.getPlayers()) {
             assertEquals(2, player.getHand().getCards().size());
         }
-        
+
         System.out.println("✓ Game start test passed!");
     }
 
     @Test
-    public void testDealCommunityCards() {
+    void testDealCommunityCards() {
         List<Player> players = Arrays.asList(
-            Player.create("P1", 1000),
-            Player.create("P2", 1000)
+                Player.create("P1", 1000),
+                Player.create("P2", 1000)
         );
 
         Game game = Game.create(players, new Blinds(10, 20));
@@ -75,52 +76,56 @@ public class GameTest {
         game.dealRiver();
         assertEquals(GameState.RIVER, game.getState());
         assertEquals(5, game.getCommunityCards().size());
-        
+
         System.out.println("✓ Deal community cards test passed!");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGameRequiresMinimumPlayers() {
+    @Test
+    void testGameRequiresMinimumPlayers() {
         List<Player> players = Arrays.asList(
-            Player.create("LonelyPlayer", 1000)
+                Player.create("LonelyPlayer", 1000)
         );
 
         // Should throw exception - need at least 2 players
-        Game.create(players, new Blinds(10, 20));
+        assertThrows(IllegalArgumentException.class, () -> {
+            Game.create(players, new Blinds(10, 20));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGameRequiresMaximumPlayers() {
+    @Test
+    void testGameRequiresMaximumPlayers() {
         List<Player> players = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             players.add(Player.create("Player" + i, 1000));
         }
 
         // Should throw exception - max 9 players
-        Game.create(players, new Blinds(10, 20));
+        assertThrows(IllegalArgumentException.class, () -> {
+            Game.create(players, new Blinds(10, 20));
+        });
     }
 
     @Test
-    public void testDealerRotation() {
+    void testDealerRotation() {
         List<Player> players = Arrays.asList(
-            Player.create("P1", 1000),
-            Player.create("P2", 1000),
-            Player.create("P3", 1000)
+                Player.create("P1", 1000),
+                Player.create("P2", 1000),
+                Player.create("P3", 1000)
         );
 
         Game game = Game.create(players, new Blinds(10, 20));
-        
+
         assertEquals(0, game.getDealerPosition());
-        
+
         game.advanceDealer();
         assertEquals(1, game.getDealerPosition());
-        
+
         game.advanceDealer();
         assertEquals(2, game.getDealerPosition());
-        
+
         game.advanceDealer();
         assertEquals(0, game.getDealerPosition()); // Should wrap around
-        
+
         System.out.println("✓ Dealer rotation test passed!");
     }
 }

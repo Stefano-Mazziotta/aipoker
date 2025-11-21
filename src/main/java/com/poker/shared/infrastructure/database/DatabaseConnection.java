@@ -3,15 +3,16 @@ package com.poker.shared.infrastructure.database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
- * Manages SQLite database connections.
- * Singleton pattern for connection pooling.
+ * Manages SQLite database connections. Singleton pattern for connection
+ * pooling. Supports configurable database path via DB_PATH environment
+ * variable.
  */
 public class DatabaseConnection {
+
     private static DatabaseConnection instance;
-    private static final String DB_FILE = "poker.db";
+    private static final String DB_FILE = System.getenv().getOrDefault("DB_PATH", "poker.db");
     private static final String DB_URL = "jdbc:sqlite:" + DB_FILE;
 
     private DatabaseConnection() {

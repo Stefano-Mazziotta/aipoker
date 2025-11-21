@@ -35,4 +35,13 @@ public enum Rank {
     public String toString() {
         return display;
     }
+    
+    public static Rank fromString(String display) {
+        for (Rank rank : values()) {
+            if (rank.display.equals(display)) {
+                return rank;
+            }
+        }
+        throw new IllegalArgumentException("Unknown rank: " + display);
+    }
 }

@@ -11,6 +11,7 @@ import java.util.*;
  * SQLite implementation of LobbyRepository.
  */
 public class SQLiteLobbyRepository implements LobbyRepository {
+
     private final DatabaseConnection dbConnection;
 
     public SQLiteLobbyRepository() {
@@ -23,16 +24,16 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         try {
             conn = dbConnection.getConnection();
             conn.setAutoCommit(false);
-            
+
             if (exists(lobby.getId())) {
                 updateLobby(conn, lobby);
             } else {
                 insertLobby(conn, lobby);
             }
-            
+
             // Save lobby players
             saveLobbyPlayers(conn, lobby);
-            
+
             conn.commit();
         } catch (SQLException e) {
             rollback(conn);
@@ -43,21 +44,26 @@ public class SQLiteLobbyRepository implements LobbyRepository {
     }
 
     private void insertLobby(Connection conn, Lobby lobby) throws SQLException {
-        String sql = "INSERT INTO lobbies (id, name, max_players, started, created_at) " +
-                     "VALUES (?, ?, ?, ?, datetime('now'))";
-        
+        String sql = "INSERT INTO lobbies (id, name, max_players, buy_in, small_blind, big_blind, status, started, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))";
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, lobby.getId().getValue());
             stmt.setString(2, lobby.getName());
             stmt.setInt(3, lobby.getMaxPlayers());
-            stmt.setBoolean(4, lobby.isStarted());
+            // Default values for fields not yet in domain model
+            stmt.setInt(4, 1000);  // Default buy_in
+            stmt.setInt(5, 10);    // Default small_blind
+            stmt.setInt(6, 20);    // Default big_blind
+            stmt.setString(7, lobby.isStarted() ? "STARTED" : "OPEN");  // status
+            stmt.setBoolean(8, lobby.isStarted());
             stmt.executeUpdate();
         }
     }
 
     private void updateLobby(Connection conn, Lobby lobby) throws SQLException {
         String sql = "UPDATE lobbies SET name = ?, max_players = ?, started = ? WHERE id = ?";
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, lobby.getName());
             stmt.setInt(2, lobby.getMaxPlayers());
@@ -74,7 +80,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
             stmt.setString(1, lobby.getId().getValue());
             stmt.executeUpdate();
         }
-        
+
         // Insert current players
         String insertSql = "INSERT INTO lobby_players (lobby_id, player_id) VALUES (?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
@@ -92,11 +98,11 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         try {
             conn = dbConnection.getConnection();
             String sql = "SELECT * FROM lobbies WHERE id = ?";
-            
+
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, id.getValue());
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
                     return Optional.of(reconstructLobby(conn, rs));
                 }
@@ -113,14 +119,14 @@ public class SQLiteLobbyRepository implements LobbyRepository {
     public List<Lobby> findOpenLobbies() {
         List<Lobby> lobbies = new ArrayList<>();
         Connection conn = null;
-        
+
         try {
             conn = dbConnection.getConnection();
             String sql = "SELECT * FROM lobbies WHERE started = 0 ORDER BY created_at DESC";
-            
+
             try (Statement stmt = conn.createStatement()) {
                 ResultSet rs = stmt.executeQuery(sql);
-                
+
                 while (rs.next()) {
                     Lobby lobby = reconstructLobby(conn, rs);
                     if (lobby.isOpen()) {
@@ -133,7 +139,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         } finally {
             dbConnection.close(conn);
         }
-        
+
         return lobbies;
     }
 
@@ -141,17 +147,17 @@ public class SQLiteLobbyRepository implements LobbyRepository {
     public List<Lobby> findByPlayer(PlayerId playerId) {
         List<Lobby> lobbies = new ArrayList<>();
         Connection conn = null;
-        
+
         try {
             conn = dbConnection.getConnection();
-            String sql = "SELECT l.* FROM lobbies l " +
-                        "JOIN lobby_players lp ON l.id = lp.lobby_id " +
-                        "WHERE lp.player_id = ?";
-            
+            String sql = "SELECT l.* FROM lobbies l "
+                    + "JOIN lobby_players lp ON l.id = lp.lobby_id "
+                    + "WHERE lp.player_id = ?";
+
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, playerId.getValue().toString());
                 ResultSet rs = stmt.executeQuery();
-                
+
                 while (rs.next()) {
                     lobbies.add(reconstructLobby(conn, rs));
                 }
@@ -161,7 +167,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         } finally {
             dbConnection.close(conn);
         }
-        
+
         return lobbies;
     }
 
@@ -171,7 +177,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         try {
             conn = dbConnection.getConnection();
             String sql = "SELECT COUNT(*) FROM lobbies WHERE id = ?";
-            
+
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, id.getValue());
                 ResultSet rs = stmt.executeQuery();
@@ -190,7 +196,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         try {
             conn = dbConnection.getConnection();
             String sql = "DELETE FROM lobbies WHERE id = ?";
-            
+
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, id.getValue());
                 stmt.executeUpdate();
@@ -206,14 +212,14 @@ public class SQLiteLobbyRepository implements LobbyRepository {
     public List<Lobby> findAll() {
         List<Lobby> lobbies = new ArrayList<>();
         Connection conn = null;
-        
+
         try {
             conn = dbConnection.getConnection();
             String sql = "SELECT * FROM lobbies ORDER BY created_at DESC";
-            
+
             try (Statement stmt = conn.createStatement()) {
                 ResultSet rs = stmt.executeQuery(sql);
-                
+
                 while (rs.next()) {
                     lobbies.add(reconstructLobby(conn, rs));
                 }
@@ -223,7 +229,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         } finally {
             dbConnection.close(conn);
         }
-        
+
         return lobbies;
     }
 
@@ -231,22 +237,22 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         String id = rs.getString("id");
         String name = rs.getString("name");
         int maxPlayers = rs.getInt("max_players");
-        
+
         Lobby lobby = new Lobby(new LobbyId(id), name, maxPlayers);
-        
+
         // Load players
         loadLobbyPlayers(conn, lobby);
-        
+
         return lobby;
     }
 
     private void loadLobbyPlayers(Connection conn, Lobby lobby) throws SQLException {
         String sql = "SELECT player_id FROM lobby_players WHERE lobby_id = ?";
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, lobby.getId().getValue());
             ResultSet rs = stmt.executeQuery();
-            
+
             while (rs.next()) {
                 lobby.addPlayer(PlayerId.from(rs.getString("player_id")));
             }

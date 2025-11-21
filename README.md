@@ -9,17 +9,86 @@
 
 ---
 
+## ⚡ Quick Reference
+
+```bash
+## 🐳 Docker Setup
+
+### Quick Start
+
+The project includes a simplified Docker setup for local development.
+
+**Server Port:** 8081 (mapped from container port 8080)
+
+```bash
+# Build and start
+docker compose up --build
+
+# Or run in background
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop
+docker compose down
+```
+
+### Running Tests in Docker
+
+```bash
+# Run all tests
+docker compose run --rm poker-server mvn test
+
+# Run specific test
+docker compose run --rm poker-server mvn test -Dtest=PlayerTest
+
+# Run with coverage
+docker compose run --rm poker-server mvn test jacoco:report
+```
+
+### Docker Commands Reference
+
+```bash
+# Access container shell
+docker compose exec poker-server bash
+
+# Access database (when server is running)
+docker compose exec poker-server sqlite3 /app/data/poker.db
+
+# Restart after code changes
+docker compose restart
+
+# Clean rebuild
+docker compose down
+docker compose up --build
+```
+
+### Configuration
+
+Environment variables are configured in `docker-compose.yml`:
+- `DB_PATH=/app/data/poker.db` - Database location in container
+
+Database persists in `./data/` directory on your host machine.
+
+---
+```
+
+---
+
 ## 📖 Table of Contents
 
+- [Quick Reference](#-quick-reference)
 - [What is This Project?](#-what-is-this-project)
 - [Key Features](#-key-features)
 - [Quick Start](#-quick-start)
 - [Project Structure](#-project-structure)
 - [Architecture Overview](#-architecture-overview)
 - [Setup Guide](#-setup-guide)
-- [How to Contribute](#-how-to-contribute)
 - [Testing](#-testing)
+- [Docker Setup](#-docker-setup)
 - [Deployment](#-deployment)
+- [How to Contribute](#-how-to-contribute)
 - [References](#-references)
 
 ---
@@ -87,39 +156,43 @@ This project serves as a **learning resource** and **production template** for b
 
 ### Prerequisites
 - **Java 17+** (JDK 17 or higher) **← REQUIRED**
-- **Maven 3.8+** or **Gradle 7+**
-- **SQLite3** (included with most systems)
+- **Maven 3.8+**
+- **Docker** (optional, for containerized setup)
 
 > ⚠️ **Important**: This project requires **Java 17 or higher** due to modern language features (records, switch expressions).  
 > If you have Java 11 or older, see [`JAVA17_SETUP.md`](./JAVA17_SETUP.md) for installation instructions.
 
-### Installation
+### Option 1: Run with Docker (Recommended for Quick Start)
+
+```bash
+# Start the server
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the server
+docker-compose down
+```
+
+Server starts on `localhost:8080`. Database persists in `./data/` directory.
+
+### Option 2: Run Locally
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/aipoker.git
 cd aipoker
 
-# Check Java version (must be 17+)
-java -version
-
 # Build the project
-./build.sh
-# or
 mvn clean package
-```
 
-### Running the Server
-
-```bash
-# Start multiplayer server (production mode)
+# Start the server
 java -jar target/poker-server.jar --server
 
-# Or run demo mode (local simulation)
+# Or run demo mode
 java -jar target/poker-server.jar --demo
 ```
-
-Server starts on `localhost:8080`
 
 ### Connect as a Player
 
@@ -489,98 +562,183 @@ public void testCompleteGameFlow() {
 
 ## 🧪 Testing
 
-### Test Structure
-
-```
-src/test/java/com/poker/
-├── TestRunner.java                    # Run all tests
-├── integration/
-│   └── FullGameIntegrationTest.java   # End-to-end scenarios
-├── player/
-│   ├── domain/PlayerTest.java         # Domain logic
-│   └── application/RegisterPlayerUseCaseTest.java
-├── game/
-│   ├── domain/GameTest.java
-│   └── domain/evaluation/HandEvaluationTest.java
-└── shared/
-    └── infrastructure/socket/SocketServerTest.java
-```
-
-### Running Tests
+### Running Tests Locally
 
 ```bash
-# All tests
+# Run all tests
 mvn test
 
-# Specific test file
+# Run specific test
 mvn test -Dtest=PlayerTest
 
-# Test suite runner
-java -cp target/poker-server.jar com.poker.TestRunner
-
-# With coverage
+# Run with coverage report
 mvn test jacoco:report
+open target/site/jacoco/index.html
+```
+
+### Running Tests in Docker
+
+```bash
+# Run tests in container
+docker-compose exec poker-server mvn test
+
+# Or run in isolated container
+docker run --rm -v $(pwd):/app -w /app maven:3.9-eclipse-temurin-17 mvn test
 ```
 
 ### Test Coverage
 
-- **Domain Tests**: 10 tests covering business logic
-- **Use Case Tests**: 8 tests covering application layer
-- **Integration Tests**: 4 tests covering end-to-end flows
-- **Socket Tests**: 5 tests covering network layer
-- **Total**: 40+ tests, 85%+ coverage
+- **Domain Tests**: Pure business logic (Player, Game, Chips, etc.)
+- **Use Case Tests**: Application logic (RegisterPlayer, StartGame, etc.)
+- **Integration Tests**: End-to-end game flows
+- **Socket Tests**: Network layer testing
+- **Total**: 40+ tests with 85%+ coverage
+
+### Test Structure
+
+```
+src/test/java/com/poker/
+├── player/domain/model/PlayerTest.java
+├── player/application/RegisterPlayerUseCaseTest.java
+├── game/domain/model/GameTest.java
+├── game/domain/evaluation/HandEvaluationTest.java
+├── lobby/application/LobbyUseCaseTest.java
+└── integration/FullGameIntegrationTest.java
+```
+
+---
+
+## 🐳 Docker Setup
+
+### Configuration
+
+The Docker setup uses a `.env` file for configuration. Environment variables:
+
+```bash
+# .env file
+SERVER_PORT=8080              # Port to expose on host
+DB_PATH=/app/data/poker.db    # Database location in container
+JAVA_OPTS=-Xmx512m -Xms256m   # JVM options
+```
+
+### Quick Commands
+
+```bash
+# Start server (uses .env configuration)
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop server
+docker compose down
+
+# Rebuild and start
+docker compose up --build -d
+
+# Run tests in container
+docker compose run --rm poker-server mvn test
+
+# Access database
+docker compose exec poker-server sqlite3 /app/data/poker.db
+```
+
+### Database Persistence
+
+The SQLite database persists in the `./data/` directory on your host machine:
+- Location: `./data/poker.db`
+- Survives container restarts
+- Can be backed up or version controlled
+
+### Development Workflow
+
+```bash
+# 1. Start container
+docker compose up -d
+
+# 2. Make code changes in ./src/
+
+# 3. Rebuild to apply changes
+docker compose up --build
+
+# 4. View logs
+docker compose logs -f
+
+# 5. Run tests
+docker compose run --rm poker-server mvn test
+```
+
+### Test Client
+
+Use the Python test client to verify the server:
+
+```bash
+# With Docker running (adjust port if changed in .env)
+python3 test_client.py
+```
+
+Or connect manually:
+```bash
+telnet localhost 8080
+# or if you changed SERVER_PORT in .env:
+telnet localhost ${SERVER_PORT}
+```
 
 ---
 
 ## 🚢 Deployment
 
-### Building for Production
+## 🚢 Deployment
+
+### Local Development
+
+```bash
+# Using Docker (recommended)
+docker-compose up -d
+
+# Or run locally
+mvn clean package
+java -jar target/poker-server.jar --server
+```
+
+### Production Build
 
 ```bash
 # Build JAR
-./build.sh
+mvn clean package -DskipTests
 
 # JAR location
 target/poker-server.jar
-```
 
-### Running in Production
-
-```bash
-# Start server
-java -jar target/poker-server.jar --server
-
-# With custom port (edit PokerApplication.java)
-# Default: 8080
-
-# Background process
+# Run in production
 nohup java -jar target/poker-server.jar --server > server.log 2>&1 &
-
-# Check logs
-tail -f server.log
 ```
 
-### Docker Deployment (Optional)
+### Configuration
 
-```dockerfile
-FROM openjdk:17-slim
-COPY target/poker-server.jar /app/poker-server.jar
-EXPOSE 8080
-CMD ["java", "-jar", "/app/poker-server.jar", "--server"]
-```
+The server uses environment variables for configuration:
 
 ```bash
-docker build -t poker-server .
-docker run -p 8080:8080 poker-server
+# Database path
+export DB_PATH=/app/data/poker.db
+
+# Server runs on port 8080 (hardcoded in PokerApplication.java)
 ```
 
-### Environment Configuration
+### Monitoring
 
-Edit `PokerApplication.java` for configuration:
-- Server port (default: 8080)
-- Database path (default: `poker_database.db`)
-- Default blinds (default: 10/20)
-- Max players per table (default: 9)
+```bash
+# View logs (Docker)
+docker-compose logs -f
+
+# View logs (local)
+tail -f server.log
+
+# Check if server is running
+nc -zv localhost 8080
+# or
+telnet localhost 8080
+```
 
 ---
 

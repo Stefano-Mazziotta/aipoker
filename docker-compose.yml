@@ -1,0 +1,14 @@
+services:
+  poker-server:
+    build: .
+    container_name: aipoker-server
+    ports:
+      - "${SERVER_PORT:-8081}:8080"
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+    environment:
+      - DB_PATH=${DB_PATH:-/app/data/poker.db}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    env_file:
+      - .env

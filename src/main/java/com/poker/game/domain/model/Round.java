@@ -14,16 +14,33 @@ public class Round {
     private Pot pot;
     private final List<Player> activePlayers;
     private int currentBet;
+    private final Map<String, Integer> playerBets; // Track each player's contribution this round
 
     public Round(List<Player> players) {
         this.players = new ArrayList<>(players);
         this.activePlayers = new ArrayList<>(players);
         this.pot = Pot.empty();
         this.currentBet = 0;
+        this.playerBets = new HashMap<>();
     }
 
     public void addToPot(int amount) {
         this.pot = this.pot.add(amount);
+    }
+    
+    public void recordPlayerBet(Player player, int amount) {
+        String playerId = player.getId().getValue().toString();
+        playerBets.put(playerId, playerBets.getOrDefault(playerId, 0) + amount);
+    }
+    
+    public void setPlayerBet(Player player, int amount) {
+        String playerId = player.getId().getValue().toString();
+        playerBets.put(playerId, amount);
+    }
+    
+    public int getPlayerBet(Player player) {
+        String playerId = player.getId().getValue().toString();
+        return playerBets.getOrDefault(playerId, 0);
     }
 
     public void setCurrentBet(int amount) {
@@ -66,5 +83,10 @@ public class Round {
         this.currentBet = 0;
         this.activePlayers.clear();
         this.activePlayers.addAll(players);
+        this.playerBets.clear();
+    }
+    
+    public Map<String, Integer> getAllPlayerBets() {
+        return new HashMap<>(playerBets);
     }
 }
