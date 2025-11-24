@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS games (
     big_blind INTEGER NOT NULL,
     pot INTEGER DEFAULT 0,
     dealer_position INTEGER,
+    current_player_index INTEGER DEFAULT 0, -- Index of player whose turn it is
+    players_acted_this_round TEXT,   -- Comma-separated player IDs who acted this round
     community_card_1 TEXT,            -- Serialized card (e.g., "A♥")
     community_card_2 TEXT,
     community_card_3 TEXT,
@@ -92,9 +94,11 @@ CREATE TABLE IF NOT EXISTS lobbies (
     current_players INTEGER DEFAULT 0,
     game_id TEXT,                     -- Associated game if started
     started BOOLEAN DEFAULT 0,        -- Compatibility with SQLiteLobbyRepository
+    admin_player_id TEXT NOT NULL,    -- Player who created the lobby and can start games
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at TIMESTAMP,
-    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL,
+    FOREIGN KEY (admin_player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_lobbies_status ON lobbies(status);
