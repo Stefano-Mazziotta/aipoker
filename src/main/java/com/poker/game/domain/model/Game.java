@@ -1,10 +1,18 @@
 package com.poker.game.domain.model;
 
-import com.poker.game.domain.evaluation.*;
-import com.poker.game.domain.exception.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.poker.game.domain.evaluation.HandEvaluationStrategy;
+import com.poker.game.domain.evaluation.PokerHand;
+import com.poker.game.domain.evaluation.TexasHoldemEvaluator;
+import com.poker.game.domain.exception.InvalidGameStateException;
 import com.poker.player.domain.model.Player;
-import com.poker.shared.domain.valueobject.*;
-import java.util.*;
+import com.poker.shared.domain.valueobject.Card;
+import com.poker.shared.domain.valueobject.Deck;
 
 /**
  * Game Aggregate Root.
@@ -22,6 +30,8 @@ public class Game {
     private Round currentRound;
     private final HandEvaluationStrategy evaluator;
     private int dealerPosition;
+    private int currentPlayerIndex;
+    private Set<String> playersActedThisRound;
 
     private Game(GameId id, List<Player> players, Blinds blinds) {
         validatePlayers(players);
@@ -33,6 +43,8 @@ public class Game {
         this.communityCards = new ArrayList<>();
         this.evaluator = new TexasHoldemEvaluator();
         this.dealerPosition = 0;
+        this.currentPlayerIndex = 0;
+        this.playersActedThisRound = new HashSet<>();
     }
 
     private void validatePlayers(List<Player> players) {
@@ -53,6 +65,11 @@ public class Game {
         Game game = new Game(id, players, blinds);
         game.state = state;
         game.dealerPosition = dealerPosition;
+        
+        // ALWAYS create a fresh deck when reconstituting - never restore deck state
+        // This prevents duplicate cards issue
+        game.deck = new Deck();
+        game.deck.shuffle();
         
         // Restore community cards
         if (communityCards != null && !communityCards.isEmpty()) {
@@ -79,6 +96,10 @@ public class Game {
                     }
                 }
             }
+            
+            // Initialize turn tracking for reconstituted game
+            game.currentPlayerIndex = (dealerPosition + 1) % players.size();
+            game.playersActedThisRound = new HashSet<>();
         }
         
         return game;
@@ -124,9 +145,9 @@ public class Game {
         currentRound.addToPot(blinds.getBigBlind());
         currentRound.setCurrentBet(blinds.getBigBlind());
         
-        // NOTE: We don't record blind bets in the player bet tracking because
-        // the test expects all players to pay the full current bet on their first action.
-        // This is a simplified model where blinds are "forgotten" for bet tracking purposes.
+        // Record blind bets so players don't have to re-pay them
+        currentRound.setPlayerBet(smallBlindPlayer, blinds.getSmallBlind());
+        currentRound.setPlayerBet(bigBlindPlayer, blinds.getBigBlind());
     }
 
     private void dealHoleCards() {
@@ -135,31 +156,45 @@ public class Game {
                 player.receiveCard(deck.dealCard());
             }
         }
+        // Initialize first player to act (left of big blind in pre-flop)
+        this.currentPlayerIndex = (dealerPosition + 3) % players.size();
+        this.playersActedThisRound = new HashSet<>();
     }
 
     public void dealFlop() {
         if (state != GameState.PRE_FLOP) {
             throw new InvalidGameStateException("Cannot deal flop in state: " + state);
         }
+        if (!isBettingRoundComplete()) {
+            throw new InvalidGameStateException("Cannot deal flop: Pre-flop betting round not complete");
+        }
         deck.dealCard(); // Burn card
         communityCards.add(deck.dealCard());
         communityCards.add(deck.dealCard());
         communityCards.add(deck.dealCard());
         this.state = GameState.FLOP;
+        startNewBettingRound();
     }
 
     public void dealTurn() {
         if (state != GameState.FLOP) {
             throw new InvalidGameStateException("Cannot deal turn in state: " + state);
         }
+        if (!isBettingRoundComplete()) {
+            throw new InvalidGameStateException("Cannot deal turn: Flop betting round not complete");
+        }
         deck.dealCard(); // Burn card
         communityCards.add(deck.dealCard());
         this.state = GameState.TURN;
+        startNewBettingRound();
     }
 
     public void dealRiver() {
         if (state != GameState.TURN) {
             throw new InvalidGameStateException("Cannot deal river in state: " + state);
+        }
+        if (!isBettingRoundComplete()) {
+            throw new InvalidGameStateException("Cannot deal river: Turn betting round not complete");
         }
         deck.dealCard(); // Burn card
         communityCards.add(deck.dealCard());
@@ -197,6 +232,89 @@ public class Game {
     public void advanceDealer() {
         this.dealerPosition = (dealerPosition + 1) % players.size();
     }
+    
+    /**
+     * Get the current player who should act
+     */
+    public Player getCurrentPlayer() {
+        if (players.isEmpty()) return null;
+        return players.get(currentPlayerIndex);
+    }
+    
+    /**
+     * Check if the current player can act
+     */
+    public boolean isPlayerTurn(Player player) {
+        if (players.isEmpty()) return false;
+        Player currentPlayer = players.get(currentPlayerIndex);
+        return currentPlayer.getId().equals(player.getId()) && !player.isFolded();
+    }
+    
+    /**
+     * Record that a player has acted and advance to next player
+     */
+    public void recordPlayerAction(Player player) {
+        playersActedThisRound.add(player.getId().getValue().toString());
+        advanceTurn();
+    }
+    
+    /**
+     * Advance to next active (non-folded) player
+     */
+    private void advanceTurn() {
+        int startIndex = currentPlayerIndex;
+        do {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+            // Avoid infinite loop if all players folded
+            if (currentPlayerIndex == startIndex) break;
+        } while (players.get(currentPlayerIndex).isFolded());
+    }
+    
+    /**
+     * Check if betting round is complete
+     */
+    private boolean isBettingRoundComplete() {
+        List<Player> activePlayers = currentRound.getActivePlayers();
+        
+        // If only one player remains, round is complete
+        if (activePlayers.size() <= 1) {
+            return true;
+        }
+        
+        // All active players must have acted
+        for (Player player : activePlayers) {
+            String playerId = player.getId().getValue().toString();
+            if (!playersActedThisRound.contains(playerId)) {
+                return false;
+            }
+        }
+        
+        // All active players must have equal bets (or be all-in)
+        int currentBet = currentRound.getCurrentBet();
+        for (Player player : activePlayers) {
+            int playerBet = currentRound.getPlayerBet(player);
+            // Player must match current bet OR be all-in (0 chips)
+            if (playerBet < currentBet && player.getChipsAmount() > 0) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Start a new betting round (reset action tracking)
+     */
+    private void startNewBettingRound() {
+        playersActedThisRound.clear();
+        currentRound.setCurrentBet(0);
+        // First to act after flop/turn/river is left of dealer
+        currentPlayerIndex = (dealerPosition + 1) % players.size();
+        // Skip folded players
+        while (players.get(currentPlayerIndex).isFolded() && currentRound.hasMultipleActivePlayers()) {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        }
+    }
 
     // Getters
     public GameId getId() { return id; }
@@ -207,4 +325,13 @@ public class Game {
     public Pot getCurrentPot() { return currentRound.getPot(); }
     public Round getCurrentRound() { return currentRound; }
     public int getDealerPosition() { return dealerPosition; }
+    public int getCurrentPlayerIndex() { return currentPlayerIndex; }
+    public Set<String> getPlayersActedThisRound() { return Set.copyOf(playersActedThisRound); }
+    
+    // Setters for persistence layer
+    public void setCurrentPlayerIndex(int index) { this.currentPlayerIndex = index; }
+    public void setPlayersActedThisRound(Set<String> players) { 
+        this.playersActedThisRound.clear();
+        this.playersActedThisRound.addAll(players);
+    }
 }

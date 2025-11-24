@@ -25,17 +25,15 @@ public class BettingRound {
         validateAction(player, action, amount);
 
         switch (action) {
-            case FOLD:
-                player.fold();
-                break;
+            case FOLD -> player.fold();
                 
-            case CHECK:
+            case CHECK -> {
                 if (currentBet > 0) {
                     throw new IllegalActionException("Cannot CHECK when there's a bet to call");
                 }
-                break;
+            }
                 
-            case CALL:
+            case CALL -> {
                 // Calculate how much the player actually needs to call
                 int playerCurrentBet = round.getPlayerBet(player);
                 int amountToCall = currentBet - playerCurrentBet;
@@ -46,9 +44,9 @@ public class BettingRound {
                 player.subtractChips(amountToCall);
                 round.addToPot(amountToCall);
                 round.recordPlayerBet(player, amountToCall);
-                break;
+            }
                 
-            case RAISE:
+            case RAISE -> {
                 int playerBet = round.getPlayerBet(player);
                 int totalRaiseAmount = amount - playerBet;
                 
@@ -63,9 +61,9 @@ public class BettingRound {
                 round.recordPlayerBet(player, totalRaiseAmount);
                 currentBet = amount;
                 round.setCurrentBet(amount);
-                break;
+            }
                 
-            case ALL_IN:
+            case ALL_IN -> {
                 int allInAmount = player.getChipsAmount();
                 player.subtractChips(allInAmount);
                 round.addToPot(allInAmount);
@@ -76,13 +74,18 @@ public class BettingRound {
                     currentBet = playerTotalBet;
                     round.setCurrentBet(playerTotalBet);
                 }
-                break;
+            }
         }
     }
 
     private void validateAction(Player player, PlayerAction action, int amount) {
         if (player.isFolded()) {
             throw new IllegalActionException("Folded player cannot act");
+        }
+        
+        // Validate action-specific constraints
+        if (action == PlayerAction.RAISE && amount < 0) {
+            throw new IllegalActionException("Raise amount cannot be negative");
         }
         
         if (amount < 0) {

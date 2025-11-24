@@ -1,13 +1,29 @@
 package com.poker.game.infrastructure.persistence;
 
-import com.poker.game.domain.model.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import com.poker.game.domain.model.Blinds;
+import com.poker.game.domain.model.Game;
+import com.poker.game.domain.model.GameId;
+import com.poker.game.domain.model.GameState;
 import com.poker.game.domain.repository.GameRepository;
-import com.poker.player.domain.model.*;
+import com.poker.player.domain.model.Player;
+import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
-import com.poker.shared.domain.valueobject.*;
+import com.poker.shared.domain.valueobject.Card;
 import com.poker.shared.infrastructure.database.DatabaseConnection;
-import java.sql.*;
-import java.util.*;
 
 /**
  * SQLite implementation of GameRepository.
@@ -49,9 +65,10 @@ public class SQLiteGameRepository implements GameRepository {
 
     private void insertGame(Connection conn, Game game) throws SQLException {
         String sql = "INSERT INTO games (id, state, small_blind, big_blind, pot, " +
-                     "dealer_position, community_card_1, community_card_2, community_card_3, " +
+                     "dealer_position, current_player_index, players_acted_this_round, " +
+                     "community_card_1, community_card_2, community_card_3, " +
                      "community_card_4, community_card_5, created_at, updated_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))";
         
         List<Card> communityCards = game.getCommunityCards();
         
@@ -62,13 +79,18 @@ public class SQLiteGameRepository implements GameRepository {
             stmt.setInt(4, game.getBlinds().getBigBlind());
             stmt.setInt(5, game.getCurrentPot().getAmount());
             stmt.setInt(6, game.getDealerPosition());
+            stmt.setInt(7, game.getCurrentPlayerIndex());
+            
+            // Convert Set to comma-separated string
+            String playersActed = String.join(",", game.getPlayersActedThisRound());
+            stmt.setString(8, playersActed);
             
             // Set community cards (null if not dealt yet)
             for (int i = 0; i < 5; i++) {
                 if (i < communityCards.size()) {
-                    stmt.setString(7 + i, communityCards.get(i).toString());
+                    stmt.setString(9 + i, communityCards.get(i).toString());
                 } else {
-                    stmt.setNull(7 + i, java.sql.Types.VARCHAR);
+                    stmt.setNull(9 + i, java.sql.Types.VARCHAR);
                 }
             }
             
@@ -78,6 +100,7 @@ public class SQLiteGameRepository implements GameRepository {
 
     private void updateGame(Connection conn, Game game) throws SQLException {
         String sql = "UPDATE games SET state = ?, pot = ?, dealer_position = ?, " +
+                     "current_player_index = ?, players_acted_this_round = ?, " +
                      "community_card_1 = ?, community_card_2 = ?, community_card_3 = ?, " +
                      "community_card_4 = ?, community_card_5 = ?, " +
                      "updated_at = datetime('now') WHERE id = ?";
@@ -88,17 +111,22 @@ public class SQLiteGameRepository implements GameRepository {
             stmt.setString(1, game.getState().name());
             stmt.setInt(2, game.getCurrentPot().getAmount());
             stmt.setInt(3, game.getDealerPosition());
+            stmt.setInt(4, game.getCurrentPlayerIndex());
+            
+            // Convert Set to comma-separated string
+            String playersActed = String.join(",", game.getPlayersActedThisRound());
+            stmt.setString(5, playersActed);
             
             // Set community cards (null if not dealt yet)
             for (int i = 0; i < 5; i++) {
                 if (i < communityCards.size()) {
-                    stmt.setString(4 + i, communityCards.get(i).toString());
+                    stmt.setString(6 + i, communityCards.get(i).toString());
                 } else {
-                    stmt.setNull(4 + i, java.sql.Types.VARCHAR);
+                    stmt.setNull(6 + i, java.sql.Types.VARCHAR);
                 }
             }
             
-            stmt.setString(9, game.getId().getValue().toString());
+            stmt.setString(11, game.getId().getValue().toString());
             stmt.executeUpdate();
         }
     }
@@ -138,7 +166,7 @@ public class SQLiteGameRepository implements GameRepository {
                 
                 // Save hole cards
                 if (holeCards.size() >= 1) {
-                    stmt.setString(9, holeCards.getFirst().toString());
+                    stmt.setString(9, holeCards.get(0).toString());
                 } else {
                     stmt.setNull(9, java.sql.Types.VARCHAR);
                 }
@@ -324,6 +352,14 @@ public class SQLiteGameRepository implements GameRepository {
         int bigBlind = rs.getInt("big_blind");
         int pot = rs.getInt("pot");
         int dealerPosition = rs.getInt("dealer_position");
+        int currentPlayerIndex = rs.getInt("current_player_index");
+        
+        // Load players acted this round
+        String playersActedStr = rs.getString("players_acted_this_round");
+        Set<String> playersActed = new HashSet<>();
+        if (playersActedStr != null && !playersActedStr.isEmpty()) {
+            playersActed.addAll(Arrays.asList(playersActedStr.split(",")));
+        }
         
         // Load community cards
         List<Card> communityCards = new ArrayList<>();
@@ -342,7 +378,13 @@ public class SQLiteGameRepository implements GameRepository {
         
         // Reconstruct game with pot, current bet, player bets, and community cards
         int currentBet = (state == GameState.PRE_FLOP) ? bigBlind : 0;
-        return Game.reconstitute(id, players, blinds, state, dealerPosition, pot, currentBet, playerBets, communityCards);
+        Game game = Game.reconstitute(id, players, blinds, state, dealerPosition, pot, currentBet, playerBets, communityCards);
+        
+        // Set turn tracking state
+        game.setCurrentPlayerIndex(currentPlayerIndex);
+        game.setPlayersActedThisRound(playersActed);
+        
+        return game;
     }
 
     private List<Player> loadGamePlayers(Connection conn, GameId gameId) throws SQLException {
