@@ -1,21 +1,29 @@
 package com.poker;
 
-import com.poker.game.application.*;
+import java.net.Socket;
+import java.util.List;
+
+import com.poker.game.application.DealCardsUseCase;
+import com.poker.game.application.DetermineWinnerUseCase;
+import com.poker.game.application.PlayerActionUseCase;
+import com.poker.game.application.StartGameUseCase;
 import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.game.infrastructure.persistence.SQLiteGameRepository;
-import com.poker.player.application.*;
-import com.poker.player.domain.repository.PlayerRepository;
-import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
-import com.poker.lobby.application.*;
+import com.poker.lobby.application.CreateLobbyUseCase;
+import com.poker.lobby.application.JoinLobbyUseCase;
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.lobby.infrastructure.persistence.SQLiteLobbyRepository;
+import com.poker.player.application.GetLeaderboardUseCase;
+import com.poker.player.application.RegisterPlayerUseCase;
+import com.poker.player.domain.repository.PlayerRepository;
+import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
-import com.poker.shared.infrastructure.socket.*;
-
-import java.net.Socket;
-import java.util.List;
-import java.util.Scanner;
+import com.poker.shared.infrastructure.socket.ClientHandler;
+import com.poker.shared.infrastructure.socket.ClientHandlerFactory;
+import com.poker.shared.infrastructure.socket.MessageFormatter;
+import com.poker.shared.infrastructure.socket.ProtocolHandler;
+import com.poker.shared.infrastructure.socket.SocketServer;
 
 /**
  * Main application entry point.

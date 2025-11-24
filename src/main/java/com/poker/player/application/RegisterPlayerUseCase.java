@@ -2,7 +2,6 @@ package com.poker.player.application;
 
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.repository.PlayerRepository;
-import com.poker.shared.domain.valueobject.Chips;
 
 /**
  * Use case for registering a new player.

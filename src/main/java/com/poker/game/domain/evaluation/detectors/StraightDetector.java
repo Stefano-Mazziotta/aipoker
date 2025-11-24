@@ -1,11 +1,13 @@
 package com.poker.game.domain.evaluation.detectors;
 
-import com.poker.shared.domain.valueobject.Card;
-import com.poker.shared.domain.valueobject.Rank;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import com.poker.game.domain.evaluation.HandDetector;
 import com.poker.game.domain.evaluation.HandRank;
 import com.poker.game.domain.evaluation.PokerHand;
-import java.util.*;
+import com.poker.shared.domain.valueobject.Card;
 
 /**
  * Detects Straight hands (five consecutive ranks).
