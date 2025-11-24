@@ -1,5 +1,5 @@
 # Simple Dockerfile for local development
-FROM maven:3.9-eclipse-temurin-17
+FROM maven:3.9-eclipse-temurin-21
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN mvn clean package -DskipTests
 RUN mkdir -p /app/data
 
 # Expose socket server port
-EXPOSE 8080
+EXPOSE 8081
 
 # Run the JAR in server mode
 CMD ["java", "-jar", "target/poker-server.jar", "--server"]

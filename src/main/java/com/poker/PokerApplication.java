@@ -85,7 +85,7 @@ public class PokerApplication {
                                          JoinLobbyUseCase joinLobby,
                                          GetLeaderboardUseCase getLeaderboard) {
         System.out.println("Starting Socket Server...");
-        System.out.println("Listening on port 8080");
+        System.out.println("Listening on port 8081");
         System.out.println("Press Ctrl+C to stop\n");
         
         // Create protocol handler with all use cases
@@ -99,7 +99,8 @@ public class PokerApplication {
             new ClientHandler(socket, protocolHandler, new MessageFormatter());
         
         // Start server
-        SocketServer server = new SocketServer(8080, handlerFactory);
+        int port = Integer.parseInt(System.getenv("SERVER_PORT"));
+        SocketServer server = new SocketServer(port, handlerFactory);
         
         try {
             server.start();
