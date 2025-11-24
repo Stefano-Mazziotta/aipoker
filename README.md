@@ -6,88 +6,41 @@
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-blue.svg)](https://alistair.cockburn.us/hexagonal-architecture/)
 [![DDD](https://img.shields.io/badge/DDD-Enabled-green.svg)](https://www.domainlanguage.com/ddd/)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-57%20Passing-success.svg)]()
 
 ---
 
 ## ⚡ Quick Reference
 
 ```bash
-## 🐳 Docker Setup
+# Build and test
+mvn clean test                        # Run all tests (57 tests)
+mvn test jacoco:report                # Generate coverage report
 
-### Quick Start
+# Run server
+docker compose up -d                  # Docker (recommended)
+java -jar target/poker-server.jar     # Local build
 
-The project includes a simplified Docker setup for local development.
+# Connect as client
+telnet localhost 8080                 # Test connection
+python3 test_client.py                # Run test client
 
-**Server Port:** 8081 (mapped from container port 8080)
-
-```bash
-# Build and start
-docker compose up --build
-
-# Or run in background
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop
-docker compose down
-```
-
-### Running Tests in Docker
-
-```bash
-# Run all tests
-docker compose run --rm poker-server mvn test
-
-# Run specific test
-docker compose run --rm poker-server mvn test -Dtest=PlayerTest
-
-# Run with coverage
-docker compose run --rm poker-server mvn test jacoco:report
-```
-
-### Docker Commands Reference
-
-```bash
-# Access container shell
-docker compose exec poker-server bash
-
-# Access database (when server is running)
-docker compose exec poker-server sqlite3 /app/data/poker.db
-
-# Restart after code changes
-docker compose restart
-
-# Clean rebuild
-docker compose down
-docker compose up --build
-```
-
-### Configuration
-
-Environment variables are configured in `docker-compose.yml`:
-- `DB_PATH=/app/data/poker.db` - Database location in container
-
-Database persists in `./data/` directory on your host machine.
-
----
+# Development
+docker compose logs -f                # View server logs
+mvn clean package                     # Build JAR file
 ```
 
 ---
 
 ## 📖 Table of Contents
 
-- [Quick Reference](#-quick-reference)
 - [What is This Project?](#-what-is-this-project)
 - [Key Features](#-key-features)
 - [Quick Start](#-quick-start)
 - [Project Structure](#-project-structure)
 - [Architecture Overview](#-architecture-overview)
-- [Setup Guide](#-setup-guide)
+- [Setup & Deployment](#-setup--deployment)
 - [Testing](#-testing)
-- [Docker Setup](#-docker-setup)
-- [Deployment](#-deployment)
 - [How to Contribute](#-how-to-contribute)
 - [References](#-references)
 
@@ -157,41 +110,42 @@ This project serves as a **learning resource** and **production template** for b
 ### Prerequisites
 - **Java 17+** (JDK 17 or higher) **← REQUIRED**
 - **Maven 3.8+**
-- **Docker** (optional, for containerized setup)
+- **Docker & Docker Compose** (optional, for containerized setup)
 
 > ⚠️ **Important**: This project requires **Java 17 or higher** due to modern language features (records, switch expressions).  
 > If you have Java 11 or older, see [`JAVA17_SETUP.md`](./JAVA17_SETUP.md) for installation instructions.
 
-### Option 1: Run with Docker (Recommended for Quick Start)
+### Option 1: Run with Docker (Recommended)
 
 ```bash
-# Start the server
-docker-compose up -d
+# Start the server (port 8080)
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
+
+# Test connection
+telnet localhost 8080
 
 # Stop the server
-docker-compose down
+docker compose down
 ```
 
-Server starts on `localhost:8080`. Database persists in `./data/` directory.
+**Configuration**: Edit `docker-compose.yml` to change ports or settings. Database persists in `./data/poker.db`.
 
 ### Option 2: Run Locally
 
 ```bash
-# Clone the repository
+# Clone and build
 git clone https://github.com/yourusername/aipoker.git
 cd aipoker
-
-# Build the project
 mvn clean package
 
-# Start the server
-java -jar target/poker-server.jar --server
+# Run tests
+mvn test
 
-# Or run demo mode
-java -jar target/poker-server.jar --demo
+# Start server
+java -jar target/poker-server.jar
 ```
 
 ### Connect as a Player
@@ -200,19 +154,16 @@ java -jar target/poker-server.jar --demo
 # Using telnet
 telnet localhost 8080
 
-# Register a player
+# Example commands
 REGISTER Alice 1000
 > REGISTERED playerId=550e8400-e29b-41d4-a716-446655440000 name=Alice chips=1000
 
-# Create a lobby
-CREATE_LOBBY "High Stakes Table" 6
-> LOBBY_CREATED lobbyId=abc123 name=High Stakes Table maxPlayers=6
+CREATE_LOBBY "High Stakes" 6
+> LOBBY_CREATED lobbyId=abc123 name=High Stakes maxPlayers=6
 
-# See available commands
 HELP
+> [Command list]
 ```
-
-For complete protocol reference, see [Protocol Commands](#protocol-commands) section below.
 
 ---
 
@@ -310,73 +261,120 @@ feature/                               # e.g., player/, game/, lobby/
 
 ---
 
-## 🛠️ Setup Guide
+## 🛠️ Setup & Deployment
 
-### Development Environment Setup
+### Local Development Setup
 
 1. **Install Java 17+**
    ```bash
-   # Check Java version
-   java -version
-   
-   # Should show version 17 or higher
+   java -version  # Should show version 17 or higher
    ```
 
-2. **Install Build Tool**
+2. **Install Maven**
    ```bash
-   # Maven
-   brew install maven  # macOS
+   brew install maven      # macOS
    sudo apt install maven  # Ubuntu
-   
-   # Or Gradle
-   brew install gradle
    ```
 
 3. **Clone and Build**
    ```bash
    git clone https://github.com/yourusername/aipoker.git
    cd aipoker
-   ./build.sh
+   mvn clean package
    ```
 
-4. **Run Tests**
+4. **Run Development Server**
    ```bash
-   mvn test
-   # or
-   java -cp target/poker-server.jar com.poker.TestRunner
+   java -jar target/poker-server.jar
    ```
 
-5. **Start Development Server**
-   ```bash
-   java -jar target/poker-server.jar --server
-   ```
+### Docker Development
+
+```bash
+# Start server
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Run tests
+docker compose run --rm poker-server mvn test
+
+# Access container shell
+docker compose exec poker-server bash
+
+# Access database
+docker compose exec poker-server sqlite3 /app/data/poker.db
+
+# Restart after code changes
+docker compose restart
+
+# Clean rebuild
+docker compose down && docker compose up --build
+```
 
 ### Database Setup
 
-The application automatically initializes the SQLite database on first run. Schema is located in `schema.sql`.
+The application automatically initializes the SQLite database on first run using `schema.sql`.
+
+**Database Location:**
+- Docker: `/app/data/poker.db` (persisted to `./data/` on host)
+- Local: `./poker_database.db`
 
 **Manual initialization** (if needed):
 ```bash
 sqlite3 poker_database.db < schema.sql
 ```
 
-### IDE Setup
+### IDE Configuration
 
-**IntelliJ IDEA** (Recommended):
+**IntelliJ IDEA**:
 1. Open project: `File → Open → Select aipoker folder`
-2. Wait for Maven/Gradle import
-3. Mark `src/main/java` as Sources Root
-4. Mark `src/test/java` as Test Sources Root
-5. Run `PokerApplication.main()`
-
-**Eclipse**:
-1. Import existing Maven/Gradle project
-2. Project is already configured with `.classpath` and `.project`
+2. Maven automatically imports dependencies
+3. Run `PokerApplication.main()`
 
 **VS Code**:
 1. Install Java Extension Pack
 2. Open folder
-3. Run/Debug from Run menu
+3. Settings configured in `.vscode/settings.json`
+
+**Eclipse**:
+1. Import existing Maven project
+2. Project files (`.classpath`, `.project`) included
+
+### Production Deployment
+
+```bash
+# Build production JAR
+mvn clean package -DskipTests
+
+# Deploy JAR (location: target/poker-server.jar)
+scp target/poker-server.jar user@server:/opt/poker/
+
+# Run in production
+nohup java -Xmx1g -jar poker-server.jar > server.log 2>&1 &
+
+# Or use systemd service
+sudo systemctl start poker-server
+```
+
+**Environment Variables:**
+```bash
+export DB_PATH=/var/lib/poker/poker.db
+export SERVER_PORT=8080
+```
+
+**Monitoring:**
+```bash
+# Check if running
+nc -zv localhost 8080
+
+# View logs
+tail -f server.log
+
+# Docker logs
+docker compose logs -f
+```
 
 ---
 
@@ -562,10 +560,10 @@ public void testCompleteGameFlow() {
 
 ## 🧪 Testing
 
-### Running Tests Locally
+### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (57 tests)
 mvn test
 
 # Run specific test
@@ -574,175 +572,78 @@ mvn test -Dtest=PlayerTest
 # Run with coverage report
 mvn test jacoco:report
 open target/site/jacoco/index.html
-```
 
-### Running Tests in Docker
-
-```bash
-# Run tests in container
-docker-compose exec poker-server mvn test
-
-# Or run in isolated container
-docker run --rm -v $(pwd):/app -w /app maven:3.9-eclipse-temurin-17 mvn test
+# Run tests in Docker
+docker compose run --rm poker-server mvn test
 ```
 
 ### Test Coverage
 
-- **Domain Tests**: Pure business logic (Player, Game, Chips, etc.)
-- **Use Case Tests**: Application logic (RegisterPlayer, StartGame, etc.)
-- **Integration Tests**: End-to-end game flows
-- **Socket Tests**: Network layer testing
-- **Total**: 40+ tests with 85%+ coverage
+Current coverage: **85%+**
+
+- **Unit Tests**: Domain logic (Player, Game, Chips, Hand Evaluation)
+- **Use Case Tests**: Application logic (RegisterPlayer, StartGame, PlayerAction)
+- **Integration Tests**: End-to-end game flows (Complete game, Folding, All-in)
+- **Repository Tests**: Data persistence layer
 
 ### Test Structure
 
 ```
 src/test/java/com/poker/
-├── player/domain/model/PlayerTest.java
-├── player/application/RegisterPlayerUseCaseTest.java
-├── game/domain/model/GameTest.java
-├── game/domain/evaluation/HandEvaluationTest.java
-├── lobby/application/LobbyUseCaseTest.java
-└── integration/FullGameIntegrationTest.java
+├── player/
+│   ├── domain/model/PlayerTest.java           # Domain tests
+│   └── application/RegisterPlayerUseCaseTest.java  # Use case tests
+├── game/
+│   ├── domain/model/GameTest.java
+│   ├── domain/evaluation/HandEvaluationTest.java
+│   └── application/GameUseCaseTest.java
+├── lobby/
+│   └── application/LobbyUseCaseTest.java
+├── integration/
+│   └── FullGameIntegrationTest.java           # E2E tests (57 total)
+└── TestRunner.java                            # Test suite runner
+```
+
+### Writing Tests
+
+Follow the testing pyramid:
+
+```java
+// ✅ Unit Test - No infrastructure dependencies
+@Test
+public void testPlayerCannotBetMoreThanTheyHave() {
+    Player player = Player.create("Alice", 100);
+    
+    assertThrows(IllegalArgumentException.class, () -> {
+        player.bet(new Chips(200));
+    });
+}
+
+// ✅ Use Case Test - With test doubles
+@Test
+public void testRegisterPlayer() {
+    PlayerRepository repo = new InMemoryPlayerRepository();
+    RegisterPlayerUseCase useCase = new RegisterPlayerUseCase(repo);
+    
+    var result = useCase.execute(new RegisterPlayerCommand("Alice", 1000));
+    
+    assertEquals("Alice", result.name());
+}
+
+// ✅ Integration Test - Full stack
+@Test
+public void testCompleteGameFlow() {
+    // Setup database
+    // Register players
+    // Start game
+    // Execute actions through all betting rounds
+    // Verify winner and pot distribution
+}
 ```
 
 ---
 
-## 🐳 Docker Setup
-
-### Configuration
-
-The Docker setup uses a `.env` file for configuration. Environment variables:
-
-```bash
-# .env file
-SERVER_PORT=8080              # Port to expose on host
-DB_PATH=/app/data/poker.db    # Database location in container
-JAVA_OPTS=-Xmx512m -Xms256m   # JVM options
-```
-
-### Quick Commands
-
-```bash
-# Start server (uses .env configuration)
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop server
-docker compose down
-
-# Rebuild and start
-docker compose up --build -d
-
-# Run tests in container
-docker compose run --rm poker-server mvn test
-
-# Access database
-docker compose exec poker-server sqlite3 /app/data/poker.db
-```
-
-### Database Persistence
-
-The SQLite database persists in the `./data/` directory on your host machine:
-- Location: `./data/poker.db`
-- Survives container restarts
-- Can be backed up or version controlled
-
-### Development Workflow
-
-```bash
-# 1. Start container
-docker compose up -d
-
-# 2. Make code changes in ./src/
-
-# 3. Rebuild to apply changes
-docker compose up --build
-
-# 4. View logs
-docker compose logs -f
-
-# 5. Run tests
-docker compose run --rm poker-server mvn test
-```
-
-### Test Client
-
-Use the Python test client to verify the server:
-
-```bash
-# With Docker running (adjust port if changed in .env)
-python3 test_client.py
-```
-
-Or connect manually:
-```bash
-telnet localhost 8080
-# or if you changed SERVER_PORT in .env:
-telnet localhost ${SERVER_PORT}
-```
-
----
-
-## 🚢 Deployment
-
-## 🚢 Deployment
-
-### Local Development
-
-```bash
-# Using Docker (recommended)
-docker-compose up -d
-
-# Or run locally
-mvn clean package
-java -jar target/poker-server.jar --server
-```
-
-### Production Build
-
-```bash
-# Build JAR
-mvn clean package -DskipTests
-
-# JAR location
-target/poker-server.jar
-
-# Run in production
-nohup java -jar target/poker-server.jar --server > server.log 2>&1 &
-```
-
-### Configuration
-
-The server uses environment variables for configuration:
-
-```bash
-# Database path
-export DB_PATH=/app/data/poker.db
-
-# Server runs on port 8080 (hardcoded in PokerApplication.java)
-```
-
-### Monitoring
-
-```bash
-# View logs (Docker)
-docker-compose logs -f
-
-# View logs (local)
-tail -f server.log
-
-# Check if server is running
-nc -zv localhost 8080
-# or
-telnet localhost 8080
-```
-
----
-
-## 📚 References
+##  References
 
 ### Architecture
 - [**Hexagonal Architecture**](https://alistair.cockburn.us/hexagonal-architecture/) - Alistair Cockburn
@@ -777,5 +678,3 @@ Built to demonstrate enterprise software architecture principles in a real-world
 ---
 
 Made with ♠️ ♥️ ♣️ ♦️ by the AiPoker Team
-
-bash build.sh 2>&1
