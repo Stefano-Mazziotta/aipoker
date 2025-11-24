@@ -1,6 +1,5 @@
 package com.poker;
 
-import java.net.Socket;
 import java.util.List;
 
 import com.poker.game.application.DealCardsUseCase;
@@ -21,11 +20,10 @@ import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
-import com.poker.shared.infrastructure.socket.ClientHandler;
-import com.poker.shared.infrastructure.socket.ClientHandlerFactory;
 import com.poker.shared.infrastructure.socket.MessageFormatter;
 import com.poker.shared.infrastructure.socket.ProtocolHandler;
-import com.poker.shared.infrastructure.socket.SocketServer;
+import com.poker.shared.infrastructure.websocket.PokerWebSocketEndpoint;
+import com.poker.shared.infrastructure.websocket.WebSocketServer;
 
 /**
  * Main application entry point.
@@ -33,7 +31,7 @@ import com.poker.shared.infrastructure.socket.SocketServer;
  * 
  * Usage:
  *   --demo    : Run demo mode (default)
- *   --server  : Start socket server on port 8080
+ *   --server  : Start WebSocket server on port 8081
  */
 public class PokerApplication {
     
@@ -73,7 +71,7 @@ public class PokerApplication {
         JoinLobbyUseCase joinLobby = new JoinLobbyUseCase(lobbyRepository);
         
         if (serverMode) {
-            startSocketServer(registerPlayer, startGame, playerAction, dealCards, 
+            startWebSocketServer(registerPlayer, startGame, playerAction, dealCards, 
                             determineWinner, createLobby, joinLobby, getLeaderboard,
                             getPlayerCards, getGameState);
         } else {
@@ -81,7 +79,7 @@ public class PokerApplication {
         }
     }
     
-    private static void startSocketServer(RegisterPlayerUseCase registerPlayer,
+    private static void startWebSocketServer(RegisterPlayerUseCase registerPlayer,
                                          StartGameUseCase startGame,
                                          PlayerActionUseCase playerAction,
                                          DealCardsUseCase dealCards,
@@ -91,8 +89,8 @@ public class PokerApplication {
                                          GetLeaderboardUseCase getLeaderboard,
                                          GetPlayerCardsUseCase getPlayerCards,
                                          GetGameStateUseCase getGameState) {
-        System.out.println("Starting Socket Server...");
-        System.out.println("Listening on port 8081");
+        System.out.println("Starting WebSocket Server...");
+        System.out.println("Listening on ws://localhost:8081/ws/poker");
         System.out.println("Press Ctrl+C to stop\n");
         
         // Create protocol handler with all use cases
@@ -102,13 +100,14 @@ public class PokerApplication {
             getPlayerCards, getGameState, new MessageFormatter()
         );
         
-        // Create client handler factory
-        ClientHandlerFactory handlerFactory = (Socket socket) -> 
-            new ClientHandler(socket, protocolHandler, new MessageFormatter());
+        MessageFormatter messageFormatter = new MessageFormatter();
         
-        // Start server
-        int port = Integer.parseInt(System.getenv("SERVER_PORT"));
-        SocketServer server = new SocketServer(port, handlerFactory);
+        // Configure WebSocket endpoint with handlers
+        PokerWebSocketEndpoint.setProtocolHandler(protocolHandler);
+        PokerWebSocketEndpoint.setMessageFormatter(messageFormatter);
+        
+        // Start WebSocket server
+        WebSocketServer server = new WebSocketServer("localhost", 8081);
         
         try {
             server.start();
@@ -120,15 +119,9 @@ public class PokerApplication {
                 System.out.println("✓ Server stopped");
             }));
             
-            // Keep main thread alive while server runs
-            try {
-                while (server.isRunning()) {
-                    Thread.sleep(5000);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("✗ Server interrupted");
-            }
+            // Keep main thread alive
+            server.awaitTermination();
+            
         } catch (RuntimeException e) {
             System.err.println("✗ Server runtime error: " + e.getMessage());
         }
