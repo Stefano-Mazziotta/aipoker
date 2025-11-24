@@ -1,310 +1,617 @@
-# 🎰 Texas Hold'em Poker Server
+# 🎴 Texas Hold'em Poker Server# 🎰 Texas Hold'em Poker Server
 
-> A production-ready multiplayer Texas Hold'em poker server showcasing **Hexagonal Architecture**, **Domain-Driven Design**, and **Screaming Architecture** patterns.
 
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
-[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-blue.svg)](https://alistair.cockburn.us/hexagonal-architecture/)
-[![DDD](https://img.shields.io/badge/DDD-Enabled-green.svg)](https://www.domainlanguage.com/ddd/)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
+
+A multiplayer Texas Hold'em poker server with **WebSocket** real-time communication, built with **Hexagonal Architecture**, **Domain-Driven Design**, and **Event-Driven Architecture**.> A production-ready multiplayer Texas Hold'em poker server showcasing **Hexagonal Architecture**, **Domain-Driven Design**, and **Screaming Architecture** patterns.
+
+
+
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
+
+[![WebSocket](https://img.shields.io/badge/WebSocket-Jakarta%202.1-blue.svg)](https://jakarta.ee/specifications/websocket/)[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-blue.svg)](https://alistair.cockburn.us/hexagonal-architecture/)
+
+[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20EDA-green.svg)]()[![DDD](https://img.shields.io/badge/DDD-Enabled-green.svg)](https://www.domainlanguage.com/ddd/)
+
+[![Tests](https://img.shields.io/badge/Tests-56%20Passing-success.svg)]()[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
+
 [![Tests](https://img.shields.io/badge/Tests-57%20Passing-success.svg)]()
 
 ---
 
+---
+
+## 🎯 What is This?
+
 ## ⚡ Quick Reference
 
+A **production-ready multiplayer poker server** demonstrating enterprise software architecture:
+
 ```bash
-# Build and test
-mvn clean test                        # Run all tests (57 tests)
-mvn test jacoco:report                # Generate coverage report
 
-# Run server
+- **Real-time multiplayer** - WebSocket-based bidirectional communication# Build and test
+
+- **Complete Texas Hold'em** - All 9 hand rankings, betting rounds, pot managementmvn clean test                        # Run all tests (57 tests)
+
+- **Event-driven** - Pub/sub pattern for game notificationsmvn test jacoco:report                # Generate coverage report
+
+- **Clean architecture** - Hexagonal + DDD + Event-Driven Design
+
+- **Modern Java** - Java 21 with records, pattern matching, sealed classes# Run server
+
 docker compose up -d                  # Docker (recommended)
-java -jar target/poker-server.jar     # Local build
 
-# Connect as client
+---java -jar target/poker-server.jar     # Local build
+
+
+
+## ⚡ Quick Start# Connect as client
+
 telnet localhost 8080                 # Test connection
-python3 test_client.py                # Run test client
 
-# Development
+### Prerequisitespython3 test_client.py                # Run test client
+
+- **Java 21+** ([Download](https://adoptium.net/))
+
+- **Maven 3.9+** ([Download](https://maven.apache.org/download.cgi))# Development
+
 docker compose logs -f                # View server logs
-mvn clean package                     # Build JAR file
+
+### Run the Servermvn clean package                     # Build JAR file
+
 ```
 
----
+```bash
 
-## 📖 Table of Contents
+# Clone and build---
+
+git clone https://github.com/Stefano-Mazziotta/aipoker.git
+
+cd aipoker## 📖 Table of Contents
+
+mvn clean package
 
 - [What is This Project?](#-what-is-this-project)
-- [Key Features](#-key-features)
-- [Quick Start](#-quick-start)
-- [Project Structure](#-project-structure)
-- [Architecture Overview](#-architecture-overview)
+
+# Start server- [Key Features](#-key-features)
+
+java -jar target/aipoker-server-1.0.0.jar- [Quick Start](#-quick-start)
+
+# Server starts on ws://localhost:8081/ws/poker- [Project Structure](#-project-structure)
+
+```- [Architecture Overview](#-architecture-overview)
+
 - [Setup & Deployment](#-setup--deployment)
-- [Testing](#-testing)
+
+### Test with Web Client- [Testing](#-testing)
+
 - [How to Contribute](#-how-to-contribute)
-- [References](#-references)
 
----
+Open `websocket-client.html` in your browser and connect to `ws://localhost:8081/ws/poker`- [References](#-references)
 
-## 🎯 What is This Project?
 
-This is a **fully functional multiplayer Texas Hold'em poker server** that demonstrates enterprise-level software architecture principles. Originally a monolithic application, it has been completely refactored using:
+
+**Try these commands:**---
+
+```
+
+REGISTER player1 1000    # Register with 1000 chips## 🎯 What is This Project?
+
+HELP                     # See all commands
+
+LEADERBOARD             # View rankingsThis is a **fully functional multiplayer Texas Hold'em poker server** that demonstrates enterprise-level software architecture principles. Originally a monolithic application, it has been completely refactored using:
+
+```
 
 - **Hexagonal Architecture** (Ports & Adapters)
-- **Domain-Driven Design** (DDD)
+
+---- **Domain-Driven Design** (DDD)
+
 - **Screaming Architecture** (Feature-first organization)
-- **SOLID Principles**
 
-### The Product
+## 🏗️ Architecture- **SOLID Principles**
 
-A TCP-based poker server supporting:
-- ♠️ **Complete Texas Hold'em rules** - All 9 hand rankings, proper betting rounds
-- 👥 **Multiplayer gameplay** - Network-based with concurrent games
-- 🎮 **Lobby system** - Create and join game rooms
-- 🏆 **Player rankings** - Leaderboards and statistics
-- 💾 **Persistent state** - SQLite database for all game data
+
+
+This project combines three architectural patterns:### The Product
+
+
+
+### 1. **Hexagonal Architecture (Ports & Adapters)**A TCP-based poker server supporting:
+
+```- ♠️ **Complete Texas Hold'em rules** - All 9 hand rankings, proper betting rounds
+
+Domain (Business Logic)- 👥 **Multiplayer gameplay** - Network-based with concurrent games
+
+    ↕ Ports (Interfaces)- 🎮 **Lobby system** - Create and join game rooms
+
+Adapters (Infrastructure: WebSocket, Database, Events)- 🏆 **Player rankings** - Leaderboards and statistics
+
+```- 💾 **Persistent state** - SQLite database for all game data
+
 - 🧪 **Comprehensive testing** - 40+ test cases with 85%+ coverage
 
-### Why This Architecture?
+### 2. **Domain-Driven Design (DDD)**
 
-This project serves as a **learning resource** and **production template** for building maintainable, testable, and scalable applications. It demonstrates how to:
+- **Entities**: Player, Game, Card, Hand### Why This Architecture?
 
-1. **Separate business logic from technical concerns**
+- **Value Objects**: Chips, PlayerId, GameId
+
+- **Aggregates**: Game (root), Player (root)This project serves as a **learning resource** and **production template** for building maintainable, testable, and scalable applications. It demonstrates how to:
+
+- **Repositories**: GameRepository, PlayerRepository
+
+- **Use Cases**: Application services orchestrating domain logic1. **Separate business logic from technical concerns**
+
 2. **Make your codebase screams what it does, not how**
-3. **Write testable code without mocking frameworks**
-4. **Organize large applications by business features**
-5. **Apply DDD patterns in real-world scenarios**
+
+### 3. **Event-Driven Architecture (EDA)**3. **Write testable code without mocking frameworks**
+
+- **Events**: PlayerActionEvent, CardsDealtEvent, WinnerDeterminedEvent, GameStateChangedEvent4. **Organize large applications by business features**
+
+- **Publisher**: GameEventPublisher (singleton with pub/sub)5. **Apply DDD patterns in real-world scenarios**
+
+- **Subscribers**: WebSocket clients connected to specific games/lobbies
 
 > **For Architecture Details**: See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for in-depth explanations of Hexagonal Architecture, DDD, Screaming Architecture, and all patterns used.
+
+**See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for detailed documentation.**
+
+---
 
 ---
 
 ## ✨ Key Features
 
+## 📁 Project Structure
+
 ### Game Features
-- ✅ **Complete Poker Rules**: All betting actions (Call, Raise, Fold, Check, All-in)
-- ✅ **Hand Evaluation**: Sophisticated algorithm for all 9 poker hands
-- ✅ **Dealer Rotation**: Proper button advancement and blind posting
-- ✅ **Pot Management**: Main pot, side pots, winner determination
-- ✅ **Game States**: Pre-flop → Flop → Turn → River → Showdown
 
-### System Features
-- ✅ **Multiplayer Support**: TCP socket server with protocol handler
-- ✅ **Player Management**: Registration, authentication, chip tracking
-- ✅ **Lobby System**: Create rooms, join games, matchmaking
-- ✅ **Leaderboard**: Player rankings by chips and statistics
-- ✅ **Persistence**: SQLite database for all state
-- ✅ **Real-time Updates**: Event-driven game state notifications
+```- ✅ **Complete Poker Rules**: All betting actions (Call, Raise, Fold, Check, All-in)
 
-### Technical Features
-- ✅ **Clean Architecture**: Perfect separation of concerns
-- ✅ **Rich Domain Model**: DDD aggregates, value objects, repositories
-- ✅ **Testability**: 40+ tests, 85%+ coverage, no mocking needed
-- ✅ **Scalability**: Stateless use cases, concurrent connections
-- ✅ **Maintainability**: Feature-first organization, SOLID principles
+src/main/java/com/poker/- ✅ **Hand Evaluation**: Sophisticated algorithm for all 9 poker hands
 
----
+├── PokerApplication.java           # Main entry point- ✅ **Dealer Rotation**: Proper button advancement and blind posting
 
-## 🚀 Quick Start
+├── game/                           # Game bounded context- ✅ **Pot Management**: Main pot, side pots, winner determination
 
-### Prerequisites
-- **Java 17+** (JDK 17 or higher) **← REQUIRED**
-- **Maven 3.8+**
-- **Docker & Docker Compose** (optional, for containerized setup)
+│   ├── domain/                     # Business logic- ✅ **Game States**: Pre-flop → Flop → Turn → River → Showdown
 
-> ⚠️ **Important**: This project requires **Java 17 or higher** due to modern language features (records, switch expressions).  
-> If you have Java 11 or older, see [`JAVA17_SETUP.md`](./JAVA17_SETUP.md) for installation instructions.
+│   │   ├── model/                  # Entities & Value Objects
 
-### Option 1: Run with Docker (Recommended)
+│   │   │   ├── Game.java          # Game aggregate root### System Features
 
-```bash
-# Start the server (port 8080)
-docker compose up -d
+│   │   │   ├── Card.java, Deck.java- ✅ **Multiplayer Support**: TCP socket server with protocol handler
 
-# View logs
-docker compose logs -f
+│   │   │   ├── Hand.java, PokerHand.java- ✅ **Player Management**: Registration, authentication, chip tracking
 
-# Test connection
-telnet localhost 8080
+│   │   │   └── Round.java, Pot.java- ✅ **Lobby System**: Create rooms, join games, matchmaking
 
-# Stop the server
-docker compose down
+│   │   ├── evaluation/             # Hand evaluation algorithm- ✅ **Leaderboard**: Player rankings by chips and statistics
+
+│   │   │   └── HandEvaluator.java- ✅ **Persistence**: SQLite database for all state
+
+│   │   └── repository/             # Repository interfaces (ports)- ✅ **Real-time Updates**: Event-driven game state notifications
+
+│   ├── application/                # Use cases
+
+│   │   ├── StartGameUseCase.java### Technical Features
+
+│   │   ├── PlayerActionUseCase.java- ✅ **Clean Architecture**: Perfect separation of concerns
+
+│   │   ├── DealCardsUseCase.java- ✅ **Rich Domain Model**: DDD aggregates, value objects, repositories
+
+│   │   └── DetermineWinnerUseCase.java- ✅ **Testability**: 40+ tests, 85%+ coverage, no mocking needed
+
+│   └── infrastructure/             # Adapters- ✅ **Scalability**: Stateless use cases, concurrent connections
+
+│       └── persistence/- ✅ **Maintainability**: Feature-first organization, SOLID principles
+
+│           └── SQLiteGameRepository.java
+
+├── player/                         # Player bounded context---
+
+│   ├── domain/
+
+│   │   ├── model/## 🚀 Quick Start
+
+│   │   │   └── Player.java        # Player aggregate root
+
+│   │   └── repository/### Prerequisites
+
+│   ├── application/- **Java 17+** (JDK 17 or higher) **← REQUIRED**
+
+│   │   └── RegisterPlayerUseCase.java- **Maven 3.8+**
+
+│   └── infrastructure/- **Docker & Docker Compose** (optional, for containerized setup)
+
+│       └── persistence/
+
+│           └── SQLitePlayerRepository.java> ⚠️ **Important**: This project requires **Java 17 or higher** due to modern language features (records, switch expressions).  
+
+├── lobby/                          # Lobby bounded context> If you have Java 11 or older, see [`JAVA17_SETUP.md`](./JAVA17_SETUP.md) for installation instructions.
+
+│   ├── domain/
+
+│   │   └── model/### Option 1: Run with Docker (Recommended)
+
+│   │       └── Lobby.java         # Lobby aggregate root
+
+│   ├── application/```bash
+
+│   │   ├── CreateLobbyUseCase.java# Start the server (port 8080)
+
+│   │   └── JoinLobbyUseCase.javadocker compose up -d
+
+│   └── infrastructure/
+
+│       └── persistence/# View logs
+
+│           └── SQLiteLobbyRepository.javadocker compose logs -f
+
+└── shared/                         # Shared kernel
+
+    ├── domain/# Test connection
+
+    │   └── valueobject/telnet localhost 8080
+
+    │       └── Chips.java
+
+    └── infrastructure/# Stop the server
+
+        ├── events/                 # Event-driven componentsdocker compose down
+
+        │   ├── GameEvent.java```
+
+        │   ├── GameEventPublisher.java
+
+        │   ├── PlayerActionEvent.java**Configuration**: Edit `docker-compose.yml` to change ports or settings. Database persists in `./data/poker.db`.
+
+        │   ├── CardsDealtEvent.java
+
+        │   ├── GameStateChangedEvent.java### Option 2: Run Locally
+
+        │   └── WinnerDeterminedEvent.java
+
+        ├── websocket/              # WebSocket server```bash
+
+        │   ├── WebSocketServer.java# Clone and build
+
+        │   └── PokerWebSocketEndpoint.javagit clone https://github.com/yourusername/aipoker.git
+
+        ├── socket/                 # Protocol handlerscd aipoker
+
+        │   ├── ProtocolHandler.javamvn clean package
+
+        │   └── MessageFormatter.java
+
+        └── database/# Run tests
+
+            └── DatabaseInitializer.javamvn test
+
 ```
-
-**Configuration**: Edit `docker-compose.yml` to change ports or settings. Database persists in `./data/poker.db`.
-
-### Option 2: Run Locally
-
-```bash
-# Clone and build
-git clone https://github.com/yourusername/aipoker.git
-cd aipoker
-mvn clean package
-
-# Run tests
-mvn test
 
 # Start server
-java -jar target/poker-server.jar
+
+---java -jar target/poker-server.jar
+
 ```
+
+## 🎮 Features
 
 ### Connect as a Player
 
-```bash
-# Using telnet
-telnet localhost 8080
+### Poker Game
 
-# Example commands
-REGISTER Alice 1000
+- ✅ Complete Texas Hold'em rules```bash
+
+- ✅ All betting actions: Fold, Check, Call, Raise, All-in# Using telnet
+
+- ✅ All 9 hand rankings (High Card → Royal Flush)telnet localhost 8080
+
+- ✅ Dealer rotation and blind posting
+
+- ✅ Main pot and side pot management# Example commands
+
+- ✅ Proper game state machine (Pre-flop → Flop → Turn → River → Showdown)REGISTER Alice 1000
+
 > REGISTERED playerId=550e8400-e29b-41d4-a716-446655440000 name=Alice chips=1000
 
-CREATE_LOBBY "High Stakes" 6
-> LOBBY_CREATED lobbyId=abc123 name=High Stakes maxPlayers=6
+### Real-Time Communication
 
-HELP
-> [Command list]
+- ✅ WebSocket server (Jakarta WebSocket + Tyrus)CREATE_LOBBY "High Stakes" 6
+
+- ✅ Event-driven notifications to all players> LOBBY_CREATED lobbyId=abc123 name=High Stakes maxPlayers=6
+
+- ✅ JSON message protocol
+
+- ✅ Subscribe to game/lobby updatesHELP
+
+- ✅ Browser-compatible (native WebSocket API)> [Command list]
+
 ```
 
----
+### System
 
-## 📁 Project Structure
+- ✅ Player registration and management---
 
-### High-Level Organization
+- ✅ Lobby system (create/join games)
+
+- ✅ Leaderboard with rankings## 📁 Project Structure
+
+- ✅ SQLite persistence
+
+- ✅ Comprehensive testing (56 tests)### High-Level Organization
+
+- ✅ JaCoCo code coverage reports
 
 ```
-aipoker/
+
+---aipoker/
+
 ├── src/main/java/com/poker/          # Production code
-│   ├── player/                        # Player management feature
-│   ├── game/                          # Game logic feature
-│   ├── lobby/                         # Lobby system feature
-│   └── shared/                        # Shared infrastructure
-│
-├── src/test/java/com/poker/           # Test code
-│   ├── integration/                   # End-to-end tests
-│   ├── player/                        # Player tests
-│   ├── game/                          # Game tests
-│   └── lobby/                         # Lobby tests
-│
-├── ARCHITECTURE.md                    # Architecture deep-dive
-├── README.md                          # This file
-└── build.sh                           # Build script
-```
 
-### Feature-First Structure (Screaming Architecture)
+## 🧪 Testing│   ├── player/                        # Player management feature
+
+│   ├── game/                          # Game logic feature
+
+```bash│   ├── lobby/                         # Lobby system feature
+
+# Run all tests│   └── shared/                        # Shared infrastructure
+
+mvn test│
+
+├── src/test/java/com/poker/           # Test code
+
+# Run tests with coverage report│   ├── integration/                   # End-to-end tests
+
+mvn clean test jacoco:report│   ├── player/                        # Player tests
+
+│   ├── game/                          # Game tests
+
+# View coverage report│   └── lobby/                         # Lobby tests
+
+open target/site/jacoco/index.html│
+
+```├── ARCHITECTURE.md                    # Architecture deep-dive
+
+├── README.md                          # This file
+
+**Test Coverage:**└── build.sh                           # Build script
+
+- Unit tests for domain logic (game rules, hand evaluation)```
+
+- Integration tests for use cases
+
+- Full game flow integration tests### Feature-First Structure (Screaming Architecture)
+
+- 56 tests, 100% passing
 
 Each feature follows the same internal structure:
 
-```
-feature/                               # e.g., player/, game/, lobby/
-├── domain/                            # Pure business logic
-│   ├── model/                         # Aggregates and entities
-│   ├── valueobject/                   # Immutable value objects
-│   ├── repository/                    # Repository interfaces (ports)
-│   └── exception/                     # Domain exceptions
-│
-├── application/                       # Use cases (application services)
-│   ├── RegisterPlayerUseCase.java    # Business operations
-│   └── GetLeaderboardUseCase.java
-│
-└── infrastructure/                    # Adapters
-    ├── persistence/                   # Database implementations
-    └── socket/                        # Network adapters
-```
-
-> **Why this structure?** See the [Screaming Architecture](./ARCHITECTURE.md#screaming-architecture) section in ARCHITECTURE.md
-
 ---
+
+```
+
+## 🔌 WebSocket Protocolfeature/                               # e.g., player/, game/, lobby/
+
+├── domain/                            # Pure business logic
+
+### Connection│   ├── model/                         # Aggregates and entities
+
+```javascript│   ├── valueobject/                   # Immutable value objects
+
+const ws = new WebSocket('ws://localhost:8081/ws/poker');│   ├── repository/                    # Repository interfaces (ports)
+
+```│   └── exception/                     # Domain exceptions
+
+│
+
+### Send Commands├── application/                       # Use cases (application services)
+
+```json│   ├── RegisterPlayerUseCase.java    # Business operations
+
+{│   └── GetLeaderboardUseCase.java
+
+  "command": "REGISTER alice 1000"│
+
+}└── infrastructure/                    # Adapters
+
+```    ├── persistence/                   # Database implementations
+
+    └── socket/                        # Network adapters
+
+### Subscribe to Events```
+
+```json
+
+{> **Why this structure?** See the [Screaming Architecture](./ARCHITECTURE.md#screaming-architecture) section in ARCHITECTURE.md
+
+  "command": "SUBSCRIBE_GAME <game-id>"
+
+}---
+
+```
 
 ## 🏗️ Architecture Overview
 
+### Receive Real-Time Events
+
 ### The Big Picture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   PRIMARY ADAPTERS                      │
-│              (Socket Server, REST API)                  │
+**Player Action:**
+
+```json```
+
+{┌─────────────────────────────────────────────────────────┐
+
+  "eventType": "PLAYER_ACTION",│                   PRIMARY ADAPTERS                      │
+
+  "gameId": "uuid",│              (Socket Server, REST API)                  │
+
+  "playerId": "uuid",└────────────────────┬────────────────────────────────────┘
+
+  "playerName": "Alice",                     │
+
+  "action": "RAISE",                     ▼
+
+  "amount": 50,┌─────────────────────────────────────────────────────────┐
+
+  "timestamp": "2025-11-24T16:00:00Z"│                  APPLICATION LAYER                      │
+
+}│                    (Use Cases)                          │
+
+```│  RegisterPlayer | StartGame | PlayerAction | etc.       │
+
 └────────────────────┬────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                  APPLICATION LAYER                      │
-│                    (Use Cases)                          │
-│  RegisterPlayer | StartGame | PlayerAction | etc.       │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                   DOMAIN LAYER                          │
-│              (Business Logic - Pure Java)               │
-│  Player | Game | Lobby | Card | Chips | etc.            │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────┐
+
+**Cards Dealt:**                     │
+
+```json                     ▼
+
+{┌─────────────────────────────────────────────────────────┐
+
+  "eventType": "CARDS_DEALT",│                   DOMAIN LAYER                          │
+
+  "gameId": "uuid",│              (Business Logic - Pure Java)               │
+
+  "phase": "FLOP",│  Player | Game | Lobby | Card | Chips | etc.            │
+
+  "newCards": ["AH", "KD", "QS"],└────────────────────┬────────────────────────────────────┘
+
+  "timestamp": "2025-11-24T16:00:00Z"                     │
+
+}                     ▼
+
+```┌─────────────────────────────────────────────────────────┐
+
 │                 SECONDARY ADAPTERS                      │
-│           (SQLite, PostgreSQL, Redis, etc.)             │
-└─────────────────────────────────────────────────────────┘
-```
 
-### Key Architectural Decisions
+**Winner Determined:**│           (SQLite, PostgreSQL, Redis, etc.)             │
 
-| Decision | Rationale | Benefit |
-|----------|-----------|---------|
-| **Hexagonal Architecture** | Isolate domain logic from infrastructure | Easy to test, swap implementations |
-| **Feature-First Packages** | Organize by business capabilities | Easy to understand, reduced coupling |
-| **Value Objects** | Immutable, self-validating types | Type safety, no invalid states |
-| **Rich Domain Model** | Business logic in domain entities | Single source of truth, DRY |
+```json└─────────────────────────────────────────────────────────┘
+
+{```
+
+  "eventType": "WINNER_DETERMINED",
+
+  "gameId": "uuid",### Key Architectural Decisions
+
+  "winnerId": "uuid",
+
+  "winnerName": "Alice",| Decision | Rationale | Benefit |
+
+  "handRank": "FULL_HOUSE",|----------|-----------|---------|
+
+  "amountWon": 200,| **Hexagonal Architecture** | Isolate domain logic from infrastructure | Easy to test, swap implementations |
+
+  "timestamp": "2025-11-24T16:00:00Z"| **Feature-First Packages** | Organize by business capabilities | Easy to understand, reduced coupling |
+
+}| **Value Objects** | Immutable, self-validating types | Type safety, no invalid states |
+
+```| **Rich Domain Model** | Business logic in domain entities | Single source of truth, DRY |
+
 | **Repository Pattern** | Abstract data access | Testable without database |
-| **Use Case per Operation** | Single responsibility, explicit | Clear contracts, easy to test |
 
-> **For detailed explanations**: Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) - a complete guide covering Hexagonal Architecture, DDD, all patterns, and design decisions.
+---| **Use Case per Operation** | Single responsibility, explicit | Clear contracts, easy to test |
 
----
 
-## 🛠️ Setup & Deployment
 
-### Local Development Setup
+## 🛠️ Technology Stack> **For detailed explanations**: Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) - a complete guide covering Hexagonal Architecture, DDD, all patterns, and design decisions.
 
-1. **Install Java 17+**
+
+
+| Component | Technology |---
+
+|-----------|------------|
+
+| **Language** | Java 21 (records, pattern matching, sealed classes) |## 🛠️ Setup & Deployment
+
+| **Build Tool** | Maven 3.9+ |
+
+| **WebSocket** | Jakarta WebSocket API 2.1.1 |### Local Development Setup
+
+| **WebSocket Server** | Tyrus 2.1.5 (Grizzly container) |
+
+| **JSON** | Gson 2.10.1 |1. **Install Java 17+**
+
+| **Database** | SQLite 3.44.1.0 |   ```bash
+
+| **Testing** | JUnit 5.10.1 |   java -version  # Should show version 17 or higher
+
+| **Coverage** | JaCoCo 0.8.14 |   ```
+
+
+
+---2. **Install Maven**
+
    ```bash
-   java -version  # Should show version 17 or higher
-   ```
 
-2. **Install Maven**
-   ```bash
-   brew install maven      # macOS
+## 📚 Documentation   brew install maven      # macOS
+
    sudo apt install maven  # Ubuntu
-   ```
 
-3. **Clone and Build**
-   ```bash
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Detailed architecture documentation   ```
+
+- **[TODO.md](./TODO.md)** - Feature roadmap and planned improvements
+
+- **[schema.sql](./schema.sql)** - Database schema3. **Clone and Build**
+
+- **[websocket-client.html](./websocket-client.html)** - Interactive test client   ```bash
+
    git clone https://github.com/yourusername/aipoker.git
-   cd aipoker
-   mvn clean package
-   ```
 
-4. **Run Development Server**
-   ```bash
-   java -jar target/poker-server.jar
-   ```
+---   cd aipoker
+
+   mvn clean package
+
+## 🤝 Contributing   ```
+
+
+
+1. Fork the repository4. **Run Development Server**
+
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)   ```bash
+
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)   java -jar target/poker-server.jar
+
+4. Push to the branch (`git push origin feature/amazing-feature`)   ```
+
+5. Open a Pull Request
 
 ### Docker Development
 
+---
+
 ```bash
-# Start server
+
+## 📝 License# Start server
+
 docker compose up -d
 
-# View logs
-docker compose logs -f
+This project is for educational purposes.
 
-# Run tests
+# View logs
+
+---docker compose logs -f
+
+
+
+## 👤 Author# Run tests
+
 docker compose run --rm poker-server mvn test
 
-# Access container shell
+**Stefano Mazziotta**
+
+- GitHub: [@Stefano-Mazziotta](https://github.com/Stefano-Mazziotta)# Access container shell
+
 docker compose exec poker-server bash
 
+---
+
 # Access database
-docker compose exec poker-server sqlite3 /app/data/poker.db
+
+**Built with ❤️ using Clean Architecture principles**docker compose exec poker-server sqlite3 /app/data/poker.db
+
 
 # Restart after code changes
 docker compose restart
