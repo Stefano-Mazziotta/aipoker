@@ -1,17 +1,26 @@
 package com.poker.game.application;
 
-import com.poker.game.domain.model.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.poker.game.domain.model.Blinds;
+import com.poker.game.domain.model.Game;
+import com.poker.game.domain.model.GameId;
+import com.poker.game.domain.model.GameState;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for game use cases.
@@ -19,9 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GameUseCaseTest {
 
     private StartGameUseCase startGameUseCase;
-    private DealCardsUseCase dealCardsUseCase;
     private PlayerActionUseCase playerActionUseCase;
-    private DetermineWinnerUseCase determineWinnerUseCase;
 
     private InMemoryGameRepository gameRepository;
     private InMemoryPlayerRepository playerRepository;
@@ -32,9 +39,7 @@ class GameUseCaseTest {
         playerRepository = new InMemoryPlayerRepository();
 
         startGameUseCase = new StartGameUseCase(gameRepository, playerRepository);
-        dealCardsUseCase = new DealCardsUseCase(gameRepository);
         playerActionUseCase = new PlayerActionUseCase(gameRepository);
-        determineWinnerUseCase = new DetermineWinnerUseCase(gameRepository, playerRepository);
     }
 
     @Test
@@ -60,17 +65,23 @@ class GameUseCaseTest {
         assertNotNull(startResponse.gameId());
         assertEquals(2, startResponse.players().size());
 
-        // Pre-flop betting: Alice folds (simpler test flow)
-        var aliceFoldCommand = new PlayerActionUseCase.PlayerActionCommand(
+        // Get the game to check current player
+        Game game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
+        Player currentPlayer = game.getCurrentPlayer();
+        assertNotNull(currentPlayer);
+
+        // Current player folds (simpler test flow)
+        var foldCommand = new PlayerActionUseCase.PlayerActionCommand(
                 startResponse.gameId(),
-                alice.getId().getValue().toString(),
+                currentPlayer.getId().getValue().toString(),
                 PlayerAction.FOLD,
                 0
         );
-        var foldResponse = playerActionUseCase.execute(aliceFoldCommand);
+        var foldResponse = playerActionUseCase.execute(foldCommand);
 
         // Verify fold was successful
         assertNotNull(foldResponse);
+        assertTrue(foldResponse.playerFolded());
     }
 
     @Test
@@ -89,10 +100,15 @@ class GameUseCaseTest {
         );
         var startResponse = startGameUseCase.execute(startCommand);
 
-        // Alice folds
+        // Get the game to check current player
+        Game game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
+        Player currentPlayer = game.getCurrentPlayer();
+        assertNotNull(currentPlayer);
+
+        // Current player folds
         var foldCommand = new PlayerActionUseCase.PlayerActionCommand(
                 startResponse.gameId(),
-                alice.getId().getValue().toString(),
+                currentPlayer.getId().getValue().toString(),
                 PlayerAction.FOLD,
                 0
         );
@@ -100,13 +116,13 @@ class GameUseCaseTest {
 
         assertTrue(foldResponse.playerFolded());
 
-        // Verify Alice is folded
-        Game game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
-        Player aliceInGame = game.getPlayers().stream()
-                .filter(p -> p.getId().equals(alice.getId()))
+        // Reload game and verify player is folded
+        game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
+        Player foldedPlayer = game.getPlayers().stream()
+                .filter(p -> p.getId().equals(currentPlayer.getId()))
                 .findFirst()
                 .orElseThrow();
-        assertTrue(aliceInGame.isFolded());
+        assertTrue(foldedPlayer.isFolded());
     }
 
     // Simple in-memory repositories for testing

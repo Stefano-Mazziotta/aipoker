@@ -1,14 +1,21 @@
 package com.poker.player.application;
 
-import com.poker.player.domain.model.Player;
-import com.poker.player.domain.model.PlayerId;
-import com.poker.player.domain.repository.PlayerRepository;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.poker.player.domain.model.Player;
+import com.poker.player.domain.model.PlayerId;
+import com.poker.player.domain.repository.PlayerRepository;
 
 /**
  * Integration tests for RegisterPlayerUseCase.
@@ -44,9 +51,10 @@ class RegisterPlayerUseCaseTest {
     void testRegisterPlayerWithDuplicateNameThrows() {
         useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 500));
 
-        assertThrows(IllegalArgumentException.class, ()
+        Exception exception = assertThrows(IllegalArgumentException.class, ()
                 -> useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 600))
         );
+        assertNotNull(exception);
     }
 
     // Simple in-memory repository for testing

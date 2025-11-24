@@ -1,11 +1,15 @@
 package com.poker.game.domain.model;
 
-import com.poker.player.domain.model.Player;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.poker.player.domain.model.Player;
 
 /**
  * Tests for Game aggregate.
@@ -62,15 +66,32 @@ public class GameTest {
         Game game = Game.create(players, new Blinds(10, 20));
         game.start();
 
+        // Complete pre-flop betting round - both players must act and match bets
+        // After blinds, current bet is 20 (big blind)
+        // Both players need to call 20
+        game.getCurrentRound().setPlayerBet(players.get(0), 20);
+        game.recordPlayerAction(players.get(0)); // P1 calls
+        
+        game.getCurrentRound().setPlayerBet(players.get(1), 20);
+        game.recordPlayerAction(players.get(1)); // P2 calls
+
         // Deal Flop
         game.dealFlop();
         assertEquals(GameState.FLOP, game.getState());
         assertEquals(3, game.getCommunityCards().size());
 
+        // Complete flop betting round - both check (bet 0 since startNewBettingRound was called)
+        game.recordPlayerAction(players.get(0));
+        game.recordPlayerAction(players.get(1));
+
         // Deal Turn
         game.dealTurn();
         assertEquals(GameState.TURN, game.getState());
         assertEquals(4, game.getCommunityCards().size());
+
+        // Complete turn betting round - both check
+        game.recordPlayerAction(players.get(0));
+        game.recordPlayerAction(players.get(1));
 
         // Deal River
         game.dealRiver();
@@ -87,9 +108,10 @@ public class GameTest {
         );
 
         // Should throw exception - need at least 2 players
-        assertThrows(IllegalArgumentException.class, () -> {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             Game.create(players, new Blinds(10, 20));
         });
+        assertNotNull(exception);
     }
 
     @Test
@@ -100,9 +122,10 @@ public class GameTest {
         }
 
         // Should throw exception - max 9 players
-        assertThrows(IllegalArgumentException.class, () -> {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             Game.create(players, new Blinds(10, 20));
         });
+        assertNotNull(exception);
     }
 
     @Test

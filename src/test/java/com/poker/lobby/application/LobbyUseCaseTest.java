@@ -1,15 +1,18 @@
 package com.poker.lobby.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.lobby.infrastructure.persistence.SQLiteLobbyRepository;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for lobby use cases.
@@ -37,15 +40,22 @@ public class LobbyUseCaseTest {
     @Test
     void testCreateLobby() {
         String timestamp = String.valueOf(System.currentTimeMillis());
+        
+        // Register admin player
+        var admin = registerPlayer.execute(
+                new RegisterPlayerUseCase.RegisterPlayerCommand("Admin" + timestamp, 1000)
+        );
+        
         var response = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("Test Lobby" + timestamp, 6)
+                new CreateLobbyUseCase.CreateLobbyCommand("Test Lobby" + timestamp, 6, admin.id())
         );
 
         assertNotNull(response.lobbyId());
         assertEquals("Test Lobby" + timestamp, response.name());
         assertEquals(6, response.maxPlayers());
-        assertEquals(0, response.currentPlayers());
+        assertEquals(1, response.currentPlayers()); // Admin auto-joins
         assertTrue(response.isOpen());
+        assertEquals(admin.id(), response.adminPlayerId());
 
         System.out.println("✓ Create lobby test passed!");
     }
@@ -53,9 +63,15 @@ public class LobbyUseCaseTest {
     @Test
     void testJoinLobby() {
         String timestamp = String.valueOf(System.currentTimeMillis());
+        
+        // Register admin player
+        var admin = registerPlayer.execute(
+                new RegisterPlayerUseCase.RegisterPlayerCommand("Admin" + timestamp, 1000)
+        );
+        
         // Create lobby
         var lobby = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("Join Test" + timestamp, 4)
+                new CreateLobbyUseCase.CreateLobbyCommand("Join Test" + timestamp, 4, admin.id())
         );
 
         // Register player
@@ -69,7 +85,7 @@ public class LobbyUseCaseTest {
         );
 
         assertEquals(lobby.lobbyId(), response.lobbyId());
-        assertEquals(1, response.currentPlayers());
+        assertEquals(2, response.currentPlayers()); // Admin + player
         assertTrue(response.isOpen());
 
         System.out.println("✓ Join lobby test passed!");
@@ -78,15 +94,18 @@ public class LobbyUseCaseTest {
     @Test
     void testLobbyFull() {
         String timestamp = String.valueOf(System.currentTimeMillis());
-        // Create small lobby
+        
+        // Register admin player
+        var admin = registerPlayer.execute(
+                new RegisterPlayerUseCase.RegisterPlayerCommand("Admin" + timestamp, 1000)
+        );
+        
+        // Create small lobby (2 players max)
         var lobby = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("Full Test" + timestamp, 2)
+                new CreateLobbyUseCase.CreateLobbyCommand("Full Test" + timestamp, 2, admin.id())
         );
 
-        // Register 3 players with unique names
-        var p1 = registerPlayer.execute(
-                new RegisterPlayerUseCase.RegisterPlayerCommand("Player1" + timestamp, 1000)
-        );
+        // Register 2 more players with unique names
         var p2 = registerPlayer.execute(
                 new RegisterPlayerUseCase.RegisterPlayerCommand("Player2" + timestamp, 1000)
         );
@@ -94,13 +113,13 @@ public class LobbyUseCaseTest {
                 new RegisterPlayerUseCase.RegisterPlayerCommand("Player3" + timestamp, 1000)
         );
 
-        // Join with 2 players
-        joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobby.lobbyId(), p1.id()));
+        // Join with 1 player (admin already in)
         joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobby.lobbyId(), p2.id()));
 
-        // This should throw exception
-        assertThrows(IllegalStateException.class, () -> {
+        // Now lobby is full (admin + p2), this should throw exception
+        Exception exception = assertThrows(IllegalStateException.class, () -> {
             joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobby.lobbyId(), p3.id()));
         });
+        assertNotNull(exception);
     }
 }

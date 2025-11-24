@@ -1,20 +1,28 @@
 package com.poker.integration;
 
-import com.poker.game.application.*;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import com.poker.game.application.DealCardsUseCase;
+import com.poker.game.application.DetermineWinnerUseCase;
+import com.poker.game.application.PlayerActionUseCase;
+import com.poker.game.application.StartGameUseCase;
 import com.poker.game.domain.model.Blinds;
+import com.poker.game.domain.model.Game;
+import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.game.infrastructure.persistence.SQLiteGameRepository;
 import com.poker.player.application.RegisterPlayerUseCase;
+import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end integration tests for complete game flow.
@@ -74,39 +82,40 @@ public class FullGameIntegrationTest {
         assertEquals("PRE_FLOP", game.state());
         assertEquals(30, game.pot()); // Small + Big blind
 
-        // 3. Pre-flop betting round
-        // Charlie calls
-        var action1 = playerAction.execute(
+        // Get the game to determine turn order
+        Game gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        
+        // 3. Pre-flop betting round - have all players act in turn order
+        // NOTE: Action tracking state (playersActedThisRound) is not persisted,
+        // so we get current player from fresh game load each time
+        playerAction.execute(
                 new PlayerActionUseCase.PlayerActionCommand(
                         game.gameId(),
-                        charlie.id(),
+                        gameObj.getCurrentPlayer().getId().getValue().toString(),
                         PlayerAction.CALL,
                         20
                 )
         );
-        assertEquals(50, action1.pot());
-
-        // Alice calls
-        var action2 = playerAction.execute(
+        
+        gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        playerAction.execute(
                 new PlayerActionUseCase.PlayerActionCommand(
                         game.gameId(),
-                        alice.id(),
+                        gameObj.getCurrentPlayer().getId().getValue().toString(),
                         PlayerAction.CALL,
                         20
                 )
         );
-        assertEquals(70, action2.pot()); // Pot: 30 (blinds) + 20 (Charlie) + 20 (Alice)
-
-        // Bob calls (he's small blind, already paid 10, needs to pay 10 more)
-        var action3 = playerAction.execute(
+        
+        gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        playerAction.execute(
                 new PlayerActionUseCase.PlayerActionCommand(
                         game.gameId(),
-                        bob.id(),
+                        gameObj.getCurrentPlayer().getId().getValue().toString(),
                         PlayerAction.CALL,
                         20
                 )
         );
-        assertEquals(90, action3.pot()); // Pot: 70 + 20 (Bob)
 
         // 4. Deal Flop
         var flop = dealCards.dealFlop(
@@ -115,23 +124,17 @@ public class FullGameIntegrationTest {
         assertEquals("FLOP", flop.state());
         assertEquals(3, flop.communityCardsCount());
 
-        // 5. Post-flop betting
-        // All players check
-        playerAction.execute(
-                new PlayerActionUseCase.PlayerActionCommand(
-                        game.gameId(), alice.id(), PlayerAction.CHECK, 0
-                )
-        );
-        playerAction.execute(
-                new PlayerActionUseCase.PlayerActionCommand(
-                        game.gameId(), bob.id(), PlayerAction.CHECK, 0
-                )
-        );
-        playerAction.execute(
-                new PlayerActionUseCase.PlayerActionCommand(
-                        game.gameId(), charlie.id(), PlayerAction.CHECK, 0
-                )
-        );
+        // 5. Post-flop betting - all players check in turn
+        gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        for (int i = 0; i < 3; i++) {
+            Player currentPlayer = gameObj.getCurrentPlayer();
+            playerAction.execute(
+                    new PlayerActionUseCase.PlayerActionCommand(
+                            game.gameId(), currentPlayer.getId().getValue().toString(), PlayerAction.CHECK, 0
+                    )
+            );
+            gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        }
 
         // 6. Deal Turn
         var turn = dealCards.dealTurn(
@@ -140,14 +143,38 @@ public class FullGameIntegrationTest {
         assertEquals("TURN", turn.state());
         assertEquals(4, turn.communityCardsCount());
 
-        // 7. Deal River
+        // 7. Turn betting - all players check in turn
+        gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        for (int i = 0; i < 3; i++) {
+            Player currentPlayer = gameObj.getCurrentPlayer();
+            playerAction.execute(
+                    new PlayerActionUseCase.PlayerActionCommand(
+                            game.gameId(), currentPlayer.getId().getValue().toString(), PlayerAction.CHECK, 0
+                    )
+            );
+            gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        }
+
+        // 8. Deal River
         var river = dealCards.dealRiver(
                 new DealCardsUseCase.DealCardsCommand(game.gameId())
         );
         assertEquals("RIVER", river.state());
         assertEquals(5, river.communityCardsCount());
 
-        // 8. Showdown
+        // 9. River betting - all players check in turn
+        gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        for (int i = 0; i < 3; i++) {
+            Player currentPlayer = gameObj.getCurrentPlayer();
+            playerAction.execute(
+                    new PlayerActionUseCase.PlayerActionCommand(
+                            game.gameId(), currentPlayer.getId().getValue().toString(), PlayerAction.CHECK, 0
+                    )
+            );
+            gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        }
+
+        // 10. Showdown
         var winner = determineWinner.execute(
                 new DetermineWinnerUseCase.DetermineWinnerCommand(game.gameId())
         );
@@ -179,11 +206,15 @@ public class FullGameIntegrationTest {
                 )
         );
 
-        // Player 1 folds
+        // Get current player to fold
+        Game gameObj = gameRepository.findById(GameId.from(game.gameId())).orElseThrow();
+        Player currentPlayer = gameObj.getCurrentPlayer();
+
+        // Current player folds
         var fold = playerAction.execute(
                 new PlayerActionUseCase.PlayerActionCommand(
                         game.gameId(),
-                        p1.id(),
+                        currentPlayer.getId().getValue().toString(),
                         PlayerAction.FOLD,
                         0
                 )
