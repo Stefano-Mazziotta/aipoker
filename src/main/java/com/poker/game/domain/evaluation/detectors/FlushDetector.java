@@ -23,7 +23,7 @@ public class FlushDetector implements HandDetector {
         }
 
         // Check if all cards have the same suit
-        Suit firstSuit = cards.getFirst().getSuit();
+        Suit firstSuit = cards.get(0).getSuit();
         boolean allSameSuit = cards.stream()
             .allMatch(card -> card.getSuit() == firstSuit);
 

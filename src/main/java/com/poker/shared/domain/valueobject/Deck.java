@@ -18,13 +18,13 @@ public class Deck {
     }
 
     private List<Card> generateAllCards() {
-        List<Card> cards = new ArrayList<>(52);
+        List<Card> allCards = new ArrayList<>(52);
         for (Suit suit : Suit.values()) {
             for (Rank rank : Rank.values()) {
-                cards.add(new Card(rank, suit));
+                allCards.add(new Card(rank, suit));
             }
         }
-        return cards;
+        return allCards;
     }
 
     public void shuffle() {
@@ -35,7 +35,7 @@ public class Deck {
         if (cards.isEmpty()) {
             throw new IllegalStateException("Cannot deal from empty deck");
         }
-        return cards.removeFirst();
+        return cards.remove(0);
     }
 
     public List<Card> getCards() {
