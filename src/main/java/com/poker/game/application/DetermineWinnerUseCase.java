@@ -1,6 +1,7 @@
 package com.poker.game.application;
 
-import com.poker.game.domain.model.*;
+import com.poker.game.domain.model.Game;
+import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.repository.PlayerRepository;
