@@ -1,8 +1,12 @@
 package com.poker.game.application;
 
-import com.poker.game.domain.model.*;
+import com.poker.game.domain.model.BettingRound;
+import com.poker.game.domain.model.Game;
+import com.poker.game.domain.model.GameId;
+import com.poker.game.domain.model.Round;
 import com.poker.game.domain.repository.GameRepository;
-import com.poker.player.domain.model.*;
+import com.poker.player.domain.model.Player;
+import com.poker.player.domain.model.PlayerAction;
 
 /**
  * Use case for executing player actions during a game.
@@ -25,6 +29,11 @@ public class PlayerActionUseCase {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Player not in game"));
 
+        // Validate it's player's turn
+        if (!game.isPlayerTurn(player)) {
+            throw new IllegalArgumentException("Not your turn! Wait for your turn to act.");
+        }
+
         // Create betting round and execute action
         Round round = game.getCurrentRound();
         BettingRound bettingRound = new BettingRound(round, game.getState());
@@ -34,6 +43,9 @@ public class PlayerActionUseCase {
             command.action(),
             command.amount()
         );
+        
+        // Record action and advance turn
+        game.recordPlayerAction(player);
 
         // Save game state
         gameRepository.save(game);

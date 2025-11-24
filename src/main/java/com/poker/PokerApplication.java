@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.poker.game.application.DealCardsUseCase;
 import com.poker.game.application.DetermineWinnerUseCase;
+import com.poker.game.application.GetGameStateUseCase;
+import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
 import com.poker.game.domain.model.Blinds;
@@ -63,6 +65,8 @@ public class PokerApplication {
         PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository);
         DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository);
         DetermineWinnerUseCase determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository);
+        GetPlayerCardsUseCase getPlayerCards = new GetPlayerCardsUseCase(gameRepository);
+        GetGameStateUseCase getGameState = new GetGameStateUseCase(gameRepository);
         
         // Lobby use cases
         CreateLobbyUseCase createLobby = new CreateLobbyUseCase(lobbyRepository);
@@ -70,7 +74,8 @@ public class PokerApplication {
         
         if (serverMode) {
             startSocketServer(registerPlayer, startGame, playerAction, dealCards, 
-                            determineWinner, createLobby, joinLobby, getLeaderboard);
+                            determineWinner, createLobby, joinLobby, getLeaderboard,
+                            getPlayerCards, getGameState);
         } else {
             runDemo(registerPlayer, startGame, getLeaderboard, createLobby);
         }
@@ -83,7 +88,9 @@ public class PokerApplication {
                                          DetermineWinnerUseCase determineWinner,
                                          CreateLobbyUseCase createLobby,
                                          JoinLobbyUseCase joinLobby,
-                                         GetLeaderboardUseCase getLeaderboard) {
+                                         GetLeaderboardUseCase getLeaderboard,
+                                         GetPlayerCardsUseCase getPlayerCards,
+                                         GetGameStateUseCase getGameState) {
         System.out.println("Starting Socket Server...");
         System.out.println("Listening on port 8081");
         System.out.println("Press Ctrl+C to stop\n");
@@ -91,7 +98,8 @@ public class PokerApplication {
         // Create protocol handler with all use cases
         ProtocolHandler protocolHandler = new ProtocolHandler(
             registerPlayer, startGame, playerAction, dealCards,
-            determineWinner, createLobby, joinLobby, getLeaderboard, new MessageFormatter()
+            determineWinner, createLobby, joinLobby, getLeaderboard,
+            getPlayerCards, getGameState, new MessageFormatter()
         );
         
         // Create client handler factory
@@ -112,13 +120,17 @@ public class PokerApplication {
                 System.out.println("✓ Server stopped");
             }));
             
-            // Block forever
-            while (server.isRunning()) {
-                Thread.sleep(1000);
+            // Keep main thread alive while server runs
+            try {
+                while (server.isRunning()) {
+                    Thread.sleep(5000);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("✗ Server interrupted");
             }
-        } catch (Exception e) {
-            System.err.println("✗ Server error: " + e.getMessage());
-            e.printStackTrace();
+        } catch (RuntimeException e) {
+            System.err.println("✗ Server runtime error: " + e.getMessage());
         }
     }
     
@@ -151,10 +163,11 @@ public class PokerApplication {
             // Demo: Create lobby
             System.out.println("\nCreating lobby...");
             var lobbyResponse = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("High Stakes Table", 6)
+                new CreateLobbyUseCase.CreateLobbyCommand("High Stakes Table", 6, response1.id())
             );
             System.out.println("✓ Lobby created: " + lobbyResponse.name() + 
                              " (" + lobbyResponse.currentPlayers() + "/" + lobbyResponse.maxPlayers() + " players)");
+            System.out.println("  Admin: " + lobbyResponse.adminPlayerId());
 
             // Demo: Start game
             System.out.println("\nStarting game...");
@@ -199,9 +212,8 @@ public class PokerApplication {
             System.out.println("\nTo start socket server:");
             System.out.println("  java -jar poker-server.jar --server");
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             System.err.println("✗ Error: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }
