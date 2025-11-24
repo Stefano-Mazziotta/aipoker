@@ -15,8 +15,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
         <sqlite.version>3.44.1.0</sqlite.version>
         <junit.version>5.10.1</junit.version>
     </properties>
