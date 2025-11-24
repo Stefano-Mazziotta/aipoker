@@ -1,11 +1,19 @@
 package com.poker.lobby.infrastructure.persistence;
 
-import com.poker.lobby.domain.model.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import com.poker.lobby.domain.model.Lobby;
+import com.poker.lobby.domain.model.LobbyId;
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.shared.infrastructure.database.DatabaseConnection;
-import java.sql.*;
-import java.util.*;
 
 /**
  * SQLite implementation of LobbyRepository.
@@ -44,8 +52,8 @@ public class SQLiteLobbyRepository implements LobbyRepository {
     }
 
     private void insertLobby(Connection conn, Lobby lobby) throws SQLException {
-        String sql = "INSERT INTO lobbies (id, name, max_players, buy_in, small_blind, big_blind, status, started, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))";
+        String sql = "INSERT INTO lobbies (id, name, max_players, buy_in, small_blind, big_blind, status, started, admin_player_id, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, lobby.getId().getValue());
@@ -57,6 +65,7 @@ public class SQLiteLobbyRepository implements LobbyRepository {
             stmt.setInt(6, 20);    // Default big_blind
             stmt.setString(7, lobby.isStarted() ? "STARTED" : "OPEN");  // status
             stmt.setBoolean(8, lobby.isStarted());
+            stmt.setString(9, lobby.getAdminPlayerId().getValue().toString());
             stmt.executeUpdate();
         }
     }
@@ -237,8 +246,9 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         String id = rs.getString("id");
         String name = rs.getString("name");
         int maxPlayers = rs.getInt("max_players");
+        String adminPlayerId = rs.getString("admin_player_id");
 
-        Lobby lobby = new Lobby(new LobbyId(id), name, maxPlayers);
+        Lobby lobby = new Lobby(new LobbyId(id), name, maxPlayers, PlayerId.from(adminPlayerId));
 
         // Load players
         loadLobbyPlayers(conn, lobby);

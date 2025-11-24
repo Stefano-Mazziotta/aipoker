@@ -1,6 +1,7 @@
 package com.poker.lobby.application;
 
-import com.poker.lobby.domain.model.*;
+import com.poker.lobby.domain.model.Lobby;
+import com.poker.lobby.domain.model.LobbyId;
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.player.domain.model.PlayerId;
 
@@ -31,7 +32,8 @@ public class JoinLobbyUseCase {
             lobby.getName(),
             lobby.getPlayers().size(),
             lobby.getMaxPlayers(),
-            lobby.isOpen()
+            lobby.isOpen(),
+            lobby.getAdminPlayerId().getValue().toString()
         );
     }
 
@@ -42,6 +44,7 @@ public class JoinLobbyUseCase {
         String name,
         int currentPlayers,
         int maxPlayers,
-        boolean isOpen
+        boolean isOpen,
+        String adminPlayerId
     ) {}
 }

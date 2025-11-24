@@ -1,7 +1,8 @@
 package com.poker.lobby.application;
 
-import com.poker.lobby.domain.model.*;
+import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.repository.LobbyRepository;
+import com.poker.player.domain.model.PlayerId;
 
 /**
  * Use case for creating a new lobby.
@@ -19,8 +20,9 @@ public class CreateLobbyUseCase {
             throw new IllegalArgumentException("Max players must be between 2 and 9");
         }
 
-        // Create lobby
-        Lobby lobby = Lobby.create(command.name(), command.maxPlayers());
+        // Create lobby with admin
+        PlayerId adminId = PlayerId.from(command.adminPlayerId());
+        Lobby lobby = Lobby.create(command.name(), command.maxPlayers(), adminId);
         
         // Save to repository
         lobbyRepository.save(lobby);
@@ -30,17 +32,19 @@ public class CreateLobbyUseCase {
             lobby.getName(),
             lobby.getPlayers().size(),
             lobby.getMaxPlayers(),
-            lobby.isOpen()
+            lobby.isOpen(),
+            adminId.getValue().toString()
         );
     }
 
-    public record CreateLobbyCommand(String name, int maxPlayers) {}
+    public record CreateLobbyCommand(String name, int maxPlayers, String adminPlayerId) {}
     
     public record LobbyResponse(
         String lobbyId,
         String name,
         int currentPlayers,
         int maxPlayers,
-        boolean isOpen
+        boolean isOpen,
+        String adminPlayerId
     ) {}
 }
