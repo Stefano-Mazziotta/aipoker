@@ -1,6 +1,9 @@
 package com.poker.shared.infrastructure.socket;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.logging.Logger;
 
@@ -35,7 +38,7 @@ public class ClientHandler implements Runnable {
             processCommands();
             
         } catch (IOException e) {
-            LOGGER.warning("Client handler error: " + e.getMessage());
+            LOGGER.warning(() -> String.format("Client handler error: %s", e.getMessage()));
         } finally {
             cleanup();
         }
@@ -54,7 +57,8 @@ public class ClientHandler implements Runnable {
     private void processCommands() throws IOException {
         String command;
         while (running && (command = input.readLine()) != null) {
-            LOGGER.info("Received command: " + command);
+            final String cmd = command;
+            LOGGER.info(() -> String.format("Received command: %s", cmd));
             
             try {
                 String response = protocolHandler.handle(command);
@@ -62,7 +66,7 @@ public class ClientHandler implements Runnable {
             } catch (Exception e) {
                 String errorResponse = messageFormatter.formatError(e.getMessage());
                 output.println(errorResponse);
-                LOGGER.warning("Error processing command: " + e.getMessage());
+                LOGGER.warning(() -> String.format("Error processing command: %s", e.getMessage()));
             }
             
             if ("QUIT".equalsIgnoreCase(command.trim())) {
@@ -77,9 +81,9 @@ public class ClientHandler implements Runnable {
             if (output != null) output.close();
             if (socket != null && !socket.isClosed()) socket.close();
             
-            LOGGER.info("Client disconnected: " + socket.getInetAddress());
+            LOGGER.info(() -> String.format("Client disconnected: %s", socket.getInetAddress()));
         } catch (IOException e) {
-            LOGGER.warning("Error closing client connection: " + e.getMessage());
+            LOGGER.warning(() -> String.format("Error closing client connection: %s", e.getMessage()));
         }
     }
 

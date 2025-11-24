@@ -1,13 +1,22 @@
 package com.poker.shared.infrastructure.socket;
 
-import com.poker.game.application.*;
-import com.poker.game.domain.model.Blinds;
-import com.poker.lobby.application.*;
-import com.poker.player.application.*;
-import com.poker.player.domain.model.PlayerAction;
-
 import java.util.List;
 import java.util.logging.Logger;
+
+import com.poker.game.application.DealCardsUseCase;
+import com.poker.game.application.DetermineWinnerUseCase;
+import com.poker.game.application.GetGameStateUseCase;
+import com.poker.game.application.GetGameStateUseCase.GameStateCommand;
+import com.poker.game.application.GetPlayerCardsUseCase;
+import com.poker.game.application.GetPlayerCardsUseCase.PlayerCardsCommand;
+import com.poker.game.application.PlayerActionUseCase;
+import com.poker.game.application.StartGameUseCase;
+import com.poker.game.domain.model.Blinds;
+import com.poker.lobby.application.CreateLobbyUseCase;
+import com.poker.lobby.application.JoinLobbyUseCase;
+import com.poker.player.application.GetLeaderboardUseCase;
+import com.poker.player.application.RegisterPlayerUseCase;
+import com.poker.player.domain.model.PlayerAction;
 
 /**
  * Handles protocol commands and delegates to appropriate use cases.
@@ -24,6 +33,8 @@ public class ProtocolHandler {
     private final CreateLobbyUseCase createLobby;
     private final JoinLobbyUseCase joinLobby;
     private final GetLeaderboardUseCase getLeaderboard;
+    private final GetPlayerCardsUseCase getPlayerCards;
+    private final GetGameStateUseCase getGameState;
     private final MessageFormatter formatter;
 
     public ProtocolHandler(
@@ -35,6 +46,8 @@ public class ProtocolHandler {
             CreateLobbyUseCase createLobby,
             JoinLobbyUseCase joinLobby,
             GetLeaderboardUseCase getLeaderboard,
+            GetPlayerCardsUseCase getPlayerCards,
+            GetGameStateUseCase getGameState,
             MessageFormatter formatter) {
         this.registerPlayer = registerPlayer;
         this.startGame = startGame;
@@ -44,6 +57,8 @@ public class ProtocolHandler {
         this.createLobby = createLobby;
         this.joinLobby = joinLobby;
         this.getLeaderboard = getLeaderboard;
+        this.getPlayerCards = getPlayerCards;
+        this.getGameState = getGameState;
         this.formatter = formatter;
     }
 
@@ -71,12 +86,14 @@ public class ProtocolHandler {
                 case "CREATE_LOBBY" -> handleCreateLobby(parts);
                 case "JOIN_LOBBY" -> handleJoinLobby(parts);
                 case "LEADERBOARD" -> handleLeaderboard(parts);
+                case "GET_MY_CARDS" -> handleGetMyCards(parts);
+                case "GET_GAME_STATE" -> handleGetGameState(parts);
                 case "HELP" -> handleHelp();
                 case "QUIT" -> formatter.formatInfo("Goodbye!");
                 default -> formatter.formatError("Unknown command: " + cmd);
             };
         } catch (Exception e) {
-            LOGGER.warning("Command error: " + e.getMessage());
+            LOGGER.warning(() -> String.format("Command error: %s", e.getMessage()));
             return formatter.formatError(e.getMessage());
         }
     }
@@ -203,15 +220,16 @@ public class ProtocolHandler {
     }
 
     private String handleCreateLobby(String[] parts) {
-        if (parts.length < 3) {
-            return formatter.formatError("Usage: CREATE_LOBBY <name> <maxPlayers>");
+        if (parts.length < 4) {
+            return formatter.formatError("Usage: CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>");
         }
         
         String name = parts[1];
         int maxPlayers = Integer.parseInt(parts[2]);
+        String adminPlayerId = parts[3];
         
         var response = createLobby.execute(
-            new CreateLobbyUseCase.CreateLobbyCommand(name, maxPlayers)
+            new CreateLobbyUseCase.CreateLobbyCommand(name, maxPlayers, adminPlayerId)
         );
         
         return formatter.formatLobbyCreated(response);
@@ -239,35 +257,61 @@ public class ProtocolHandler {
         return formatter.formatLeaderboard(response);
     }
 
+    private String handleGetMyCards(String[] parts) {
+        if (parts.length < 3) {
+            return formatter.formatError("Usage: GET_MY_CARDS <gameId> <playerId>");
+        }
+        
+        var response = getPlayerCards.execute(
+            new PlayerCardsCommand(parts[1], parts[2])
+        );
+        
+        return formatter.formatPlayerCards(response);
+    }
+
+    private String handleGetGameState(String[] parts) {
+        if (parts.length < 2) {
+            return formatter.formatError("Usage: GET_GAME_STATE <gameId>");
+        }
+        
+        var response = getGameState.execute(
+            new GameStateCommand(parts[1])
+        );
+        
+        return formatter.formatGameState(response);
+    }
+
     private String handleHelp() {
         return """
             Available commands:
             
             Player Management:
-              REGISTER <name> <chips>              - Register a new player
-              LEADERBOARD [limit]                  - Show top players
+              REGISTER <name> <chips>                      - Register a new player
+              LEADERBOARD [limit]                          - Show top players
             
             Lobby Management:
-              CREATE_LOBBY <name> <maxPlayers>     - Create a new lobby
-              JOIN_LOBBY <lobbyId> <playerId>      - Join existing lobby
+              CREATE_LOBBY <name> <maxPlayers> <adminId>   - Create a new lobby
+              JOIN_LOBBY <lobbyId> <playerId>              - Join existing lobby
             
             Game Management:
-              START_GAME <playerIds...> <sb> <bb>  - Start a new game
-              DEAL_FLOP <gameId>                   - Deal flop
-              DEAL_TURN <gameId>                   - Deal turn
-              DEAL_RIVER <gameId>                  - Deal river
-              DETERMINE_WINNER <gameId>            - Determine winner
+              START_GAME <playerIds...> <sb> <bb>          - Start a new game (admin only)
+              GET_GAME_STATE <gameId>                      - View current game state
+              DEAL_FLOP <gameId>                           - Deal flop (after betting round)
+              DEAL_TURN <gameId>                           - Deal turn (after betting round)
+              DEAL_RIVER <gameId>                          - Deal river (after betting round)
+              DETERMINE_WINNER <gameId>                    - Determine winner
             
             Player Actions:
-              FOLD <gameId> <playerId>             - Fold current hand
-              CHECK <gameId> <playerId>            - Check
-              CALL <gameId> <playerId> <amount>    - Call bet
-              RAISE <gameId> <playerId> <amount>   - Raise bet
-              ALL_IN <gameId> <playerId>           - Go all-in
+              GET_MY_CARDS <gameId> <playerId>             - View your hole cards
+              FOLD <gameId> <playerId>                     - Fold current hand
+              CHECK <gameId> <playerId>                    - Check
+              CALL <gameId> <playerId> <amount>            - Call bet
+              RAISE <gameId> <playerId> <amount>           - Raise bet
+              ALL_IN <gameId> <playerId>                   - Go all-in
             
             Other:
-              HELP                                 - Show this help
-              QUIT                                 - Disconnect
+              HELP                                         - Show this help
+              QUIT                                         - Disconnect
             """;
     }
 }

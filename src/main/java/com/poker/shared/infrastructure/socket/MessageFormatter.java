@@ -1,8 +1,15 @@
 package com.poker.shared.infrastructure.socket;
 
-import com.poker.game.application.*;
-import com.poker.lobby.application.*;
-import com.poker.player.application.*;
+import com.poker.game.application.DealCardsUseCase;
+import com.poker.game.application.DetermineWinnerUseCase;
+import com.poker.game.application.GetGameStateUseCase;
+import com.poker.game.application.GetPlayerCardsUseCase;
+import com.poker.game.application.PlayerActionUseCase;
+import com.poker.game.application.StartGameUseCase;
+import com.poker.lobby.application.CreateLobbyUseCase;
+import com.poker.lobby.application.JoinLobbyUseCase;
+import com.poker.player.application.GetLeaderboardUseCase;
+import com.poker.player.application.RegisterPlayerUseCase;
 
 /**
  * Formats messages and responses for socket communication.
@@ -81,9 +88,10 @@ public class MessageFormatter {
             Lobby ID: %s
             Name: %s
             Players: %d/%d
+            Admin: %s
             Open: %s
             """.formatted(response.lobbyId(), response.name(), response.currentPlayers(),
-            response.maxPlayers(), response.isOpen());
+            response.maxPlayers(), response.adminPlayerId(), response.isOpen());
     }
 
     public String formatLobbyJoined(JoinLobbyUseCase.LobbyResponse response) {
@@ -92,9 +100,10 @@ public class MessageFormatter {
             Lobby ID: %s
             Name: %s
             Players: %d/%d
+            Admin: %s
             Open: %s
             """.formatted(response.lobbyId(), response.name(), response.currentPlayers(),
-            response.maxPlayers(), response.isOpen());
+            response.maxPlayers(), response.adminPlayerId(), response.isOpen());
     }
 
     public String formatLeaderboard(GetLeaderboardUseCase.LeaderboardResponse response) {
@@ -111,5 +120,26 @@ public class MessageFormatter {
         
         sb.append("╚═══════════════════════════════════════════════╝\n");
         return sb.toString();
+    }
+
+    public String formatPlayerCards(GetPlayerCardsUseCase.PlayerCardsResponse response) {
+        return """
+            SUCCESS: Your hole cards
+            Player: %s
+            Cards: %s
+            Card Count: %d
+            """.formatted(response.playerName(), response.cards(), response.cardCount());
+    }
+
+    public String formatGameState(GetGameStateUseCase.GameStateResponse response) {
+        return """
+            SUCCESS: Current game state
+            State: %s
+            Community Cards: %s
+            Pot: %d
+            Players: %s
+            Player Count: %d
+            """.formatted(response.state(), response.communityCards(), response.pot(),
+            response.players(), response.playerCount());
     }
 }
