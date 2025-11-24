@@ -35,8 +35,8 @@ public class TwoPairDetector implements HandDetector {
 
         // Sort pairs by rank (higher pair first)
         pairs.sort((p1, p2) -> Integer.compare(
-            p2.get(0).getRank().getValue(),
-            p1.get(0).getRank().getValue()
+            p2.getFirst().getRank().getValue(),
+            p1.getFirst().getRank().getValue()
         ));
 
         // Find the kicker
@@ -50,7 +50,7 @@ public class TwoPairDetector implements HandDetector {
 
         // Build final hand: higher pair, lower pair, kicker
         List<Card> handCards = new ArrayList<>();
-        handCards.addAll(pairs.get(0));
+        handCards.addAll(pairs.getFirst());
         handCards.addAll(pairs.get(1));
         handCards.addAll(kickers);
 

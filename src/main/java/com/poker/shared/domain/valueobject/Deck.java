@@ -35,7 +35,7 @@ public class Deck {
         if (cards.isEmpty()) {
             throw new IllegalStateException("Cannot deal from empty deck");
         }
-        return cards.remove(0);
+        return cards.removeFirst();
     }
 
     public List<Card> getCards() {

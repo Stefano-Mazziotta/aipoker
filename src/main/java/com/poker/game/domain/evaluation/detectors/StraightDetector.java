@@ -41,7 +41,7 @@ public class StraightDetector implements HandDetector {
             for (int i = 1; i < sortedCards.size(); i++) {
                 aceLowCards.add(sortedCards.get(i));
             }
-            aceLowCards.add(sortedCards.get(0)); // Move Ace to end
+            aceLowCards.add(sortedCards.getFirst()); // Move Ace to end
             return Optional.of(new PokerHand(HandRank.STRAIGHT, aceLowCards));
         }
 
@@ -66,7 +66,7 @@ public class StraightDetector implements HandDetector {
             values.add(card.getRank().getValue());
         }
         
-        return values.get(0) == 14 && // Ace
+        return values.getFirst() == 14 && // Ace
                values.get(1) == 5 &&
                values.get(2) == 4 &&
                values.get(3) == 3 &&

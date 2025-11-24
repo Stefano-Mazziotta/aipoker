@@ -138,7 +138,7 @@ public class SQLiteGameRepository implements GameRepository {
                 
                 // Save hole cards
                 if (holeCards.size() >= 1) {
-                    stmt.setString(9, holeCards.get(0).toString());
+                    stmt.setString(9, holeCards.getFirst().toString());
                 } else {
                     stmt.setNull(9, java.sql.Types.VARCHAR);
                 }

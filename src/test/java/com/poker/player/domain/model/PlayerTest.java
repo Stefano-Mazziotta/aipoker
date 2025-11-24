@@ -29,7 +29,7 @@ class PlayerTest {
         player.receiveCard(card);
         
         assertEquals(1, player.getHand().getCards().size());
-        assertEquals(card, player.getHand().getCards().get(0));
+        assertEquals(card, player.getHand().getCards().getFirst());
     }
 
     @Test
