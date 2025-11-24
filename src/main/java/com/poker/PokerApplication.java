@@ -19,7 +19,9 @@ import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
+import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
+import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
 import com.poker.shared.infrastructure.socket.MessageFormatter;
 import com.poker.shared.infrastructure.socket.ProtocolHandler;
 import com.poker.shared.infrastructure.websocket.PokerWebSocketEndpoint;
@@ -54,15 +56,18 @@ public class PokerApplication {
         GameRepository gameRepository = new SQLiteGameRepository(playerRepository);
         LobbyRepository lobbyRepository = new SQLiteLobbyRepository();
         
+        // Event publisher (infrastructure adapter for domain events)
+        DomainEventPublisher eventPublisher = WebSocketEventPublisher.getInstance();
+        
         // Player use cases
         RegisterPlayerUseCase registerPlayer = new RegisterPlayerUseCase(playerRepository);
         GetLeaderboardUseCase getLeaderboard = new GetLeaderboardUseCase(playerRepository);
         
-        // Game use cases
-        StartGameUseCase startGame = new StartGameUseCase(gameRepository, playerRepository);
-        PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository);
-        DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository);
-        DetermineWinnerUseCase determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository);
+        // Game use cases (now with event publisher injected)
+        StartGameUseCase startGame = new StartGameUseCase(gameRepository, playerRepository, eventPublisher);
+        PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository, eventPublisher);
+        DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository, eventPublisher);
+        DetermineWinnerUseCase determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository, eventPublisher);
         GetPlayerCardsUseCase getPlayerCards = new GetPlayerCardsUseCase(gameRepository);
         GetGameStateUseCase getGameState = new GetGameStateUseCase(gameRepository);
         

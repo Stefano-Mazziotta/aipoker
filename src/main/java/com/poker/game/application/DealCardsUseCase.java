@@ -3,23 +3,23 @@ package com.poker.game.application;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.poker.game.domain.events.CardsDealtEvent;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
+import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.domain.valueobject.Card;
-import com.poker.shared.infrastructure.events.CardsDealtEvent;
-import com.poker.shared.infrastructure.events.GameEventPublisher;
 
 /**
  * Use case for dealing community cards (Flop, Turn, River).
  */
 public class DealCardsUseCase {
     private final GameRepository gameRepository;
-    private final GameEventPublisher eventPublisher;
+    private final DomainEventPublisher eventPublisher;
 
-    public DealCardsUseCase(GameRepository gameRepository) {
+    public DealCardsUseCase(GameRepository gameRepository, DomainEventPublisher eventPublisher) {
         this.gameRepository = gameRepository;
-        this.eventPublisher = GameEventPublisher.getInstance();
+        this.eventPublisher = eventPublisher;
     }
 
     public CardsResponse dealFlop(DealCardsCommand command) {
@@ -75,7 +75,7 @@ public class DealCardsUseCase {
             newCards,
             allCardsStr
         );
-        eventPublisher.publishToGame(event);
+        eventPublisher.publishToScope(game.getId().getValue().toString(), event);
     }
 
     private CardsResponse createResponse(Game game) {

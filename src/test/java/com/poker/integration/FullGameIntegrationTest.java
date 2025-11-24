@@ -22,6 +22,8 @@ import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
+import com.poker.shared.domain.events.DomainEventPublisher;
+import com.poker.shared.domain.events.NoOpEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
 
 /**
@@ -31,6 +33,7 @@ public class FullGameIntegrationTest {
 
     private static PlayerRepository playerRepository;
     private static GameRepository gameRepository;
+    private static DomainEventPublisher eventPublisher;
     private static RegisterPlayerUseCase registerPlayer;
     private static StartGameUseCase startGame;
     private static PlayerActionUseCase playerAction;
@@ -43,12 +46,13 @@ public class FullGameIntegrationTest {
 
         playerRepository = new SQLitePlayerRepository();
         gameRepository = new SQLiteGameRepository(playerRepository);
+        eventPublisher = new NoOpEventPublisher();
 
         registerPlayer = new RegisterPlayerUseCase(playerRepository);
-        startGame = new StartGameUseCase(gameRepository, playerRepository);
-        playerAction = new PlayerActionUseCase(gameRepository);
-        dealCards = new DealCardsUseCase(gameRepository);
-        determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository);
+        startGame = new StartGameUseCase(gameRepository, playerRepository, eventPublisher);
+        playerAction = new PlayerActionUseCase(gameRepository, eventPublisher);
+        dealCards = new DealCardsUseCase(gameRepository, eventPublisher);
+        determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository, eventPublisher);
     }
 
     @Test

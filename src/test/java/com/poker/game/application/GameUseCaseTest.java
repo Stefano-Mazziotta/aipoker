@@ -21,6 +21,8 @@ import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
+import com.poker.shared.domain.events.DomainEventPublisher;
+import com.poker.shared.domain.events.NoOpEventPublisher;
 
 /**
  * Integration tests for game use cases.
@@ -32,14 +34,16 @@ class GameUseCaseTest {
 
     private InMemoryGameRepository gameRepository;
     private InMemoryPlayerRepository playerRepository;
+    private DomainEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
         gameRepository = new InMemoryGameRepository();
         playerRepository = new InMemoryPlayerRepository();
+        eventPublisher = new NoOpEventPublisher();
 
-        startGameUseCase = new StartGameUseCase(gameRepository, playerRepository);
-        playerActionUseCase = new PlayerActionUseCase(gameRepository);
+        startGameUseCase = new StartGameUseCase(gameRepository, playerRepository, eventPublisher);
+        playerActionUseCase = new PlayerActionUseCase(gameRepository, eventPublisher);
     }
 
     @Test

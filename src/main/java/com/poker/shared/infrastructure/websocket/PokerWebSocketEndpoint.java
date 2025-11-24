@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.poker.shared.infrastructure.events.GameEventPublisher;
+import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
 import com.poker.shared.infrastructure.socket.MessageFormatter;
 import com.poker.shared.infrastructure.socket.ProtocolHandler;
 
@@ -28,7 +28,7 @@ public class PokerWebSocketEndpoint {
     // These will be injected/configured
     private static ProtocolHandler protocolHandler;
     private static MessageFormatter messageFormatter;
-    private static GameEventPublisher eventPublisher = GameEventPublisher.getInstance();
+    private static WebSocketEventPublisher eventPublisher = WebSocketEventPublisher.getInstance();
 
     public static void setProtocolHandler(ProtocolHandler handler) {
         protocolHandler = handler;
@@ -113,7 +113,7 @@ public class PokerWebSocketEndpoint {
             String gameId = parts[1];
             String playerId = parts[2];
             
-            eventPublisher.subscribeToGame(gameId, session, playerId);
+            eventPublisher.subscribe(gameId, session, playerId);
             session.getBasicRemote().sendText(createJsonResponse("success", 
                 "Subscribed to game " + gameId));
                 
@@ -134,7 +134,7 @@ public class PokerWebSocketEndpoint {
             String lobbyId = parts[1];
             String playerId = parts[2];
             
-            eventPublisher.subscribeToLobby(lobbyId, session, playerId);
+            eventPublisher.subscribe(lobbyId, session, playerId);
             session.getBasicRemote().sendText(createJsonResponse("success", 
                 "Subscribed to lobby " + lobbyId));
                 

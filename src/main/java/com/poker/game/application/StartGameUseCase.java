@@ -3,14 +3,14 @@ package com.poker.game.application;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.poker.game.domain.events.GameStateChangedEvent;
 import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
-import com.poker.shared.infrastructure.events.GameEventPublisher;
-import com.poker.shared.infrastructure.events.GameStateChangedEvent;
+import com.poker.shared.domain.events.DomainEventPublisher;
 
 /**
  * Use case for starting a new poker game.
@@ -18,12 +18,13 @@ import com.poker.shared.infrastructure.events.GameStateChangedEvent;
 public class StartGameUseCase {
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
-    private final GameEventPublisher eventPublisher;
+    private final DomainEventPublisher eventPublisher;
 
-    public StartGameUseCase(GameRepository gameRepository, PlayerRepository playerRepository) {
+    public StartGameUseCase(GameRepository gameRepository, PlayerRepository playerRepository, 
+                          DomainEventPublisher eventPublisher) {
         this.gameRepository = gameRepository;
         this.playerRepository = playerRepository;
-        this.eventPublisher = GameEventPublisher.getInstance();
+        this.eventPublisher = eventPublisher;
     }
 
     public GameResponse execute(StartGameCommand command) {
@@ -59,7 +60,7 @@ public class StartGameUseCase {
             currentPlayer != null ? currentPlayer.getName() : null,
             game.getCurrentPot().getAmount()
         );
-        eventPublisher.publishToGame(event);
+        eventPublisher.publishToScope(game.getId().getValue().toString(), event);
 
         return new GameResponse(
             game.getId().getValue().toString(),
