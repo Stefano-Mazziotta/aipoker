@@ -17,9 +17,45 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sqlite.version>3.44.1.0</sqlite.version>
         <junit.version>5.10.1</junit.version>
+        <tyrus.version>2.1.5</tyrus.version>
+        <jakarta.websocket.version>2.1.1</jakarta.websocket.version>
+        <gson.version>2.10.1</gson.version>
     </properties>
 
     <dependencies>
+        <!-- WebSocket API (Jakarta EE) -->
+        <dependency>
+            <groupId>jakarta.websocket</groupId>
+            <artifactId>jakarta.websocket-api</artifactId>
+            <version>${jakarta.websocket.version}</version>
+        </dependency>
+        
+        <!-- Tyrus WebSocket Server Implementation -->
+        <dependency>
+            <groupId>org.glassfish.tyrus.bundles</groupId>
+            <artifactId>tyrus-standalone-client-jdk</artifactId>
+            <version>${tyrus.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-server</artifactId>
+            <version>${tyrus.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-container-grizzly-server</artifactId>
+            <version>${tyrus.version}</version>
+        </dependency>
+        
+        <!-- JSON processing with Gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+        
         <!-- SQLite JDBC Driver -->
         <dependency>
             <groupId>org.xerial</groupId>
