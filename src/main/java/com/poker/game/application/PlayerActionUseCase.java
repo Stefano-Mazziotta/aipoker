@@ -7,15 +7,19 @@ import com.poker.game.domain.model.Round;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
+import com.poker.shared.infrastructure.events.GameEventPublisher;
+import com.poker.shared.infrastructure.events.PlayerActionEvent;
 
 /**
  * Use case for executing player actions during a game.
  */
 public class PlayerActionUseCase {
     private final GameRepository gameRepository;
+    private final GameEventPublisher eventPublisher;
 
     public PlayerActionUseCase(GameRepository gameRepository) {
         this.gameRepository = gameRepository;
+        this.eventPublisher = GameEventPublisher.getInstance();
     }
 
     public ActionResponse execute(PlayerActionCommand command) {
@@ -49,6 +53,18 @@ public class PlayerActionUseCase {
 
         // Save game state
         gameRepository.save(game);
+
+        // Publish event to all subscribed clients
+        PlayerActionEvent event = new PlayerActionEvent(
+            command.gameId(),
+            command.playerId(),
+            player.getName(),
+            command.action().name(),
+            command.amount(),
+            round.getPot().getAmount(),
+            round.getCurrentBet()
+        );
+        eventPublisher.publishToGame(event);
 
         return new ActionResponse(
             game.getState().name(),

@@ -4,6 +4,8 @@ import com.poker.game.domain.model.*;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.player.domain.model.*;
 import com.poker.player.domain.repository.PlayerRepository;
+import com.poker.shared.infrastructure.events.GameEventPublisher;
+import com.poker.shared.infrastructure.events.GameStateChangedEvent;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -13,10 +15,12 @@ import java.util.stream.Collectors;
 public class StartGameUseCase {
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
+    private final GameEventPublisher eventPublisher;
 
     public StartGameUseCase(GameRepository gameRepository, PlayerRepository playerRepository) {
         this.gameRepository = gameRepository;
         this.playerRepository = playerRepository;
+        this.eventPublisher = GameEventPublisher.getInstance();
     }
 
     public GameResponse execute(StartGameCommand command) {
@@ -42,6 +46,17 @@ public class StartGameUseCase {
 
         // Save game
         gameRepository.save(game);
+
+        // Publish game started event
+        Player currentPlayer = game.getCurrentPlayer();
+        GameStateChangedEvent event = new GameStateChangedEvent(
+            game.getId().getValue().toString(),
+            game.getState().name(),
+            currentPlayer != null ? currentPlayer.getId().getValue().toString() : null,
+            currentPlayer != null ? currentPlayer.getName() : null,
+            game.getCurrentPot().getAmount()
+        );
+        eventPublisher.publishToGame(event);
 
         return new GameResponse(
             game.getId().getValue().toString(),

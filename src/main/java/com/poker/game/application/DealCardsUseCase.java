@@ -1,49 +1,84 @@
 package com.poker.game.application;
 
-import com.poker.game.domain.model.*;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.poker.game.domain.model.Game;
+import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
+import com.poker.shared.domain.valueobject.Card;
+import com.poker.shared.infrastructure.events.CardsDealtEvent;
+import com.poker.shared.infrastructure.events.GameEventPublisher;
 
 /**
  * Use case for dealing community cards (Flop, Turn, River).
  */
 public class DealCardsUseCase {
     private final GameRepository gameRepository;
+    private final GameEventPublisher eventPublisher;
 
     public DealCardsUseCase(GameRepository gameRepository) {
         this.gameRepository = gameRepository;
+        this.eventPublisher = GameEventPublisher.getInstance();
     }
 
     public CardsResponse dealFlop(DealCardsCommand command) {
         Game game = loadGame(command.gameId());
+        int prevCount = game.getCommunityCards().size();
         game.dealFlop();
         gameRepository.save(game);
         
-        return new CardsResponse(
-            game.getId().getValue().toString(),
-            game.getState().name(),
-            game.getCommunityCards().size(),
-            formatCards(game.getCommunityCards())
-        );
+        // Publish cards dealt event
+        publishCardsEvent(game, "FLOP", prevCount);
+        
+        return createResponse(game);
     }
 
     public CardsResponse dealTurn(DealCardsCommand command) {
         Game game = loadGame(command.gameId());
+        int prevCount = game.getCommunityCards().size();
         game.dealTurn();
         gameRepository.save(game);
         
-        return new CardsResponse(
-            game.getId().getValue().toString(),
-            game.getState().name(),
-            game.getCommunityCards().size(),
-            formatCards(game.getCommunityCards())
-        );
+        // Publish cards dealt event
+        publishCardsEvent(game, "TURN", prevCount);
+        
+        return createResponse(game);
     }
 
     public CardsResponse dealRiver(DealCardsCommand command) {
         Game game = loadGame(command.gameId());
+        int prevCount = game.getCommunityCards().size();
         game.dealRiver();
         gameRepository.save(game);
         
+        // Publish cards dealt event
+        publishCardsEvent(game, "RIVER", prevCount);
+        
+        return createResponse(game);
+    }
+
+    private void publishCardsEvent(Game game, String phase, int prevCount) {
+        List<Card> allCards = game.getCommunityCards();
+        List<String> newCards = allCards.stream()
+            .skip(prevCount)
+            .map(card -> card.getRank().name() + card.getSuit().getSymbol())
+            .collect(Collectors.toList());
+        
+        List<String> allCardsStr = allCards.stream()
+            .map(card -> card.getRank().name() + card.getSuit().getSymbol())
+            .collect(Collectors.toList());
+        
+        CardsDealtEvent event = new CardsDealtEvent(
+            game.getId().getValue().toString(),
+            phase,
+            newCards,
+            allCardsStr
+        );
+        eventPublisher.publishToGame(event);
+    }
+
+    private CardsResponse createResponse(Game game) {
         return new CardsResponse(
             game.getId().getValue().toString(),
             game.getState().name(),
@@ -57,7 +92,7 @@ public class DealCardsUseCase {
             .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
     }
 
-    private String formatCards(java.util.List<com.poker.shared.domain.valueobject.Card> cards) {
+    private String formatCards(List<Card> cards) {
         return cards.stream()
             .map(card -> card.getRank().name() + card.getSuit().getSymbol())
             .reduce((a, b) -> a + " " + b)
