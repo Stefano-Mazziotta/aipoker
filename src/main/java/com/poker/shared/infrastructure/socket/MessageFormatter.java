@@ -28,72 +28,72 @@ public class MessageFormatter {
     }
 
     public String formatPlayerRegistered(RegisterPlayerUseCase.PlayerResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Player registered
             ID: %s
             Name: %s
             Chips: %d
-            """, response.id(), response.name(), response.chips());
+            """.formatted(response.id(), response.name(), response.chips());
     }
 
     public String formatGameStarted(StartGameUseCase.GameResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Game started
             Game ID: %s
             State: %s
             Players: %s
             Pot: %d
-            """, response.gameId(), response.state(), String.join(", ", response.players()), response.pot());
+            """.formatted(response.gameId(), response.state(), String.join(", ", response.players()), response.pot());
     }
 
     public String formatActionExecuted(PlayerActionUseCase.ActionResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Action executed
             Game State: %s
             Current Bet: %d
             Pot: %d
             Player Folded: %s
-            """, response.gameState(), response.currentBet(), response.pot(), response.playerFolded());
+            """.formatted(response.gameState(), response.currentBet(), response.pot(), response.playerFolded());
     }
 
     public String formatCardsDealt(DealCardsUseCase.CardsResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Cards dealt
             Game ID: %s
             State: %s
             Community Cards: %s
             Total Cards: %d
-            """, response.gameId(), response.state(), response.communityCards(), response.communityCardsCount());
+            """.formatted(response.gameId(), response.state(), response.communityCards(), response.communityCardsCount());
     }
 
     public String formatWinnerDetermined(DetermineWinnerUseCase.WinnerResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Winner determined!
             Winner: %s (ID: %s)
             Pot Won: %d
             Total Chips: %d
-            """, response.winnerName(), response.winnerId(), response.potWon(), response.totalChips());
+            """.formatted(response.winnerName(), response.winnerId(), response.potWon(), response.totalChips());
     }
 
     public String formatLobbyCreated(CreateLobbyUseCase.LobbyResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Lobby created
             Lobby ID: %s
             Name: %s
             Players: %d/%d
             Open: %s
-            """, response.lobbyId(), response.name(), response.currentPlayers(), 
+            """.formatted(response.lobbyId(), response.name(), response.currentPlayers(),
             response.maxPlayers(), response.isOpen());
     }
 
     public String formatLobbyJoined(JoinLobbyUseCase.LobbyResponse response) {
-        return String.format("""
+        return """
             SUCCESS: Joined lobby
             Lobby ID: %s
             Name: %s
             Players: %d/%d
             Open: %s
-            """, response.lobbyId(), response.name(), response.currentPlayers(), 
+            """.formatted(response.lobbyId(), response.name(), response.currentPlayers(),
             response.maxPlayers(), response.isOpen());
     }
 
@@ -105,7 +105,7 @@ public class MessageFormatter {
         
         int rank = 1;
         for (var player : response.rankings()) {
-            sb.append(String.format("║  %-5d │  %-20s │  %-11d ║\n", 
+            sb.append("║  %-5d │  %-20s │  %-11d ║\n".formatted(
                 rank++, player.name(), player.chips()));
         }
         

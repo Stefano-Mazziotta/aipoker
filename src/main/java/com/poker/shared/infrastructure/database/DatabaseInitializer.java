@@ -2,7 +2,7 @@ package com.poker.shared.infrastructure.database;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -42,8 +42,8 @@ public class DatabaseInitializer {
         };
 
         for (String path : paths) {
-            if (Files.exists(Paths.get(path))) {
-                return new String(Files.readAllBytes(Paths.get(path)));
+            if (Files.exists(Path.of(path))) {
+                return new String(Files.readAllBytes(Path.of(path)));
             }
         }
 

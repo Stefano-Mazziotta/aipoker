@@ -47,7 +47,7 @@ public class CombinationUtils {
         for (int i = startIndex; i <= cards.size() - (length - current.size()); i++) {
             current.add(cards.get(i));
             generateCombinations(cards, length, i + 1, current, result);
-            current.remove(current.size() - 1);
+            current.removeLast();
         }
     }
 
