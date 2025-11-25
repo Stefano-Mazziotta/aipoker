@@ -3,6 +3,7 @@ package com.poker.game.application;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.poker.game.application.dto.GetGameStateDTO;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
@@ -10,6 +11,7 @@ import com.poker.shared.domain.valueobject.Card;
 
 /**
  * Use case for getting current game state.
+ * Returns GetGameStateDTO to decouple the application layer from domain entities.
  */
 public class GetGameStateUseCase {
     private final GameRepository gameRepository;
@@ -18,7 +20,7 @@ public class GetGameStateUseCase {
         this.gameRepository = gameRepository;
     }
 
-    public GameStateResponse execute(GameStateCommand command) {
+    public GetGameStateDTO execute(GameStateCommand command) {
         Game game = gameRepository.findById(GameId.from(command.gameId()))
             .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
@@ -32,7 +34,7 @@ public class GetGameStateUseCase {
             .map(p -> p.getName() + (p.isFolded() ? " (folded)" : ""))
             .collect(Collectors.joining(", "));
 
-        return new GameStateResponse(
+        return GetGameStateDTO.fromDomain(
             game.getState().name(),
             communityCardsStr,
             communityCards.size(),
@@ -43,13 +45,4 @@ public class GetGameStateUseCase {
     }
 
     public record GameStateCommand(String gameId) {}
-    
-    public record GameStateResponse(
-        String state,
-        String communityCards,
-        int communityCardCount,
-        int pot,
-        String players,
-        int playerCount
-    ) {}
 }

@@ -1,5 +1,6 @@
 package com.poker.game.application;
 
+import com.poker.game.application.dto.DetermineWinnerDTO;
 import com.poker.game.domain.events.WinnerDeterminedEvent;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
@@ -10,6 +11,7 @@ import com.poker.shared.domain.events.DomainEventPublisher;
 
 /**
  * Use case for determining the winner at showdown.
+ * Returns DetermineWinnerDTO to decouple the application layer from domain entities.
  */
 public class DetermineWinnerUseCase {
     private final GameRepository gameRepository;
@@ -23,7 +25,7 @@ public class DetermineWinnerUseCase {
         this.eventPublisher = eventPublisher;
     }
 
-    public WinnerResponse execute(DetermineWinnerCommand command) {
+    public DetermineWinnerDTO execute(DetermineWinnerCommand command) {
         // Load game
         Game game = gameRepository.findById(GameId.from(command.gameId()))
             .orElseThrow(() -> new IllegalArgumentException("Game not found"));
@@ -47,7 +49,7 @@ public class DetermineWinnerUseCase {
         );
         eventPublisher.publishToScope(command.gameId(), event);
 
-        return new WinnerResponse(
+        return DetermineWinnerDTO.fromDomain(
             winner.getId().getValue().toString(),
             winner.getName(),
             winner.getChipsAmount(),
@@ -56,11 +58,4 @@ public class DetermineWinnerUseCase {
     }
 
     public record DetermineWinnerCommand(String gameId) {}
-    
-    public record WinnerResponse(
-        String winnerId,
-        String winnerName,
-        int totalChips,
-        int potWon
-    ) {}
 }

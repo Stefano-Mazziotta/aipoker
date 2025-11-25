@@ -1,10 +1,10 @@
 package com.poker.shared.infrastructure.websocket;
 
-import com.poker.game.application.DealCardsUseCase;
-import com.poker.game.application.DetermineWinnerUseCase;
-import com.poker.game.application.GetGameStateUseCase;
-import com.poker.game.application.GetPlayerCardsUseCase;
+import com.poker.game.application.dto.DealCardsDTO;
+import com.poker.game.application.dto.DetermineWinnerDTO;
+import com.poker.game.application.dto.GetGameStateDTO;
 import com.poker.game.application.dto.PlayerActionDTO;
+import com.poker.game.application.dto.PlayerCardsDTO;
 import com.poker.game.application.dto.StartGameDTO;
 import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.player.application.GetLeaderboardUseCase;
@@ -63,23 +63,23 @@ public class MessageFormatter {
             """.formatted(dto.gameState(), dto.currentBet(), dto.pot(), dto.playerFolded());
     }
 
-    public String formatCardsDealt(DealCardsUseCase.CardsResponse response) {
+    public String formatCardsDealt(DealCardsDTO dto) {
         return """
             SUCCESS: Cards dealt
             Game ID: %s
             State: %s
             Community Cards: %s
             Total Cards: %d
-            """.formatted(response.gameId(), response.state(), response.communityCards(), response.communityCardsCount());
+            """.formatted(dto.gameId(), dto.state(), dto.communityCards(), dto.communityCardsCount());
     }
 
-    public String formatWinnerDetermined(DetermineWinnerUseCase.WinnerResponse response) {
+    public String formatWinnerDetermined(DetermineWinnerDTO dto) {
         return """
             SUCCESS: Winner determined!
             Winner: %s (ID: %s)
             Pot Won: %d
             Total Chips: %d
-            """.formatted(response.winnerName(), response.winnerId(), response.potWon(), response.totalChips());
+            """.formatted(dto.winnerName(), dto.winnerId(), dto.potWon(), dto.totalChips());
     }
 
     public String formatLobbyCreated(LobbyDTO response) {
@@ -122,16 +122,16 @@ public class MessageFormatter {
         return sb.toString();
     }
 
-    public String formatPlayerCards(GetPlayerCardsUseCase.PlayerCardsResponse response) {
+    public String formatPlayerCards(PlayerCardsDTO dto) {
         return """
             SUCCESS: Your hole cards
             Player: %s
             Cards: %s
             Card Count: %d
-            """.formatted(response.playerName(), response.cards(), response.cardCount());
+            """.formatted(dto.playerName(), dto.cards(), dto.cardCount());
     }
 
-    public String formatGameState(GetGameStateUseCase.GameStateResponse response) {
+    public String formatGameState(GetGameStateDTO dto) {
         return """
             SUCCESS: Current game state
             State: %s
@@ -139,7 +139,7 @@ public class MessageFormatter {
             Pot: %d
             Players: %s
             Player Count: %d
-            """.formatted(response.state(), response.communityCards(), response.pot(),
-            response.players(), response.playerCount());
+            """.formatted(dto.state(), dto.communityCards(), dto.pot(),
+            dto.players(), dto.playerCount());
     }
 }

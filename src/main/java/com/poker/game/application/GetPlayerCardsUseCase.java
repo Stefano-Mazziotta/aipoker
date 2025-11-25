@@ -2,6 +2,7 @@ package com.poker.game.application;
 
 import java.util.List;
 
+import com.poker.game.application.dto.PlayerCardsDTO;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
@@ -10,6 +11,7 @@ import com.poker.shared.domain.valueobject.Card;
 
 /**
  * Use case for getting a player's hole cards.
+ * Returns PlayerCardsDTO to decouple the application layer from domain entities.
  */
 public class GetPlayerCardsUseCase {
     private final GameRepository gameRepository;
@@ -18,7 +20,7 @@ public class GetPlayerCardsUseCase {
         this.gameRepository = gameRepository;
     }
 
-    public PlayerCardsResponse execute(PlayerCardsCommand command) {
+    public PlayerCardsDTO execute(PlayerCardsCommand command) {
         Game game = gameRepository.findById(GameId.from(command.gameId()))
             .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
@@ -33,7 +35,7 @@ public class GetPlayerCardsUseCase {
             .reduce((a, b) -> a + " " + b)
             .orElse("No cards");
 
-        return new PlayerCardsResponse(
+        return PlayerCardsDTO.fromDomain(
             player.getName(),
             cardsStr,
             holeCards.size()
@@ -41,10 +43,4 @@ public class GetPlayerCardsUseCase {
     }
 
     public record PlayerCardsCommand(String gameId, String playerId) {}
-    
-    public record PlayerCardsResponse(
-        String playerName,
-        String cards,
-        int cardCount
-    ) {}
 }

@@ -3,6 +3,7 @@ package com.poker.game.application;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.poker.game.application.dto.DealCardsDTO;
 import com.poker.game.domain.events.CardsDealtEvent;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
@@ -12,6 +13,7 @@ import com.poker.shared.domain.valueobject.Card;
 
 /**
  * Use case for dealing community cards (Flop, Turn, River).
+ * Returns DealCardsDTO to decouple the application layer from domain entities.
  */
 public class DealCardsUseCase {
     private final GameRepository gameRepository;
@@ -22,7 +24,7 @@ public class DealCardsUseCase {
         this.eventPublisher = eventPublisher;
     }
 
-    public CardsResponse dealFlop(DealCardsCommand command) {
+    public DealCardsDTO dealFlop(DealCardsCommand command) {
         Game game = loadGame(command.gameId());
         int prevCount = game.getCommunityCards().size();
         game.dealFlop();
@@ -34,7 +36,7 @@ public class DealCardsUseCase {
         return createResponse(game);
     }
 
-    public CardsResponse dealTurn(DealCardsCommand command) {
+    public DealCardsDTO dealTurn(DealCardsCommand command) {
         Game game = loadGame(command.gameId());
         int prevCount = game.getCommunityCards().size();
         game.dealTurn();
@@ -46,7 +48,7 @@ public class DealCardsUseCase {
         return createResponse(game);
     }
 
-    public CardsResponse dealRiver(DealCardsCommand command) {
+    public DealCardsDTO dealRiver(DealCardsCommand command) {
         Game game = loadGame(command.gameId());
         int prevCount = game.getCommunityCards().size();
         game.dealRiver();
@@ -78,8 +80,8 @@ public class DealCardsUseCase {
         eventPublisher.publishToScope(game.getId().getValue().toString(), event);
     }
 
-    private CardsResponse createResponse(Game game) {
-        return new CardsResponse(
+    private DealCardsDTO createResponse(Game game) {
+        return DealCardsDTO.fromDomain(
             game.getId().getValue().toString(),
             game.getState().name(),
             game.getCommunityCards().size(),
@@ -100,11 +102,4 @@ public class DealCardsUseCase {
     }
 
     public record DealCardsCommand(String gameId) {}
-    
-    public record CardsResponse(
-        String gameId,
-        String state,
-        int communityCardsCount,
-        String communityCards
-    ) {}
 }
