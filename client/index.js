@@ -33,6 +33,150 @@ const suitSymbols = {
     'SPADES': '♠️'
 };
 
+// Player seats (9 maximum around the table)
+let playerSeats = new Array(9).fill(null);
+
+// Screen Management Functions
+function showOnboardingScreen() {
+    document.getElementById('onboardingScreen').classList.add('active');
+    document.getElementById('gameScreen').classList.remove('active');
+}
+
+function showGameScreen() {
+    document.getElementById('onboardingScreen').classList.remove('active');
+    document.getElementById('gameScreen').classList.add('active');
+}
+
+// Update Player Seats around the table
+function updatePlayerSeats(players) {
+    // Clear all seats first
+    playerSeats.fill(null);
+    
+    // Assign players to seats
+    players.forEach((player, index) => {
+        if (index < 9) {
+            playerSeats[index] = player;
+        }
+    });
+    
+    // Render all seats
+    for (let i = 0; i < 9; i++) {
+        const seatElement = document.getElementById(`seat-${i}`);
+        if (!seatElement) continue;
+        
+        const player = playerSeats[i];
+        
+        if (player) {
+            // Show player
+            seatElement.style.display = 'block';
+            
+            const nameElement = seatElement.querySelector('.player-name-display');
+            const chipsElement = seatElement.querySelector('.player-chips-display');
+            
+            if (nameElement) {
+                nameElement.textContent = player.name || `Player ${player.id}`;
+            }
+            if (chipsElement) {
+                chipsElement.textContent = `$${player.chips || 0}`;
+            }
+            
+            // Highlight if it's your seat
+            if (player.id === playerId) {
+                seatElement.classList.add('you');
+            } else {
+                seatElement.classList.remove('you');
+            }
+            
+            // Check if player is active
+            if (player.isActive) {
+                seatElement.classList.add('active');
+                seatElement.classList.remove('folded');
+            } else if (player.folded) {
+                seatElement.classList.add('folded');
+                seatElement.classList.remove('active');
+            } else {
+                seatElement.classList.remove('active', 'folded');
+            }
+        } else {
+            // Hide empty seat
+            seatElement.style.display = 'none';
+        }
+    }
+}
+
+// Update Player Action Indicator
+function updatePlayerAction(playerId, action, amount = null) {
+    // Find the seat for this player
+    const seatIndex = playerSeats.findIndex(p => p && p.id === playerId);
+    if (seatIndex === -1) return;
+    
+    const seatElement = document.getElementById(`seat-${seatIndex}`);
+    if (!seatElement) return;
+    
+    const actionIndicator = seatElement.querySelector('.player-action-indicator');
+    if (!actionIndicator) return;
+    
+    // Set action text
+    let actionText = action.toUpperCase();
+    if (amount) {
+        actionText += ` $${amount}`;
+    }
+    actionIndicator.textContent = actionText;
+    
+    // Show with animation
+    actionIndicator.classList.add('show');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        actionIndicator.classList.remove('show');
+    }, 3000);
+}
+
+// Update Game Display (pot, community cards, etc.)
+function updateGameDisplay(gameState) {
+    // Update pot (try both IDs for compatibility)
+    if (gameState.pot !== undefined) {
+        const potElement = document.getElementById('potAmountGame') || document.getElementById('potAmount');
+        if (potElement) {
+            potElement.textContent = `$${gameState.pot}`;
+        }
+        currentPot = gameState.pot;
+    }
+    
+    // Update current bet
+    if (gameState.currentBet !== undefined) {
+        const betElement = document.getElementById('currentBetGame') || document.getElementById('currentBetAmount');
+        if (betElement) {
+            betElement.textContent = `$${gameState.currentBet}`;
+        }
+        currentBet = gameState.currentBet;
+    }
+    
+    // Update community cards
+    if (gameState.communityCards) {
+        const communityCardsContainer = document.getElementById('communityCardsGame') || 
+                                       document.getElementById('communityCardsCenter') || 
+                                       document.getElementById('communityCards');
+        if (communityCardsContainer) {
+            communityCardsContainer.innerHTML = '';
+            
+            gameState.communityCards.forEach(card => {
+                communityCardsContainer.appendChild(createCardElement(card));
+            });
+            
+            // Add empty placeholders if less than 5
+            for (let i = gameState.communityCards.length; i < 5; i++) {
+                communityCardsContainer.appendChild(createCardElement(null));
+            }
+        }
+    }
+    
+    // Update round phase
+    if (gameState.round) {
+        currentRound = gameState.round;
+    }
+}
+
 // Update UI Button States based on Game State
 function updateButtonStates() {
     // Connection buttons
@@ -454,7 +598,17 @@ function handleCardsDealt(message) {
 
 function handlePlayerAction(message) {
     const data = message.data || message;
-    addMessage('event', `🎲 Player action: ${data.action}`);
+    const actionPlayerId = data.playerId || message.playerId;
+    const action = data.action || message.action;
+    const amount = data.amount || message.amount;
+    
+    // Update visual indicator
+    if (actionPlayerId && action) {
+        updatePlayerAction(actionPlayerId, action, amount);
+    }
+    
+    addMessage('event', `🎲 Player ${actionPlayerId}: ${action}${amount ? ` $${amount}` : ''}`, 'game');
+    
     if (gameId) {
         sendCommand(`GET_GAME_STATE ${gameId}`);
     }
@@ -499,8 +653,27 @@ function handleGameStarted(message) {
     
     currentGameState = GameState.IN_GAME;
     
-    document.getElementById('gameId').textContent = gameId.substring(0, 8) + '...';
-    addMessage('event', `🎮 Game started! Game ID: ${gameId}`);
+    // Transition to game screen
+    showGameScreen();
+    
+    // Set up game header
+    const gameIdDisplay = document.getElementById('gameIdDisplay') || document.getElementById('gameId');
+    if (gameIdDisplay) {
+        gameIdDisplay.textContent = gameId.substring(0, 8) + '...';
+    }
+    
+    // Set up players in seats (use lobby players)
+    const players = lobbyPlayers.map(p => ({
+        id: p.id || p.playerId,
+        name: p.name || `Player ${p.id || p.playerId}`,
+        chips: p.chips || 1000,
+        isActive: false,
+        folded: false
+    }));
+    updatePlayerSeats(players);
+    
+    addMessage('event', `🎮 Game started! Game ID: ${gameId}`, 'onboarding');
+    addMessage('event', `🎮 Game started! Game ID: ${gameId}`, 'game');
     updateButtonStates();
     
     // Request initial game state and cards
@@ -522,11 +695,25 @@ function handleGameState(message) {
     currentPot = message.pot || 0;
     currentBet = message.currentBet || 0;
     
+    // Update display using the new function
+    updateGameDisplay({
+        pot: currentPot,
+        currentBet: currentBet,
+        communityCards: message.communityCards,
+        round: message.round
+    });
+    
+    // Also update individual elements (backward compatibility)
     document.getElementById('potAmount').textContent = `$${currentPot}`;
     document.getElementById('currentBet').textContent = `$${currentBet}`;
     
     if (message.communityCards) {
         displayCommunityCards(message.communityCards);
+    }
+    
+    // Update player states if available
+    if (message.players) {
+        updatePlayerSeats(message.players);
     }
 }
 
@@ -873,8 +1060,16 @@ function updateConnectionStatus(connected) {
 }
 
 // Add Message to Log
-function addMessage(type, message) {
-    const container = document.getElementById('messages');
+function addMessage(type, message, target = 'onboarding') {
+    // Determine which message container to use
+    const containerId = target === 'game' ? 'gameMessages' : 'messages';
+    const container = document.getElementById(containerId);
+    
+    if (!container) {
+        console.warn(`Message container '${containerId}' not found`);
+        return;
+    }
+    
     const messageEl = document.createElement('div');
     messageEl.className = `message ${type}`;
     
@@ -887,6 +1082,9 @@ function addMessage(type, message) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Start on onboarding screen
+    showOnboardingScreen();
+    
     addMessage('info', 'Welcome to Texas Hold\'em Poker! 🎰');
     addMessage('info', 'Click CONNECT to start playing');
     updateButtonStates(); // Initialize button states on page load

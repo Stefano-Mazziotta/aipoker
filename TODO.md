@@ -1,12 +1,12 @@
 ✅ ~~1. update players list when new user join to the lobby~~ (COMPLETED)
 ✅ ~~2. start game without popup because the list of players exist in the context. Don't require a list of players ids from input user.~~ (COMPLETED)
-✅ ~~3. disabled ui buttons based on the state of the game.~~ (COMPLETED)
-4. when game is started the users must see others players in the table.
-5. The table must be the center of ui.
-6. first screen is onboarding and join a lobby
-7. when game is started render the table with others players
-8. show game flow and real time update of the table state.
-4. test game flow
+✅ ~~3. disabled ui buttons based on the state of game.~~ (COMPLETED)
+✅ ~~4. The table must be the center of ui.~~ (COMPLETED)
+✅ ~~5. first screen is onboarding and join a lobby~~ (COMPLETED)
+✅ ~~6. when game is started render the table with others players~~ (COMPLETED)
+✅ ~~7. when game is started the users must see others players in the table and his action based on the game flow.~~ (COMPLETED)
+✅ ~~8. show game flow and real time update of the table state.~~ (COMPLETED)
+9. test game flow
 
 
 
