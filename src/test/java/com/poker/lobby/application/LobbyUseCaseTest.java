@@ -12,6 +12,7 @@ import com.poker.lobby.infrastructure.persistence.SQLiteLobbyRepository;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
+import com.poker.shared.domain.events.NoOpEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
 
 /**
@@ -33,7 +34,7 @@ public class LobbyUseCaseTest {
         playerRepository = new SQLitePlayerRepository();
 
         createLobby = new CreateLobbyUseCase(lobbyRepository);
-        joinLobby = new JoinLobbyUseCase(lobbyRepository);
+        joinLobby = new JoinLobbyUseCase(lobbyRepository, new NoOpEventPublisher());
         registerPlayer = new RegisterPlayerUseCase(playerRepository);
     }
 

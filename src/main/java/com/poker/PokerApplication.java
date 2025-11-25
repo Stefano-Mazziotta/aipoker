@@ -73,7 +73,7 @@ public class PokerApplication {
         
         // Lobby use cases
         CreateLobbyUseCase createLobby = new CreateLobbyUseCase(lobbyRepository);
-        JoinLobbyUseCase joinLobby = new JoinLobbyUseCase(lobbyRepository);
+        JoinLobbyUseCase joinLobby = new JoinLobbyUseCase(lobbyRepository, eventPublisher);
         
         if (serverMode) {
             startWebSocketServer(registerPlayer, startGame, playerAction, dealCards, 
