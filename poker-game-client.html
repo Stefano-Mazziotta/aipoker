@@ -1039,16 +1039,14 @@
                 return;
             }
             
-            // Get player IDs from lobby
-            const playerIdsInput = prompt('Enter all Player IDs in the lobby (space-separated):', playerId);
-            if (!playerIdsInput) return;
-            
-            const playerIds = playerIdsInput.trim().split(/\s+/);
-            
-            if (playerIds.length < 2) {
-                addMessage('error', 'Need at least 2 players to start a game');
+            // Get player IDs from lobby context
+            if (lobbyPlayers.length < 2) {
+                addMessage('error', 'Need at least 2 players to start a game. Current players: ' + lobbyPlayers.length);
                 return;
             }
+            
+            const playerIds = lobbyPlayers.map(p => p.id);
+            addMessage('info', `Starting game with ${playerIds.length} players: ${lobbyPlayers.map(p => p.name).join(', ')}`);
             
             const smallBlind = prompt('Small Blind:', '10');
             const bigBlind = prompt('Big Blind:', '20');
