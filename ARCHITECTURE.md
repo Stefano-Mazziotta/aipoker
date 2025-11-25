@@ -11,8 +11,9 @@
 3. [Domain-Driven Design (DDD)](#domain-driven-design-ddd)
 4. [Screaming Architecture](#screaming-architecture)
 5. [Event-Driven Architecture (EDA)](#event-driven-architecture-eda)
-6. [How They Work Together](#how-they-work-together)
-7. [Code Examples](#code-examples)
+6. [Data Transfer Objects (DTO)](#data-transfer-objects-dto)
+7. [How They Work Together](#how-they-work-together)
+8. [Code Examples](#code-examples)
 
 ---
 
@@ -488,6 +489,269 @@ public class GameEventPublisher {
 ✅ **Real-time**: Immediate updates to all players
 ✅ **Extensibility**: Easy to add new event types
 ✅ **Observability**: All game actions are observable events
+
+---
+
+## Data Transfer Objects (DTO)
+
+### Concept
+
+**Data Transfer Objects (DTOs)** are simple data structures used to transfer data between architectural layers without exposing internal domain models. They act as a contract for data exchange between the application layer and infrastructure layer.
+
+### Why DTOs?
+
+| Problem | DTO Solution |
+|---------|-------------|
+| Domain entities coupled to infrastructure | DTOs decouple domain from serialization |
+| JSON serialization breaks encapsulation | DTOs expose only necessary data |
+| Changes in domain affect all layers | DTOs provide stable interfaces |
+| Sensitive data leakage | DTOs control what data is exposed |
+
+### DTO Pattern in Our Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│           INFRASTRUCTURE LAYER (WebSocket)              │
+│                                                          │
+│  PokerWebSocketEndpoint                                 │
+│       │                                                  │
+│       └─► Sends LobbyDTO (JSON)                         │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────┐
+│          APPLICATION LAYER (Use Cases)                  │
+│                                                          │
+│  JoinLobbyUseCase.execute()                             │
+│       │                                                  │
+│       ├─► Works with Domain Entities                    │
+│       │   (Lobby, Player, PlayerId)                     │
+│       │                                                  │
+│       └─► Returns LobbyDTO                              │
+│           (lobbyId, name, currentPlayers, etc.)         │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────┐
+│              DOMAIN LAYER                               │
+│                                                          │
+│  Domain Entities (Internal representation)              │
+│  - Lobby (with business logic)                          │
+│  - Player (with validation rules)                       │
+│  - Value Objects (PlayerId, LobbyId)                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### DTO Structure
+
+#### Lobby DTOs
+```java
+// Application layer DTO for lobby operations
+public record LobbyDTO(
+    String lobbyId,
+    String name,
+    int currentPlayers,
+    int maxPlayers,
+    boolean isOpen,
+    String adminPlayerId
+) {
+    public static LobbyDTO fromDomain(String lobbyId, String name, 
+                                      int currentPlayers, int maxPlayers, 
+                                      boolean isOpen, String adminPlayerId) {
+        return new LobbyDTO(lobbyId, name, currentPlayers, 
+                           maxPlayers, isOpen, adminPlayerId);
+    }
+}
+
+// Event DTO for real-time updates
+public record PlayerJoinedLobbyDTO(
+    String lobbyId,
+    String playerId,
+    String playerName,
+    int currentPlayerCount,
+    int maxPlayers
+)
+```
+
+#### Game DTOs
+```java
+// Card representation for clients
+public record CardDTO(String rank, String suit)
+
+// Player state within a game
+public record PlayerInGameDTO(
+    String playerId,
+    String playerName,
+    int chips,
+    int currentBet,
+    boolean isActive,
+    boolean hasFolded,
+    String position
+)
+
+// Complete game state
+public record GameStateDTO(
+    String gameId,
+    String phase,
+    int pot,
+    int currentBet,
+    String currentPlayerId,
+    String currentPlayerName,
+    List<CardDTO> communityCards,
+    List<PlayerInGameDTO> players
+)
+```
+
+#### Player DTOs
+```java
+// Registration response
+public record RegisterPlayerDTO(
+    String playerId,
+    String name,
+    int chips
+)
+
+// Leaderboard entry
+public record LeaderboardEntryDTO(
+    int rank,
+    String playerName,
+    int chips,
+    int gamesPlayed,
+    int gamesWon
+)
+```
+
+### DTO Usage Flow
+
+#### Example: Join Lobby Use Case
+
+```java
+// 1. Use Case receives command (plain data)
+public LobbyDTO execute(JoinLobbyCommand command) {
+    
+    // 2. Load domain entities
+    Lobby lobby = lobbyRepository.findById(new LobbyId(command.lobbyId()))
+        .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
+    
+    Player player = playerRepository.findById(PlayerId.from(command.playerId()))
+        .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+    
+    // 3. Execute domain logic
+    lobby.addPlayer(PlayerId.from(command.playerId()));
+    lobbyRepository.save(lobby);
+    
+    // 4. Publish domain event
+    eventPublisher.publishToScope(lobby.getId().getValue(), 
+        new PlayerJoinedLobbyEvent(...));
+    
+    // 5. Return DTO (not domain entity!)
+    return LobbyDTO.fromDomain(
+        lobby.getId().getValue(),
+        lobby.getName(),
+        lobby.getPlayers().size(),
+        lobby.getMaxPlayers(),
+        lobby.isOpen(),
+        lobby.getAdminPlayerId().getValue().toString()
+    );
+}
+```
+
+#### Example: WebSocket Response Formatting
+
+```java
+// Infrastructure layer uses DTO for serialization
+public String formatLobbyJoined(LobbyDTO dto) {
+    return """
+        SUCCESS: Joined lobby
+        Lobby ID: %s
+        Name: %s
+        Players: %d/%d
+        Admin: %s
+        Open: %s
+        """.formatted(dto.lobbyId(), dto.name(), dto.currentPlayers(),
+                     dto.maxPlayers(), dto.adminPlayerId(), dto.isOpen());
+}
+```
+
+### Benefits in Our System
+
+#### 1. **Domain Protection**
+- Domain entities remain encapsulated
+- No Jackson/Gson annotations in domain layer
+- Domain can change without breaking API
+
+#### 2. **Clear Boundaries**
+- Application layer returns DTOs
+- Infrastructure layer serializes DTOs
+- Domain layer knows nothing about DTOs
+
+#### 3. **API Stability**
+- DTO structure defines external contract
+- Domain refactoring doesn't affect clients
+- Version DTOs independently
+
+#### 4. **Security**
+- DTOs expose only necessary data
+- No accidental leaking of internal IDs
+- Control sensitive information flow
+
+#### 5. **Testability**
+- DTOs are simple, immutable records
+- Easy to create test data
+- No mocking needed for DTOs
+
+### DTO Organization
+
+```
+src/main/java/com/poker/
+├── lobby/
+│   └── application/
+│       ├── dto/
+│       │   ├── LobbyDTO.java
+│       │   ├── PlayerDTO.java
+│       │   └── PlayerJoinedLobbyDTO.java
+│       ├── CreateLobbyUseCase.java
+│       └── JoinLobbyUseCase.java
+├── game/
+│   └── application/
+│       ├── dto/
+│       │   ├── CardDTO.java
+│       │   ├── GameStateDTO.java
+│       │   └── PlayerInGameDTO.java
+│       └── StartGameUseCase.java
+└── player/
+    └── application/
+        ├── dto/
+        │   ├── RegisterPlayerDTO.java
+        │   └── LeaderboardEntryDTO.java
+        └── RegisterPlayerUseCase.java
+```
+
+### Best Practices
+
+✅ **DO:**
+- Use records for immutability
+- Keep DTOs in application layer
+- Use static factory methods (`fromDomain()`)
+- Name clearly: `LobbyDTO`, `PlayerJoinedLobbyDTO`
+- Include only necessary fields
+
+❌ **DON'T:**
+- Put business logic in DTOs
+- Expose domain entities directly
+- Add validation in DTOs (validate in domain)
+- Use DTOs inside domain layer
+- Create DTOs for every entity (only when needed)
+
+### DTO vs Domain Entity
+
+| Aspect | Domain Entity | DTO |
+|--------|--------------|-----|
+| **Purpose** | Business logic | Data transfer |
+| **Location** | Domain layer | Application layer |
+| **Mutability** | May be mutable | Always immutable |
+| **Behavior** | Rich methods | No behavior |
+| **Validation** | Business rules | No validation |
+| **Serialization** | Never serialized | Designed for serialization |
+| **Lifespan** | Managed by repository | Created on demand |
 
 ---
 
