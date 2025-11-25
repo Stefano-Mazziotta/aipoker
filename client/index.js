@@ -11,6 +11,19 @@ let currentBet = 0;
 let currentRound = 'pre-flop';
 let registeredPlayers = [];
 let lobbyPlayers = [];
+let isPlayerTurn = false;
+let isGameActive = false;
+
+// Game State Enum
+const GameState = {
+    DISCONNECTED: 'DISCONNECTED',
+    CONNECTED: 'CONNECTED',
+    REGISTERED: 'REGISTERED',
+    IN_LOBBY: 'IN_LOBBY',
+    IN_GAME: 'IN_GAME'
+};
+
+let currentGameState = GameState.DISCONNECTED;
 
 // Card Symbols
 const suitSymbols = {
@@ -19,6 +32,150 @@ const suitSymbols = {
     'CLUBS': '♣️',
     'SPADES': '♠️'
 };
+
+// Update UI Button States based on Game State
+function updateButtonStates() {
+    // Connection buttons
+    const btnConnect = document.getElementById('btnConnect');
+    const btnRegister = document.getElementById('btnRegister');
+    const btnCreateLobby = document.getElementById('btnCreateLobby');
+    const btnJoinLobby = document.getElementById('btnJoinLobby');
+    const btnStart = document.getElementById('btnStart');
+    
+    // Game action buttons
+    const btnCheck = document.getElementById('btnCheck');
+    const btnCall = document.getElementById('btnCall');
+    const btnRaise = document.getElementById('btnRaise');
+    const btnFold = document.getElementById('btnFold');
+    const btnAllIn = document.getElementById('btnAllIn');
+    const btnDeal = document.getElementById('btnDeal');
+    
+    // Input fields
+    const wsUrlInput = document.getElementById('wsUrl');
+    const playerNameInput = document.getElementById('playerName');
+    const startingChipsInput = document.getElementById('startingChips');
+    const betAmountInput = document.getElementById('betAmount');
+
+    switch(currentGameState) {
+        case GameState.DISCONNECTED:
+            // Only connect button enabled
+            btnConnect.disabled = false;
+            btnRegister.disabled = true;
+            btnCreateLobby.disabled = true;
+            btnJoinLobby.disabled = true;
+            btnStart.disabled = true;
+            
+            // All game actions disabled
+            btnCheck.disabled = true;
+            btnCall.disabled = true;
+            btnRaise.disabled = true;
+            btnFold.disabled = true;
+            btnAllIn.disabled = true;
+            btnDeal.disabled = true;
+            
+            // Enable inputs
+            wsUrlInput.disabled = false;
+            playerNameInput.disabled = true;
+            startingChipsInput.disabled = true;
+            betAmountInput.disabled = true;
+            break;
+
+        case GameState.CONNECTED:
+            // Can disconnect or register
+            btnConnect.disabled = false;
+            btnRegister.disabled = false;
+            btnCreateLobby.disabled = true;
+            btnJoinLobby.disabled = true;
+            btnStart.disabled = true;
+            
+            // All game actions disabled
+            btnCheck.disabled = true;
+            btnCall.disabled = true;
+            btnRaise.disabled = true;
+            btnFold.disabled = true;
+            btnAllIn.disabled = true;
+            btnDeal.disabled = true;
+            
+            // Enable registration inputs
+            wsUrlInput.disabled = true;
+            playerNameInput.disabled = false;
+            startingChipsInput.disabled = false;
+            betAmountInput.disabled = true;
+            break;
+
+        case GameState.REGISTERED:
+            // Can create or join lobby
+            btnConnect.disabled = false;
+            btnRegister.disabled = true;
+            btnCreateLobby.disabled = false;
+            btnJoinLobby.disabled = false;
+            btnStart.disabled = true;
+            
+            // All game actions disabled
+            btnCheck.disabled = true;
+            btnCall.disabled = true;
+            btnRaise.disabled = true;
+            btnFold.disabled = true;
+            btnAllIn.disabled = true;
+            btnDeal.disabled = true;
+            
+            // Lock inputs
+            wsUrlInput.disabled = true;
+            playerNameInput.disabled = true;
+            startingChipsInput.disabled = true;
+            betAmountInput.disabled = true;
+            break;
+
+        case GameState.IN_LOBBY:
+            // Only admin can start game, need at least 2 players
+            btnConnect.disabled = false;
+            btnRegister.disabled = true;
+            btnCreateLobby.disabled = true;
+            btnJoinLobby.disabled = true;
+            btnStart.disabled = !(isLobbyAdmin && lobbyPlayers.length >= 2);
+            
+            // All game actions disabled
+            btnCheck.disabled = true;
+            btnCall.disabled = true;
+            btnRaise.disabled = true;
+            btnFold.disabled = true;
+            btnAllIn.disabled = true;
+            btnDeal.disabled = true;
+            
+            // Lock inputs
+            wsUrlInput.disabled = true;
+            playerNameInput.disabled = true;
+            startingChipsInput.disabled = true;
+            betAmountInput.disabled = true;
+            break;
+
+        case GameState.IN_GAME:
+            // No lobby actions during game
+            btnConnect.disabled = false;
+            btnRegister.disabled = true;
+            btnCreateLobby.disabled = true;
+            btnJoinLobby.disabled = true;
+            btnStart.disabled = true;
+            
+            // Game actions enabled based on turn
+            const canAct = isGameActive && isPlayerTurn;
+            btnCheck.disabled = !canAct;
+            btnCall.disabled = !canAct || currentBet === 0;
+            btnRaise.disabled = !canAct;
+            btnFold.disabled = !canAct;
+            btnAllIn.disabled = !canAct;
+            
+            // Deal button only for admin/dealer
+            btnDeal.disabled = !isGameActive || isPlayerTurn;
+            
+            // Enable bet input during game
+            wsUrlInput.disabled = true;
+            playerNameInput.disabled = true;
+            startingChipsInput.disabled = true;
+            betAmountInput.disabled = !canAct;
+            break;
+    }
+}
 
 // Connect to WebSocket
 function connect() {
@@ -29,11 +186,12 @@ function connect() {
         ws = new WebSocket(url);
         
         ws.onopen = () => {
+            currentGameState = GameState.CONNECTED;
             updateConnectionStatus(true);
             addMessage('event', 'Connected to server! 🎉');
-            document.getElementById('btnRegister').disabled = false;
             document.getElementById('btnConnect').textContent = 'DISCONNECT';
             document.getElementById('btnConnect').onclick = disconnect;
+            updateButtonStates();
         };
         
         ws.onmessage = (event) => {
@@ -46,12 +204,12 @@ function connect() {
         };
         
         ws.onclose = () => {
+            currentGameState = GameState.DISCONNECTED;
             updateConnectionStatus(false);
             addMessage('info', 'Disconnected from server');
-            document.getElementById('btnRegister').disabled = true;
-            document.getElementById('btnStart').disabled = true;
             document.getElementById('btnConnect').textContent = 'CONNECT';
             document.getElementById('btnConnect').onclick = connect;
+            updateButtonStates();
         };
         
     } catch (error) {
@@ -162,18 +320,16 @@ function handleTextResponse(content) {
             playerName = nameMatch[1];
             playerChips = parseInt(chipsMatch[1]);
             
+            currentGameState = GameState.REGISTERED;
+            
             // Show player ID field
             document.getElementById('playerIdDisplay').style.display = 'block';
             document.getElementById('playerIdText').value = playerId;
-            
-            // Enable lobby buttons
-            document.getElementById('btnCreateLobby').disabled = false;
-            document.getElementById('btnJoinLobby').disabled = false;
-            document.getElementById('btnRegister').disabled = true;
             document.getElementById('btnRegister').textContent = 'REGISTERED ✓';
             
             registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
             updatePlayersList();
+            updateButtonStates();
         }
     }
     
@@ -183,16 +339,17 @@ function handleTextResponse(content) {
         if (idMatch) {
             lobbyId = idMatch[1];
             isLobbyAdmin = true;
+            
+            currentGameState = GameState.IN_LOBBY;
+            
             document.getElementById('lobbyIdDisplay').style.display = 'block';
             document.getElementById('lobbyIdText').value = lobbyId;
-            document.getElementById('btnStart').disabled = false;
-            document.getElementById('btnCreateLobby').disabled = true;
-            document.getElementById('btnJoinLobby').disabled = true;
             addMessage('event', '🏠 You are the lobby admin - You can START the game');
             
             // Initialize lobby players with yourself
             lobbyPlayers = [{ id: playerId, name: playerName, chips: playerChips }];
             updateLobbyPlayersList();
+            updateButtonStates();
             
             // Subscribe to lobby events for real-time updates
             sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
@@ -204,15 +361,17 @@ function handleTextResponse(content) {
         const idMatch = content.match(/Lobby ID:\s*([a-f0-9-]+)/);
         if (idMatch) {
             lobbyId = idMatch[1];
+            
+            currentGameState = GameState.IN_LOBBY;
+            
             document.getElementById('lobbyIdDisplay').style.display = 'block';
             document.getElementById('lobbyIdText').value = lobbyId;
-            document.getElementById('btnCreateLobby').disabled = true;
-            document.getElementById('btnJoinLobby').disabled = true;
             addMessage('event', '🏠 Joined lobby - Waiting for admin to start...');
             
             // Initialize lobby players with yourself
             lobbyPlayers = [{ id: playerId, name: playerName, chips: playerChips }];
             updateLobbyPlayersList();
+            updateButtonStates();
             
             // Subscribe to lobby events for real-time updates
             sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
@@ -224,8 +383,13 @@ function handleTextResponse(content) {
         const idMatch = content.match(/Game ID:\s*([a-f0-9-]+)/);
         if (idMatch) {
             gameId = idMatch[1];
+            isGameActive = true;
+            
+            currentGameState = GameState.IN_GAME;
+            
             document.getElementById('gameId').textContent = gameId.substring(0, 8) + '...';
             addMessage('event', '🎮 Game started!');
+            updateButtonStates();
             
             // Request initial state
             setTimeout(() => {
@@ -266,6 +430,7 @@ function handlePlayerJoinedLobby(message) {
                 chips: 1000 // Default value, actual value will be from game
             });
             updateLobbyPlayersList();
+            updateButtonStates(); // Update start button when lobby size changes
         }
     }
 }
@@ -316,22 +481,27 @@ function handlePlayerRegistered(message) {
     playerName = message.name;
     playerChips = message.chips;
     
+    currentGameState = GameState.REGISTERED;
+    
     document.getElementById('playerIdDisplay').style.display = 'block';
     document.getElementById('playerIdText').value = playerId;
-    document.getElementById('btnCreateLobby').disabled = false;
-    document.getElementById('btnJoinLobby').disabled = false;
-    document.getElementById('btnRegister').disabled = true;
     document.getElementById('btnRegister').textContent = 'REGISTERED ✓';
     
     registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
     updatePlayersList();
+    updateButtonStates();
 }
 
 // Handle Game Started
 function handleGameStarted(message) {
     gameId = message.gameId;
+    isGameActive = true;
+    
+    currentGameState = GameState.IN_GAME;
+    
     document.getElementById('gameId').textContent = gameId.substring(0, 8) + '...';
     addMessage('event', `🎮 Game started! Game ID: ${gameId}`);
+    updateButtonStates();
     
     // Request initial game state and cards
     setTimeout(() => {
@@ -512,6 +682,10 @@ function performAction(action) {
     }
     
     sendCommand(command);
+    
+    // After action, assume it's not our turn anymore until server confirms
+    isPlayerTurn = false;
+    updateButtonStates();
 }
 
 // Deal Next Round
@@ -715,4 +889,5 @@ function addMessage(type, message) {
 document.addEventListener('DOMContentLoaded', () => {
     addMessage('info', 'Welcome to Texas Hold\'em Poker! 🎰');
     addMessage('info', 'Click CONNECT to start playing');
+    updateButtonStates(); // Initialize button states on page load
 });
