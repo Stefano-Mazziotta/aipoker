@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texas Hold'em Poker - Game Client</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ffd700;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+        }
+
+        .status-indicator.connected {
+            background: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Left Panel - Game Area */
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Poker Table */
+        .poker-table {
+            background: linear-gradient(135deg, #1a472a 0%, #0d3820 100%);
+            border: 3px solid #8b4513;
+            border-radius: 150px;
+            padding: 40px;
+            min-height: 400px;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .table-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .table-info h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .pot-display {
+            background: rgba(0,0,0,0.5);
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .pot-amount {
+            font-size: 2em;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Community Cards */
+        .community-cards {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            min-height: 120px;
+            align-items: center;
+        }
+
+        .card {
+            width: 80px;
+            height: 112px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card.empty {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255,255,255,0.3);
+        }
+
+        .card.red {
+            color: #dc3545;
+        }
+
+        .card.black {
+            color: #000;
+        }
+
+        .card-rank {
+            font-size: 1.2em;
+        }
+
+        .card-suit {
+            font-size: 1.5em;
+        }
+
+        /* Player Cards */
+        .player-cards {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .player-cards h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .player-hand {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        /* Players Info */
+        .players-info {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .players-info h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .player-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-item.active {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+        }
+
+        .player-name {
+            font-weight: bold;
+        }
+
+        .player-chips {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Actions Panel */
+        .actions-panel {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .actions-panel h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .bet-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bet-controls input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 1em;
+        }
+
+        /* Right Panel - Control/Chat */
+        .right-panel {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+        }
+
+        .connection-panel h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 1em;
+        }
+
+        /* Buttons */
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* Message Log */
+        .message-log {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-log h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            font-size: 0.9em;
+            border-left: 3px solid #ffd700;
+        }
+
+        .message.event {
+            border-left-color: #28a745;
+        }
+
+        .message.error {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        .message.info {
+            border-left-color: #17a2b8;
+        }
+
+        .message-time {
+            color: #888;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        /* Game State Display */
+        .game-state {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .state-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .state-item:last-child {
+            border-bottom: none;
+        }
+
+        .state-label {
+            color: #aaa;
+        }
+
+        .state-value {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .right-panel {
+                width: 100%;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffed4e;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>♠️ Texas Hold'em Poker ♥️</h1>
+        <div class="connection-status">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Left Panel - Game Area -->
+        <div class="game-area">
+            <!-- Poker Table -->
+            <div class="poker-table">
+                <div class="table-info">
+                    <h3>🎴 Poker Table 🎴</h3>
+                    <div class="pot-display">
+                        <div>POT</div>
+                        <div class="pot-amount" id="potAmount">$0</div>
+                    </div>
+                </div>
+
+                <!-- Community Cards -->
+                <div class="community-cards" id="communityCards">
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                </div>
+
+                <!-- Game State -->
+                <div class="game-state">
+                    <div class="state-item">
+                        <span class="state-label">Game ID:</span>
+                        <span class="state-value" id="gameId">-</span>
+                    </div>
+                    <div class="state-item">
+                        <span class="state-label">Current Bet:</span>
+                        <span class="state-value" id="currentBet">$0</span>
+                    </div>
+                    <div class="state-item">
+                        <span class="state-label">Round:</span>
+                        <span class="state-value" id="currentRound">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player's Hand -->
+            <div class="player-cards">
+                <h3>🃏 Your Cards</h3>
+                <div class="player-hand" id="playerHand">
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                </div>
+            </div>
+
+            <!-- Players Info -->
+            <div class="players-info">
+                <h3>👥 Players</h3>
+                <div id="playersList">
+                    <div class="player-item">
+                        <span class="player-name">No players yet</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="actions-panel">
+                <h3>🎮 Actions</h3>
+                <div class="bet-controls">
+                    <input type="number" id="betAmount" placeholder="Bet amount" min="0" value="20">
+                    <button class="btn-warning" onclick="quickBet('pot')">POT</button>
+                    <button class="btn-warning" onclick="quickBet('half')">1/2</button>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-success" onclick="performAction('CHECK')" id="btnCheck">CHECK</button>
+                    <button class="btn-primary" onclick="performAction('CALL')" id="btnCall">CALL</button>
+                    <button class="btn-warning" onclick="performAction('RAISE')" id="btnRaise">RAISE</button>
+                    <button class="btn-danger" onclick="performAction('FOLD')" id="btnFold">FOLD</button>
+                    <button class="btn-secondary" onclick="performAction('ALL_IN')" id="btnAllIn">ALL IN</button>
+                    <button class="btn-primary" onclick="dealNext()" id="btnDeal">DEAL NEXT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Connection Panel -->
+            <div class="connection-panel">
+                <h3>🔌 Connection</h3>
+                <div class="input-group">
+                    <label>WebSocket URL:</label>
+                    <input type="text" id="wsUrl" value="ws://localhost:8081/ws/poker">
+                </div>
+                <button class="btn-primary" onclick="connect()" id="btnConnect" style="width: 100%; margin-bottom: 10px;">CONNECT</button>
+                
+                <div class="input-group">
+                    <label>Player Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter your name">
+                </div>
+                <div class="input-group">
+                    <label>Starting Chips:</label>
+                    <input type="number" id="startingChips" value="1000" min="100">
+                </div>
+                <button class="btn-success" onclick="registerPlayer()" id="btnRegister" style="width: 100%; margin-bottom: 10px;" disabled>REGISTER</button>
+                
+                <div class="input-group" id="playerIdDisplay" style="display: none;">
+                    <label>Your Player ID:</label>
+                    <input type="text" id="playerIdText" readonly style="background: rgba(0,0,0,0.7); cursor: pointer;" onclick="copyPlayerId()" title="Click to copy">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="btn-primary" onclick="createLobby()" id="btnCreateLobby" style="flex: 1;" disabled>CREATE LOBBY</button>
+                    <button class="btn-primary" onclick="joinLobby()" id="btnJoinLobby" style="flex: 1;" disabled>JOIN LOBBY</button>
+                </div>
+                
+                <div class="input-group" id="lobbyIdDisplay" style="display: none;">
+                    <label>Lobby ID:</label>
+                    <input type="text" id="lobbyIdText" readonly style="background: rgba(0,0,0,0.7); cursor: pointer;" onclick="copyLobbyId()" title="Click to copy">
+                </div>
+                
+                <button class="btn-warning" onclick="startGame()" id="btnStart" style="width: 100%;" disabled>START GAME (ADMIN)</button>
+            </div>
+
+            <!-- Message Log -->
+            <div class="message-log">
+                <h3>📋 Game Log</h3>
+                <div class="messages" id="messages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let ws = null;
+        let playerId = null;
+        let playerName = null;
+        let gameId = null;
+        let lobbyId = null;
+        let isLobbyAdmin = false;
+        let playerChips = 0;
+        let currentPot = 0;
+        let currentBet = 0;
+        let currentRound = 'pre-flop';
+        let registeredPlayers = [];
+        let lobbyPlayers = [];
+
+        // Card Symbols
+        const suitSymbols = {
+            'HEARTS': '♥️',
+            'DIAMONDS': '♦️',
+            'CLUBS': '♣️',
+            'SPADES': '♠️'
+        };
+
+        // Connect to WebSocket
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            addMessage('info', `Connecting to ${url}...`);
+            
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = () => {
+                    updateConnectionStatus(true);
+                    addMessage('event', 'Connected to server! 🎉');
+                    document.getElementById('btnRegister').disabled = false;
+                    document.getElementById('btnConnect').textContent = 'DISCONNECT';
+                    document.getElementById('btnConnect').onclick = disconnect;
+                };
+                
+                ws.onmessage = (event) => {
+                    handleMessage(event.data);
+                };
+                
+                ws.onerror = (error) => {
+                    addMessage('error', 'WebSocket error occurred');
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onclose = () => {
+                    updateConnectionStatus(false);
+                    addMessage('info', 'Disconnected from server');
+                    document.getElementById('btnRegister').disabled = true;
+                    document.getElementById('btnStart').disabled = true;
+                    document.getElementById('btnConnect').textContent = 'CONNECT';
+                    document.getElementById('btnConnect').onclick = connect;
+                };
+                
+            } catch (error) {
+                addMessage('error', `Connection failed: ${error.message}`);
+            }
+        }
+
+        // Disconnect
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        // Send Command
+        function sendCommand(command) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = JSON.stringify({ command: command });
+                ws.send(message);
+                addMessage('info', `Sent: ${command}`);
+            } else {
+                addMessage('error', 'Not connected to server');
+            }
+        }
+
+        // Handle Incoming Messages
+        function handleMessage(data) {
+            try {
+                const message = JSON.parse(data);
+                const type = message.type || message.eventType;
+
+                switch(type) {
+                    case 'PLAYER_REGISTERED':
+                        handlePlayerRegistered(message);
+                        break;
+                    case 'LOBBY_CREATED':
+                        handleLobbyCreated(message);
+                        break;
+                    case 'LOBBY_JOINED':
+                        handleLobbyJoined(message);
+                        break;
+                    case 'PLAYER_JOINED_LOBBY':
+                        handlePlayerJoinedLobby(message);
+                        break;
+                    case 'GAME_STARTED':
+                        handleGameStarted(message);
+                        break;
+                    case 'GAME_STATE_CHANGED':
+                        handleGameStateChanged(message);
+                        break;
+                    case 'CARDS_DEALT':
+                        handleCardsDealt(message);
+                        break;
+                    case 'PLAYER_ACTION':
+                        handlePlayerAction(message);
+                        break;
+                    case 'WINNER_DETERMINED':
+                        handleWinnerDetermined(message);
+                        break;
+                    case 'PLAYER_CARDS':
+                        handlePlayerCards(message);
+                        break;
+                    case 'GAME_STATE':
+                        handleGameState(message);
+                        break;
+                    case 'FLOP_DEALT':
+                    case 'TURN_DEALT':
+                    case 'RIVER_DEALT':
+                        handleCommunityCards(message);
+                        break;
+                    case 'WINNER_DETERMINED':
+                        handleWinner(message);
+                        break;
+                    case 'ERROR':
+                        addMessage('error', message.message || message.content || 'An error occurred');
+                        break;
+                    case 'INFO':
+                        addMessage('info', message.message || message.content);
+                        break;
+                    case 'success':
+                        addMessage('info', message.content);
+                        break;
+                    case 'response':
+                        handleTextResponse(message.content);
+                        break;
+                    default:
+                        addMessage('event', JSON.stringify(message, null, 2));
+                }
+            } catch (e) {
+                // Plain text message - parse it
+                handleTextResponse(data);
+            }
+        }
+
+        // Handle Text Response (from server's MessageFormatter)
+        function handleTextResponse(content) {
+            addMessage('info', content);
+            
+            // Parse player registration
+            if (content.includes('SUCCESS: Player registered')) {
+                const idMatch = content.match(/ID:\s*([a-f0-9-]+)/);
+                const nameMatch = content.match(/Name:\s*(\w+)/);
+                const chipsMatch = content.match(/Chips:\s*(\d+)/);
+                
+                if (idMatch && nameMatch && chipsMatch) {
+                    playerId = idMatch[1];
+                    playerName = nameMatch[1];
+                    playerChips = parseInt(chipsMatch[1]);
+                    
+                    // Show player ID field
+                    document.getElementById('playerIdDisplay').style.display = 'block';
+                    document.getElementById('playerIdText').value = playerId;
+                    
+                    // Enable lobby buttons
+                    document.getElementById('btnCreateLobby').disabled = false;
+                    document.getElementById('btnJoinLobby').disabled = false;
+                    document.getElementById('btnRegister').disabled = true;
+                    document.getElementById('btnRegister').textContent = 'REGISTERED ✓';
+                    
+                    registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
+                    updatePlayersList();
+                }
+            }
+            
+            // Parse lobby creation
+            if (content.includes('SUCCESS: Lobby created')) {
+                const idMatch = content.match(/Lobby ID:\s*([a-f0-9-]+)/);
+                if (idMatch) {
+                    lobbyId = idMatch[1];
+                    isLobbyAdmin = true;
+                    document.getElementById('lobbyIdDisplay').style.display = 'block';
+                    document.getElementById('lobbyIdText').value = lobbyId;
+                    document.getElementById('btnStart').disabled = false;
+                    document.getElementById('btnCreateLobby').disabled = true;
+                    document.getElementById('btnJoinLobby').disabled = true;
+                    addMessage('event', '🏠 You are the lobby admin - You can START the game');
+                    
+                    // Subscribe to lobby events for real-time updates
+                    sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
+                }
+            }
+            
+            // Parse lobby join
+            if (content.includes('SUCCESS: Joined lobby')) {
+                const idMatch = content.match(/Lobby ID:\s*([a-f0-9-]+)/);
+                if (idMatch) {
+                    lobbyId = idMatch[1];
+                    document.getElementById('lobbyIdDisplay').style.display = 'block';
+                    document.getElementById('lobbyIdText').value = lobbyId;
+                    document.getElementById('btnCreateLobby').disabled = true;
+                    document.getElementById('btnJoinLobby').disabled = true;
+                    addMessage('event', '🏠 Joined lobby - Waiting for admin to start...');
+                    
+                    // Subscribe to lobby events for real-time updates
+                    sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
+                }
+            }
+            
+            // Parse game start
+            if (content.includes('SUCCESS: Game started')) {
+                const idMatch = content.match(/Game ID:\s*([a-f0-9-]+)/);
+                if (idMatch) {
+                    gameId = idMatch[1];
+                    document.getElementById('gameId').textContent = gameId.substring(0, 8) + '...';
+                    addMessage('event', '🎮 Game started!');
+                    
+                    // Request initial state
+                    setTimeout(() => {
+                        sendCommand(`GET_GAME_STATE ${gameId}`);
+                        sendCommand(`GET_MY_CARDS ${gameId} ${playerId}`);
+                    }, 500);
+                }
+            }
+        }
+
+        // Handle Lobby Created
+        function handleLobbyCreated(message) {
+            // Handled in handleTextResponse
+        }
+
+        // Handle Lobby Joined  
+        function handleLobbyJoined(message) {
+            // Handled in handleTextResponse
+        }
+
+        // Handle Player Joined Lobby (Event from WebSocket)
+        function handlePlayerJoinedLobby(message) {
+            const data = message.data || message;
+            const joinedPlayerId = data.playerId;
+            const currentCount = data.currentPlayerCount;
+            const maxPlayers = data.maxPlayers;
+            
+            addMessage('event', `👤 New player joined lobby (${currentCount}/${maxPlayers} players)`);
+            
+            // Update lobby info if it's displayed
+            if (lobbyId === data.lobbyId) {
+                updateLobbyPlayerCount(currentCount, maxPlayers);
+            }
+        }
+
+        // Handle other domain events
+        function handleGameStateChanged(message) {
+            const data = message.data || message;
+            addMessage('event', `🔄 Game state: ${data.newState}`);
+            if (gameId) {
+                sendCommand(`GET_GAME_STATE ${gameId}`);
+            }
+        }
+
+        function handleCardsDealt(message) {
+            const data = message.data || message;
+            addMessage('event', `🃏 Cards dealt`);
+            if (gameId) {
+                sendCommand(`GET_MY_CARDS ${gameId} ${playerId}`);
+            }
+        }
+
+        function handlePlayerAction(message) {
+            const data = message.data || message;
+            addMessage('event', `🎲 Player action: ${data.action}`);
+            if (gameId) {
+                sendCommand(`GET_GAME_STATE ${gameId}`);
+            }
+        }
+
+        function handleWinnerDetermined(message) {
+            const data = message.data || message;
+            addMessage('success', `🏆 Winner: ${data.winnerName} with ${data.handRank}`);
+            if (gameId) {
+                sendCommand(`GET_GAME_STATE ${gameId}`);
+            }
+        }
+
+        // Update lobby player count display
+        function updateLobbyPlayerCount(current, max) {
+            // Could add a UI element to show this
+            console.log(`Lobby players: ${current}/${max}`);
+        }
+
+        // Handle Player Registered
+        function handlePlayerRegistered(message) {
+            // Handled in handleTextResponse - kept for JSON compatibility
+            playerId = message.playerId;
+            playerName = message.name;
+            playerChips = message.chips;
+            
+            document.getElementById('playerIdDisplay').style.display = 'block';
+            document.getElementById('playerIdText').value = playerId;
+            document.getElementById('btnCreateLobby').disabled = false;
+            document.getElementById('btnJoinLobby').disabled = false;
+            document.getElementById('btnRegister').disabled = true;
+            document.getElementById('btnRegister').textContent = 'REGISTERED ✓';
+            
+            registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
+            updatePlayersList();
+        }
+
+        // Handle Game Started
+        function handleGameStarted(message) {
+            gameId = message.gameId;
+            document.getElementById('gameId').textContent = gameId.substring(0, 8) + '...';
+            addMessage('event', `🎮 Game started! Game ID: ${gameId}`);
+            
+            // Request initial game state and cards
+            setTimeout(() => {
+                sendCommand(`GET_GAME_STATE ${gameId}`);
+                sendCommand(`GET_MY_CARDS ${gameId} ${playerId}`);
+            }, 500);
+        }
+
+        // Handle Player Cards
+        function handlePlayerCards(message) {
+            const cards = message.cards || [];
+            displayPlayerCards(cards);
+            addMessage('event', `🃏 Received your cards`);
+        }
+
+        // Handle Game State
+        function handleGameState(message) {
+            currentPot = message.pot || 0;
+            currentBet = message.currentBet || 0;
+            
+            document.getElementById('potAmount').textContent = `$${currentPot}`;
+            document.getElementById('currentBet').textContent = `$${currentBet}`;
+            
+            if (message.communityCards) {
+                displayCommunityCards(message.communityCards);
+            }
+        }
+
+        // Handle Community Cards
+        function handleCommunityCards(message) {
+            const cards = message.communityCards || message.cards || [];
+            displayCommunityCards(cards);
+            
+            const round = message.type.replace('_DEALT', '').toLowerCase();
+            currentRound = round;
+            document.getElementById('currentRound').textContent = round.toUpperCase();
+            addMessage('event', `🎴 ${round.toUpperCase()} dealt`);
+            
+            // Update game state
+            setTimeout(() => {
+                sendCommand(`GET_GAME_STATE ${gameId}`);
+            }, 300);
+        }
+
+        // Handle Winner
+        function handleWinner(message) {
+            const winner = message.winner || message.winnerName;
+            const hand = message.hand || message.handRank;
+            const amount = message.amount || message.potWon;
+            
+            addMessage('event', `🏆 Winner: ${winner} with ${hand} - Won $${amount}`);
+            
+            // Reset table
+            setTimeout(() => {
+                resetTable();
+            }, 3000);
+        }
+
+        // Register Player
+        function registerPlayer() {
+            const name = document.getElementById('playerName').value.trim();
+            const chips = document.getElementById('startingChips').value;
+            
+            if (!name) {
+                addMessage('error', 'Please enter your name');
+                return;
+            }
+            
+            sendCommand(`REGISTER ${name} ${chips}`);
+        }
+
+        // Create Lobby
+        function createLobby() {
+            if (!playerId) {
+                addMessage('error', 'Please register first');
+                return;
+            }
+            
+            const lobbyName = prompt('Enter lobby name:', `${playerName}'s Game`);
+            if (!lobbyName) return;
+            
+            const maxPlayers = prompt('Maximum number of players (2-10):', '6');
+            if (!maxPlayers) return;
+            
+            sendCommand(`CREATE_LOBBY ${lobbyName} ${maxPlayers} ${playerId}`);
+        }
+
+        // Join Lobby
+        function joinLobby() {
+            if (!playerId) {
+                addMessage('error', 'Please register first');
+                return;
+            }
+            
+            const lobbyIdToJoin = prompt('Enter Lobby ID to join:');
+            if (!lobbyIdToJoin) return;
+            
+            sendCommand(`JOIN_LOBBY ${lobbyIdToJoin} ${playerId}`);
+        }
+
+        // Start Game (Admin only)
+        function startGame() {
+            if (!playerId) {
+                addMessage('error', 'Please register first');
+                return;
+            }
+            
+            if (!lobbyId) {
+                addMessage('error', 'Please create or join a lobby first');
+                return;
+            }
+            
+            if (!isLobbyAdmin) {
+                addMessage('error', 'Only the lobby admin can start the game');
+                return;
+            }
+            
+            // Get player IDs from lobby
+            const playerIdsInput = prompt('Enter all Player IDs in the lobby (space-separated):', playerId);
+            if (!playerIdsInput) return;
+            
+            const playerIds = playerIdsInput.trim().split(/\s+/);
+            
+            if (playerIds.length < 2) {
+                addMessage('error', 'Need at least 2 players to start a game');
+                return;
+            }
+            
+            const smallBlind = prompt('Small Blind:', '10');
+            const bigBlind = prompt('Big Blind:', '20');
+            
+            if (!smallBlind || !bigBlind) return;
+            
+            const command = `START_GAME ${playerIds.join(' ')} ${smallBlind} ${bigBlind}`;
+            sendCommand(command);
+        }
+
+        // Copy Player ID
+        function copyPlayerId() {
+            const input = document.getElementById('playerIdText');
+            input.select();
+            document.execCommand('copy');
+            addMessage('info', '📋 Player ID copied to clipboard!');
+        }
+
+        // Copy Lobby ID
+        function copyLobbyId() {
+            const input = document.getElementById('lobbyIdText');
+            input.select();
+            document.execCommand('copy');
+            addMessage('info', '📋 Lobby ID copied to clipboard!');
+        }
+
+        // Perform Action
+        function performAction(action) {
+            if (!gameId || !playerId) {
+                addMessage('error', 'No active game');
+                return;
+            }
+            
+            let command = '';
+            const betAmount = document.getElementById('betAmount').value;
+            
+            switch(action) {
+                case 'CHECK':
+                    command = `CHECK ${gameId} ${playerId}`;
+                    break;
+                case 'CALL':
+                    command = `CALL ${gameId} ${playerId} ${currentBet}`;
+                    break;
+                case 'RAISE':
+                    command = `RAISE ${gameId} ${playerId} ${betAmount}`;
+                    break;
+                case 'FOLD':
+                    command = `FOLD ${gameId} ${playerId}`;
+                    break;
+                case 'ALL_IN':
+                    command = `ALL_IN ${gameId} ${playerId}`;
+                    break;
+            }
+            
+            sendCommand(command);
+        }
+
+        // Deal Next Round
+        function dealNext() {
+            if (!gameId) {
+                addMessage('error', 'No active game');
+                return;
+            }
+            
+            let command = '';
+            switch(currentRound) {
+                case 'pre-flop':
+                    command = `DEAL_FLOP ${gameId}`;
+                    break;
+                case 'flop':
+                    command = `DEAL_TURN ${gameId}`;
+                    break;
+                case 'turn':
+                    command = `DEAL_RIVER ${gameId}`;
+                    break;
+                case 'river':
+                    command = `DETERMINE_WINNER ${gameId}`;
+                    break;
+            }
+            
+            if (command) {
+                sendCommand(command);
+            }
+        }
+
+        // Quick Bet
+        function quickBet(type) {
+            let amount = 0;
+            switch(type) {
+                case 'pot':
+                    amount = currentPot;
+                    break;
+                case 'half':
+                    amount = Math.floor(currentPot / 2);
+                    break;
+            }
+            document.getElementById('betAmount').value = amount;
+        }
+
+        // Display Player Cards
+        function displayPlayerCards(cards) {
+            const container = document.getElementById('playerHand');
+            container.innerHTML = '';
+            
+            cards.forEach(cardStr => {
+                const card = parseCard(cardStr);
+                const cardEl = createCardElement(card);
+                container.appendChild(cardEl);
+            });
+        }
+
+        // Display Community Cards
+        function displayCommunityCards(cards) {
+            const container = document.getElementById('communityCards');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                if (i < cards.length) {
+                    const card = parseCard(cards[i]);
+                    const cardEl = createCardElement(card);
+                    container.appendChild(cardEl);
+                } else {
+                    const emptyCard = document.createElement('div');
+                    emptyCard.className = 'card empty';
+                    container.appendChild(emptyCard);
+                }
+            }
+        }
+
+        // Parse Card String
+        function parseCard(cardStr) {
+            // Format: "ACE of HEARTS" or "10 of DIAMONDS"
+            const parts = cardStr.split(' of ');
+            return {
+                rank: parts[0],
+                suit: parts[1]
+            };
+        }
+
+        // Create Card Element
+        function createCardElement(card) {
+            const cardEl = document.createElement('div');
+            const isRed = card.suit === 'HEARTS' || card.suit === 'DIAMONDS';
+            cardEl.className = `card ${isRed ? 'red' : 'black'}`;
+            
+            const suitSymbol = suitSymbols[card.suit] || card.suit;
+            
+            cardEl.innerHTML = `
+                <div class="card-rank">${card.rank}</div>
+                <div class="card-suit">${suitSymbol}</div>
+            `;
+            
+            return cardEl;
+        }
+
+        // Update Players List
+        function updatePlayersList() {
+            const container = document.getElementById('playersList');
+            container.innerHTML = '';
+            
+            if (registeredPlayers.length === 0) {
+                container.innerHTML = '<div class="player-item"><span class="player-name">No players yet</span></div>';
+                return;
+            }
+            
+            registeredPlayers.forEach(player => {
+                const playerEl = document.createElement('div');
+                playerEl.className = 'player-item';
+                if (player.id === playerId) {
+                    playerEl.classList.add('active');
+                }
+                
+                playerEl.innerHTML = `
+                    <span class="player-name">${player.name}</span>
+                    <span class="player-chips">$${player.chips}</span>
+                `;
+                
+                container.appendChild(playerEl);
+            });
+        }
+
+        // Reset Table
+        function resetTable() {
+            currentRound = 'pre-flop';
+            document.getElementById('currentRound').textContent = '-';
+            document.getElementById('communityCards').innerHTML = `
+                <div class="card empty"></div>
+                <div class="card empty"></div>
+                <div class="card empty"></div>
+                <div class="card empty"></div>
+                <div class="card empty"></div>
+            `;
+        }
+
+        // Update Connection Status
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('statusText');
+            
+            if (connected) {
+                indicator.classList.add('connected');
+                text.textContent = 'Connected';
+            } else {
+                indicator.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Add Message to Log
+        function addMessage(type, message) {
+            const container = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const time = new Date().toLocaleTimeString();
+            messageEl.innerHTML = `<span class="message-time">${time}</span>${message}`;
+            
+            container.appendChild(messageEl);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            addMessage('info', 'Welcome to Texas Hold\'em Poker! 🎰');
+            addMessage('info', 'Click CONNECT to start playing');
+        });
+    </script>
+</body>
+</html>
