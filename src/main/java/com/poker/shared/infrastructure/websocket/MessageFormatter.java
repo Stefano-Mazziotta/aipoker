@@ -8,11 +8,12 @@ import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
 import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.player.application.GetLeaderboardUseCase;
-import com.poker.player.application.RegisterPlayerUseCase;
+import com.poker.player.application.dto.RegisterPlayerDTO;
 
 /**
  * Formats messages and responses for socket communication.
  * Uses simple text format (could be extended to JSON).
+ * Now uses DTOs for all use case responses to maintain layer separation.
  */
 public class MessageFormatter {
 
@@ -33,13 +34,13 @@ public class MessageFormatter {
         return "INFO: " + message;
     }
 
-    public String formatPlayerRegistered(RegisterPlayerUseCase.PlayerResponse response) {
+    public String formatPlayerRegistered(RegisterPlayerDTO dto) {
         return """
             SUCCESS: Player registered
             ID: %s
             Name: %s
             Chips: %d
-            """.formatted(response.id(), response.name(), response.chips());
+            """.formatted(dto.id(), dto.name(), dto.chips());
     }
 
     public String formatGameStarted(StartGameUseCase.GameResponse response) {

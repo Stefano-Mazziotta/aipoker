@@ -1,10 +1,12 @@
 package com.poker.player.application;
 
+import com.poker.player.application.dto.RegisterPlayerDTO;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.repository.PlayerRepository;
 
 /**
  * Use case for registering a new player.
+ * Returns RegisterPlayerDTO to decouple the application layer from domain entities.
  */
 public class RegisterPlayerUseCase {
     private final PlayerRepository playerRepository;
@@ -13,7 +15,7 @@ public class RegisterPlayerUseCase {
         this.playerRepository = playerRepository;
     }
 
-    public PlayerResponse execute(RegisterPlayerCommand command) {
+    public RegisterPlayerDTO execute(RegisterPlayerCommand command) {
         // Check if player name already exists
         if (playerRepository.findByName(command.name()).isPresent()) {
             throw new IllegalArgumentException("Player name already exists: " + command.name());
@@ -25,7 +27,7 @@ public class RegisterPlayerUseCase {
         // Save to repository
         playerRepository.save(player);
 
-        return new PlayerResponse(
+        return RegisterPlayerDTO.fromDomain(
             player.getId().getValue().toString(),
             player.getName(),
             player.getChipsAmount()
@@ -33,6 +35,4 @@ public class RegisterPlayerUseCase {
     }
 
     public record RegisterPlayerCommand(String name, int initialChips) {}
-    
-    public record PlayerResponse(String id, String name, int chips) {}
 }

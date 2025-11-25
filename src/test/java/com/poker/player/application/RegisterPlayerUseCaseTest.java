@@ -13,12 +13,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.poker.player.application.dto.RegisterPlayerDTO;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
 
 /**
  * Integration tests for RegisterPlayerUseCase.
+ * 
+ * These tests validate player registration behavior using DTOs,
+ * ensuring the use case properly converts domain entities to DTOs
+ * while maintaining business rules like unique player names.
  */
 class RegisterPlayerUseCaseTest {
 
@@ -35,14 +40,16 @@ class RegisterPlayerUseCaseTest {
     void testRegisterPlayer() {
         var command = new RegisterPlayerUseCase.RegisterPlayerCommand("Alice", 1000);
 
-        var response = useCase.execute(command);
+        // Execute returns RegisterPlayerDTO, not domain entity
+        RegisterPlayerDTO dto = useCase.execute(command);
 
-        assertNotNull(response.id());
-        assertEquals("Alice", response.name());
-        assertEquals(1000, response.chips());
+        // Assert on DTO fields - test works with DTOs, not domain entities
+        assertNotNull(dto.id());
+        assertEquals("Alice", dto.name());
+        assertEquals(1000, dto.chips());
 
-        // Verify persistence
-        Optional<Player> saved = repository.findById(PlayerId.from(response.id()));
+        // Verify persistence by querying repository (domain layer check)
+        Optional<Player> saved = repository.findById(PlayerId.from(dto.id()));
         assertTrue(saved.isPresent());
         assertEquals("Alice", saved.get().getName());
     }
@@ -51,6 +58,7 @@ class RegisterPlayerUseCaseTest {
     void testRegisterPlayerWithDuplicateNameThrows() {
         useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 500));
 
+        // Business rule: duplicate names should throw exception
         Exception exception = assertThrows(IllegalArgumentException.class, ()
                 -> useCase.execute(new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 600))
         );

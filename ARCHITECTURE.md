@@ -753,6 +753,75 @@ src/main/java/com/poker/
 | **Serialization** | Never serialized | Designed for serialization |
 | **Lifespan** | Managed by repository | Created on demand |
 
+### DTOs in Testing
+
+DTOs play a crucial role in testing by decoupling tests from domain implementation details:
+
+**Benefits:**
+- **Stability**: Tests don't break when domain models evolve
+- **Clarity**: Test assertions use the same data structure as real clients
+- **Isolation**: Tests validate the application layer contract, not internal structure
+- **Maintainability**: Changes to domain internals don't require test updates
+
+**Testing Pattern:**
+```java
+@Test
+void testCreateLobby() {
+    // Arrange: Prepare test data
+    RegisterPlayerDTO admin = registerPlayer.execute(
+        new RegisterPlayerCommand("Admin", 1000)
+    );
+    
+    // Act: Execute use case - receives DTO, not domain entity
+    LobbyDTO lobbyDTO = createLobby.execute(
+        new CreateLobbyCommand("Test Lobby", 6, admin.id())
+    );
+    
+    // Assert: Verify DTO fields - tests work with DTOs
+    assertNotNull(lobbyDTO.lobbyId());
+    assertEquals("Test Lobby", lobbyDTO.name());
+    assertEquals(6, lobbyDTO.maxPlayers());
+    assertEquals(1, lobbyDTO.currentPlayers());
+    assertTrue(lobbyDTO.isOpen());
+}
+```
+
+**Key Principles:**
+1. **Use DTOs for assertions**: Test the external contract, not internal state
+2. **Avoid domain entities in tests**: Only use entities when testing repositories
+3. **Mirror production usage**: Tests should reflect how real clients use the API
+4. **Document expectations**: Comments explain DTO field meanings and business rules
+
+**Example Test Documentation:**
+```java
+/**
+ * Tests for lobby use cases.
+ * 
+ * These tests validate the behavior of the application layer use cases,
+ * working exclusively with DTOs to decouple tests from domain implementation details.
+ * This approach ensures tests remain stable even when domain models evolve.
+ */
+class LobbyUseCaseTest {
+    @Test
+    void testJoinLobby() {
+        // Register player - receives RegisterPlayerDTO
+        RegisterPlayerDTO player = registerPlayer.execute(
+            new RegisterPlayerCommand("TestPlayer", 1000)
+        );
+        
+        // Join lobby - receives LobbyDTO
+        LobbyDTO joinedLobby = joinLobby.execute(
+            new JoinLobbyCommand(lobbyId, player.id())
+        );
+        
+        // Assert on DTO fields
+        assertEquals(2, joinedLobby.currentPlayers()); // Admin + player
+    }
+}
+```
+
+This pattern ensures tests validate behavior from the client's perspective, not the implementation's perspective.
+
 ---
 
 ## How They Work Together
