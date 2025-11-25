@@ -1,0 +1,445 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #ffd700;
+}
+
+.header h1 {
+    font-size: 1.8em;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #dc3545;
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+
+.status-indicator.connected {
+    background: #28a745;
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+/* Main Container */
+.container {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Left Panel - Game Area */
+.game-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Poker Table */
+.poker-table {
+    background: linear-gradient(135deg, #1a472a 0%, #0d3820 100%);
+    border: 3px solid #8b4513;
+    border-radius: 150px;
+    padding: 40px;
+    min-height: 400px;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.table-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.table-info h3 {
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+
+.pot-display {
+    background: rgba(0,0,0,0.5);
+    padding: 15px 30px;
+    border-radius: 10px;
+    display: inline-block;
+    margin: 10px 0;
+}
+
+.pot-amount {
+    font-size: 2em;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* Community Cards */
+.community-cards {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+    min-height: 120px;
+    align-items: center;
+}
+
+.card {
+    width: 80px;
+    height: 112px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    position: relative;
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+}
+
+.card.empty {
+    background: rgba(255,255,255,0.1);
+    border: 2px dashed rgba(255,255,255,0.3);
+}
+
+.card.red {
+    color: #dc3545;
+}
+
+.card.black {
+    color: #000;
+}
+
+.card-rank {
+    font-size: 1.2em;
+}
+
+.card-suit {
+    font-size: 1.5em;
+}
+
+/* Player Cards */
+.player-cards {
+    background: rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.player-cards h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.player-hand {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+/* Players Info */
+.players-info {
+    background: rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 15px;
+}
+
+.players-info h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.player-item {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.player-item.active {
+    background: rgba(255, 215, 0, 0.2);
+    border: 2px solid #ffd700;
+}
+
+.player-name {
+    font-weight: bold;
+}
+
+.player-chips {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* Actions Panel */
+.actions-panel {
+    background: rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 15px;
+}
+
+.actions-panel h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.bet-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.bet-controls input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    font-size: 1em;
+}
+
+/* Right Panel - Control/Chat */
+.right-panel {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Connection Panel */
+.connection-panel {
+    background: rgba(0,0,0,0.5);
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #ffd700;
+}
+
+.connection-panel h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    font-size: 1em;
+}
+
+/* Buttons */
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+/* Message Log */
+.message-log {
+    background: rgba(0,0,0,0.5);
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #ffd700;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-log h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.message {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    font-size: 0.9em;
+    border-left: 3px solid #ffd700;
+}
+
+.message.event {
+    border-left-color: #28a745;
+}
+
+.message.error {
+    border-left-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.message.info {
+    border-left-color: #17a2b8;
+}
+
+.message-time {
+    color: #888;
+    font-size: 0.8em;
+    margin-right: 8px;
+}
+
+/* Game State Display */
+.game-state {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.state-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.state-item:last-child {
+    border-bottom: none;
+}
+
+.state-label {
+    color: #aaa;
+}
+
+.state-value {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .right-panel {
+        width: 100%;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ffd700;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ffed4e;
+}

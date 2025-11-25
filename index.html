@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texas Hold'em Poker - Game Client</title>
+    <link rel="stylesheet" href="client/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>♠️ Texas Hold'em Poker ♥️</h1>
+        <div class="connection-status">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Left Panel - Game Area -->
+        <div class="game-area">
+            <!-- Poker Table -->
+            <div class="poker-table">
+                <div class="table-info">
+                    <h3>🎴 Poker Table 🎴</h3>
+                    <div class="pot-display">
+                        <div>POT</div>
+                        <div class="pot-amount" id="potAmount">$0</div>
+                    </div>
+                </div>
+
+                <!-- Community Cards -->
+                <div class="community-cards" id="communityCards">
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                </div>
+
+                <!-- Game State -->
+                <div class="game-state">
+                    <div class="state-item">
+                        <span class="state-label">Game ID:</span>
+                        <span class="state-value" id="gameId">-</span>
+                    </div>
+                    <div class="state-item">
+                        <span class="state-label">Current Bet:</span>
+                        <span class="state-value" id="currentBet">$0</span>
+                    </div>
+                    <div class="state-item">
+                        <span class="state-label">Round:</span>
+                        <span class="state-value" id="currentRound">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player's Hand -->
+            <div class="player-cards">
+                <h3>🃏 Your Cards</h3>
+                <div class="player-hand" id="playerHand">
+                    <div class="card empty"></div>
+                    <div class="card empty"></div>
+                </div>
+            </div>
+
+            <!-- Players Info -->
+            <div class="players-info">
+                <h3>👥 Players</h3>
+                <div id="playersList">
+                    <div class="player-item">
+                        <span class="player-name">No players yet</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="actions-panel">
+                <h3>🎮 Actions</h3>
+                <div class="bet-controls">
+                    <input type="number" id="betAmount" placeholder="Bet amount" min="0" value="20">
+                    <button class="btn-warning" onclick="quickBet('pot')">POT</button>
+                    <button class="btn-warning" onclick="quickBet('half')">1/2</button>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-success" onclick="performAction('CHECK')" id="btnCheck">CHECK</button>
+                    <button class="btn-primary" onclick="performAction('CALL')" id="btnCall">CALL</button>
+                    <button class="btn-warning" onclick="performAction('RAISE')" id="btnRaise">RAISE</button>
+                    <button class="btn-danger" onclick="performAction('FOLD')" id="btnFold">FOLD</button>
+                    <button class="btn-secondary" onclick="performAction('ALL_IN')" id="btnAllIn">ALL IN</button>
+                    <button class="btn-primary" onclick="dealNext()" id="btnDeal">DEAL NEXT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Connection Panel -->
+            <div class="connection-panel">
+                <h3>🔌 Connection</h3>
+                <div class="input-group">
+                    <label>WebSocket URL:</label>
+                    <input type="text" id="wsUrl" value="ws://localhost:8081/ws/poker">
+                </div>
+                <button class="btn-primary" onclick="connect()" id="btnConnect" style="width: 100%; margin-bottom: 10px;">CONNECT</button>
+                
+                <div class="input-group">
+                    <label>Player Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter your name">
+                </div>
+                <div class="input-group">
+                    <label>Starting Chips:</label>
+                    <input type="number" id="startingChips" value="1000" min="100">
+                </div>
+                <button class="btn-success" onclick="registerPlayer()" id="btnRegister" style="width: 100%; margin-bottom: 10px;" disabled>REGISTER</button>
+                
+                <div class="input-group" id="playerIdDisplay" style="display: none;">
+                    <label>Your Player ID:</label>
+                    <input type="text" id="playerIdText" readonly style="background: rgba(0,0,0,0.7); cursor: pointer;" onclick="copyPlayerId()" title="Click to copy">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="btn-primary" onclick="createLobby()" id="btnCreateLobby" style="flex: 1;" disabled>CREATE LOBBY</button>
+                    <button class="btn-primary" onclick="joinLobby()" id="btnJoinLobby" style="flex: 1;" disabled>JOIN LOBBY</button>
+                </div>
+                
+                <div class="input-group" id="lobbyIdDisplay" style="display: none;">
+                    <label>Lobby ID:</label>
+                    <input type="text" id="lobbyIdText" readonly style="background: rgba(0,0,0,0.7); cursor: pointer;" onclick="copyLobbyId()" title="Click to copy">
+                </div>
+                
+                <button class="btn-warning" onclick="startGame()" id="btnStart" style="width: 100%;" disabled>START GAME (ADMIN)</button>
+            </div>
+
+            <!-- Message Log -->
+            <div class="message-log">
+                <h3>📋 Game Log</h3>
+                <div class="messages" id="messages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="client/index.js"></script>
+</body>
+</html>
