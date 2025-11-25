@@ -1,5 +1,6 @@
 package com.poker.shared.infrastructure.events;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,7 +91,7 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
                 try {
                     session.getBasicRemote().sendText(json);
                     successCount++;
-                } catch (Exception e) {
+                } catch (IOException e) {
                     LOGGER.warning(() -> String.format("Failed to send event to session %s: %s", 
                         session.getId(), e.getMessage()));
                 }
