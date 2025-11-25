@@ -1,3 +1,16 @@
+✅ ~~1. update players list when new user join to the lobby~~ (COMPLETED)
+2. start game without popup because the list of players exist in the context. Don't require a list of players ids from input user.
+3. disabled ui buttons based on the state of the game.
+4. when game is started the users must see others players in the table.
+5. The table must be the center of ui.
+6. first screen is onboarding and join a lobby
+7. when game is started render the table with others players
+8. show game flow and real time update of the table state.
+4. test game flow
+
+
+
+
 # 📋 TODO - Feature Roadmap
 
 > Planned features and improvements for the Texas Hold'em Poker Server

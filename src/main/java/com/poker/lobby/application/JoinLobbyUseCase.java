@@ -4,7 +4,9 @@ import com.poker.lobby.domain.events.PlayerJoinedLobbyEvent;
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
 import com.poker.lobby.domain.repository.LobbyRepository;
+import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerId;
+import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.shared.domain.events.DomainEventPublisher;
 
 /**
@@ -12,10 +14,13 @@ import com.poker.shared.domain.events.DomainEventPublisher;
  */
 public class JoinLobbyUseCase {
     private final LobbyRepository lobbyRepository;
+    private final PlayerRepository playerRepository;
     private final DomainEventPublisher eventPublisher;
 
-    public JoinLobbyUseCase(LobbyRepository lobbyRepository, DomainEventPublisher eventPublisher) {
+    public JoinLobbyUseCase(LobbyRepository lobbyRepository, PlayerRepository playerRepository,
+                           DomainEventPublisher eventPublisher) {
         this.lobbyRepository = lobbyRepository;
+        this.playerRepository = playerRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -24,8 +29,12 @@ public class JoinLobbyUseCase {
         Lobby lobby = lobbyRepository.findById(new LobbyId(command.lobbyId()))
             .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
 
-        // Add player to lobby
+        // Load player
         PlayerId playerId = PlayerId.from(command.playerId());
+        Player player = playerRepository.findById(playerId)
+            .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        
+        // Add player to lobby
         lobby.addPlayer(playerId);
         
         // Save updated lobby
@@ -35,6 +44,7 @@ public class JoinLobbyUseCase {
         PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(
             lobby.getId().getValue(),
             playerId.getValue().toString(),
+            player.getName(),
             lobby.getPlayers().size(),
             lobby.getMaxPlayers()
         );

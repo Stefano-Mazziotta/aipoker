@@ -780,6 +780,10 @@
                     document.getElementById('btnJoinLobby').disabled = true;
                     addMessage('event', '🏠 You are the lobby admin - You can START the game');
                     
+                    // Initialize lobby players with yourself
+                    lobbyPlayers = [{ id: playerId, name: playerName, chips: playerChips }];
+                    updateLobbyPlayersList();
+                    
                     // Subscribe to lobby events for real-time updates
                     sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
                 }
@@ -795,6 +799,10 @@
                     document.getElementById('btnCreateLobby').disabled = true;
                     document.getElementById('btnJoinLobby').disabled = true;
                     addMessage('event', '🏠 Joined lobby - Waiting for admin to start...');
+                    
+                    // Initialize lobby players with yourself
+                    lobbyPlayers = [{ id: playerId, name: playerName, chips: playerChips }];
+                    updateLobbyPlayersList();
                     
                     // Subscribe to lobby events for real-time updates
                     sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
@@ -832,14 +840,23 @@
         function handlePlayerJoinedLobby(message) {
             const data = message.data || message;
             const joinedPlayerId = data.playerId;
+            const joinedPlayerName = data.playerName || 'Unknown';
             const currentCount = data.currentPlayerCount;
             const maxPlayers = data.maxPlayers;
             
-            addMessage('event', `👤 New player joined lobby (${currentCount}/${maxPlayers} players)`);
+            addMessage('event', `👤 ${joinedPlayerName} joined lobby (${currentCount}/${maxPlayers} players)`);
             
-            // Update lobby info if it's displayed
+            // Add player to lobby players list if not already present
             if (lobbyId === data.lobbyId) {
-                updateLobbyPlayerCount(currentCount, maxPlayers);
+                const existingPlayer = lobbyPlayers.find(p => p.id === joinedPlayerId);
+                if (!existingPlayer) {
+                    lobbyPlayers.push({
+                        id: joinedPlayerId,
+                        name: joinedPlayerName,
+                        chips: 1000 // Default value, actual value will be from game
+                    });
+                    updateLobbyPlayersList();
+                }
             }
         }
 
@@ -1207,6 +1224,39 @@
                 playerEl.innerHTML = `
                     <span class="player-name">${player.name}</span>
                     <span class="player-chips">$${player.chips}</span>
+                `;
+                
+                container.appendChild(playerEl);
+            });
+        }
+
+        // Update Lobby Players List (real-time lobby members)
+        function updateLobbyPlayersList() {
+            const container = document.getElementById('playersList');
+            
+            // Only show lobby players when in a lobby (not in game)
+            if (!lobbyId || gameId) {
+                return; // Don't update if not in lobby or if game has started
+            }
+            
+            container.innerHTML = '<div style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">🏠 Lobby Players</div>';
+            
+            if (lobbyPlayers.length === 0) {
+                container.innerHTML += '<div class="player-item"><span class="player-name">No players yet</span></div>';
+                return;
+            }
+            
+            lobbyPlayers.forEach(player => {
+                const playerEl = document.createElement('div');
+                playerEl.className = 'player-item';
+                if (player.id === playerId) {
+                    playerEl.classList.add('active');
+                }
+                
+                const isAdmin = isLobbyAdmin && player.id === playerId;
+                playerEl.innerHTML = `
+                    <span class="player-name">${player.name} ${isAdmin ? '👑' : ''}</span>
+                    <span class="player-chips">Ready</span>
                 `;
                 
                 container.appendChild(playerEl);

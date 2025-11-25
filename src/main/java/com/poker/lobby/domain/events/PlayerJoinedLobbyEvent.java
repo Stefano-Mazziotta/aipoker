@@ -8,14 +8,16 @@ import com.poker.shared.domain.events.DomainEvent;
 public class PlayerJoinedLobbyEvent extends DomainEvent {
     private final String lobbyId;
     private final String playerId;
+    private final String playerName;
     private final int currentPlayerCount;
     private final int maxPlayers;
 
-    public PlayerJoinedLobbyEvent(String lobbyId, String playerId, 
+    public PlayerJoinedLobbyEvent(String lobbyId, String playerId, String playerName,
                                   int currentPlayerCount, int maxPlayers) {
         super();
         this.lobbyId = lobbyId;
         this.playerId = playerId;
+        this.playerName = playerName;
         this.currentPlayerCount = currentPlayerCount;
         this.maxPlayers = maxPlayers;
     }
@@ -27,6 +29,7 @@ public class PlayerJoinedLobbyEvent extends DomainEvent {
 
     public String lobbyId() { return lobbyId; }
     public String playerId() { return playerId; }
+    public String playerName() { return playerName; }
     public int currentPlayerCount() { return currentPlayerCount; }
     public int maxPlayers() { return maxPlayers; }
 }
