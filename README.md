@@ -562,7 +562,7 @@ public void testCompleteGameFlow() {
 
 ## 🧪 Testing
 
-### Running Tests
+### Running Unit Tests
 
 ```bash
 # Run all tests (57 tests)
@@ -588,6 +588,106 @@ Current coverage: **85%+**
 - **Integration Tests**: End-to-end game flows (Complete game, Folding, All-in)
 - **Repository Tests**: Data persistence layer
 
+### Local Development Testing - 2 Player Game Flow
+
+Test the complete game with real WebSocket connections between 2 players.
+
+#### Option 1: Using Docker Compose (Recommended)
+
+**Step 1: Start Server**
+```bash
+# Start server in background
+docker compose up -d
+
+# View logs
+docker compose logs -f
+```
+
+**Step 2: Connect Two Clients**
+
+Open two terminals for the Python clients:
+
+**Terminal 2 (Player 1 - Alice):**
+```bash
+python3 poker-client.py Alice
+```
+
+**Terminal 3 (Player 2 - Bob):**
+```bash
+python3 poker-client.py Bob
+```
+
+Alternatively, open `websocket-client.html` in two browser tabs.
+
+**Step 3: Play a Complete Game**
+
+In Alice's terminal:
+```
+Alice> REGISTER Alice 1000
+Alice> info   # Note your Player ID
+```
+
+In Bob's terminal:
+```
+Bob> REGISTER Bob 1000
+Bob> info     # Note your Player ID
+```
+
+In Alice's terminal (replace with actual IDs):
+```
+Alice> START_GAME <alice-id> <bob-id> 10 20
+Alice> GET_MY_CARDS <game-id> <alice-id>
+Alice> CALL <game-id> <alice-id> 10
+```
+
+In Bob's terminal:
+```
+Bob> GET_MY_CARDS <game-id> <bob-id>
+Bob> CHECK <game-id> <bob-id>
+```
+
+Progress the game:
+```
+# Either player can deal
+DEAL_FLOP <game-id>
+DEAL_TURN <game-id>
+DEAL_RIVER <game-id>
+DETERMINE_WINNER <game-id>
+```
+
+**Available Commands in Python Client:**
+- `help` - Show all server commands
+- `quick` - Show quick commands with your current IDs
+- `info` - Show your Player/Game/Lobby IDs
+- `exit` - Disconnect
+
+**Stop Server:**
+```bash
+docker compose down
+```
+
+#### Option 2: Using Local JAR
+
+**Terminal 1 (Server):**
+```bash
+java -jar target/poker-server.jar --server
+```
+
+**Terminal 2 & 3:** Same as above (Python or HTML clients)
+
+#### Option 3: Quick Start Script
+
+```bash
+# Automated setup
+./start-docker-test.sh
+```
+
+This script will:
+- Check dependencies
+- Start Docker Compose
+- Show testing instructions
+- Display logs
+
 ### Test Structure
 
 ```
@@ -605,6 +705,26 @@ src/test/java/com/poker/
 │   └── FullGameIntegrationTest.java           # E2E tests (57 total)
 └── TestRunner.java                            # Test suite runner
 ```
+
+### WebSocket Commands Reference
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `REGISTER <name> <chips>` | Register player | `REGISTER Alice 1000` |
+| `START_GAME <id1> <id2> <sb> <bb>` | Start game | `START_GAME alice-id bob-id 10 20` |
+| `GET_MY_CARDS <game> <player>` | View hole cards | `GET_MY_CARDS game-id player-id` |
+| `CHECK <game> <player>` | Check | `CHECK game-id player-id` |
+| `CALL <game> <player> <amt>` | Call bet | `CALL game-id player-id 50` |
+| `RAISE <game> <player> <amt>` | Raise | `RAISE game-id player-id 100` |
+| `FOLD <game> <player>` | Fold | `FOLD game-id player-id` |
+| `ALL_IN <game> <player>` | All-in | `ALL_IN game-id player-id` |
+| `DEAL_FLOP <game>` | Deal flop | `DEAL_FLOP game-id` |
+| `DEAL_TURN <game>` | Deal turn | `DEAL_TURN game-id` |
+| `DEAL_RIVER <game>` | Deal river | `DEAL_RIVER game-id` |
+| `DETERMINE_WINNER <game>` | Show winner | `DETERMINE_WINNER game-id` |
+| `GET_GAME_STATE <game>` | View state | `GET_GAME_STATE game-id` |
+| `LEADERBOARD [n]` | Top players | `LEADERBOARD 10` |
+| `HELP` | Show commands | `HELP` |
 
 ### Writing Tests
 
