@@ -104,6 +104,10 @@ public class Player {
         return folded;
     }
 
+    public boolean isAllIn() {
+        return chips.getAmount() == 0;
+    }
+
     @Override
     public String toString() {
         return name + " (" + chips + ")";

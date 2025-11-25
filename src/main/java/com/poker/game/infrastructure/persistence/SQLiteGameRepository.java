@@ -161,7 +161,7 @@ public class SQLiteGameRepository implements GameRepository {
                 stmt.setInt(4, player.getChipsAmount()); // chips_at_start
                 stmt.setInt(5, player.getChipsAmount()); // current_chips
                 stmt.setBoolean(6, player.isFolded()); // is_folded
-                stmt.setBoolean(7, false); // is_all_in - TODO: track this
+                stmt.setBoolean(7, player.isAllIn()); // is_all_in
                 stmt.setInt(8, currentBet); // current_bet from round
                 
                 // Save hole cards
