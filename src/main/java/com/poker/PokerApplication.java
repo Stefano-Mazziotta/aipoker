@@ -22,9 +22,9 @@ import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
 import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
-import com.poker.shared.infrastructure.socket.MessageFormatter;
-import com.poker.shared.infrastructure.socket.ProtocolHandler;
+import com.poker.shared.infrastructure.websocket.MessageFormatter;
 import com.poker.shared.infrastructure.websocket.PokerWebSocketEndpoint;
+import com.poker.shared.infrastructure.websocket.ProtocolHandler;
 import com.poker.shared.infrastructure.websocket.WebSocketServer;
 
 /**

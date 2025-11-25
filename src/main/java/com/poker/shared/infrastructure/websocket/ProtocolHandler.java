@@ -1,4 +1,4 @@
-package com.poker.shared.infrastructure.socket;
+package com.poker.shared.infrastructure.websocket;
 
 import java.util.List;
 import java.util.logging.Logger;

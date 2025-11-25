@@ -1,4 +1,4 @@
-package com.poker.shared.infrastructure.socket;
+package com.poker.shared.infrastructure.websocket;
 
 import com.poker.game.application.DealCardsUseCase;
 import com.poker.game.application.DetermineWinnerUseCase;
