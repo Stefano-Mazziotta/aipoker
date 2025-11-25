@@ -3,6 +3,7 @@ package com.poker.game.application;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.poker.game.application.dto.StartGameDTO;
 import com.poker.game.domain.events.GameStateChangedEvent;
 import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.model.Game;
@@ -14,6 +15,7 @@ import com.poker.shared.domain.events.DomainEventPublisher;
 
 /**
  * Use case for starting a new poker game.
+ * Returns StartGameDTO to decouple the application layer from domain entities.
  */
 public class StartGameUseCase {
     private final GameRepository gameRepository;
@@ -27,7 +29,7 @@ public class StartGameUseCase {
         this.eventPublisher = eventPublisher;
     }
 
-    public GameResponse execute(StartGameCommand command) {
+    public StartGameDTO execute(StartGameCommand command) {
         // Load all players
         List<Player> players = command.playerIds().stream()
             .map(id -> playerRepository.findById(PlayerId.from(id))
@@ -62,7 +64,7 @@ public class StartGameUseCase {
         );
         eventPublisher.publishToScope(game.getId().getValue().toString(), event);
 
-        return new GameResponse(
+        return StartGameDTO.fromDomain(
             game.getId().getValue().toString(),
             game.getState().name(),
             game.getPlayers().stream().map(p -> p.getName()).collect(Collectors.toList()),
@@ -71,6 +73,4 @@ public class StartGameUseCase {
     }
 
     public record StartGameCommand(List<String> playerIds, Blinds blinds) {}
-    
-    public record GameResponse(String gameId, String state, List<String> players, int pot) {}
 }

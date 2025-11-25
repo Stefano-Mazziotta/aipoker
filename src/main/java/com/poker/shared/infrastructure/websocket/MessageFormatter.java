@@ -4,8 +4,8 @@ import com.poker.game.application.DealCardsUseCase;
 import com.poker.game.application.DetermineWinnerUseCase;
 import com.poker.game.application.GetGameStateUseCase;
 import com.poker.game.application.GetPlayerCardsUseCase;
-import com.poker.game.application.PlayerActionUseCase;
-import com.poker.game.application.StartGameUseCase;
+import com.poker.game.application.dto.PlayerActionDTO;
+import com.poker.game.application.dto.StartGameDTO;
 import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.dto.RegisterPlayerDTO;
@@ -43,24 +43,24 @@ public class MessageFormatter {
             """.formatted(dto.id(), dto.name(), dto.chips());
     }
 
-    public String formatGameStarted(StartGameUseCase.GameResponse response) {
+    public String formatGameStarted(StartGameDTO dto) {
         return """
             SUCCESS: Game started
             Game ID: %s
             State: %s
             Players: %s
             Pot: %d
-            """.formatted(response.gameId(), response.state(), String.join(", ", response.players()), response.pot());
+            """.formatted(dto.gameId(), dto.state(), String.join(", ", dto.players()), dto.pot());
     }
 
-    public String formatActionExecuted(PlayerActionUseCase.ActionResponse response) {
+    public String formatActionExecuted(PlayerActionDTO dto) {
         return """
             SUCCESS: Action executed
             Game State: %s
             Current Bet: %d
             Pot: %d
             Player Folded: %s
-            """.formatted(response.gameState(), response.currentBet(), response.pot(), response.playerFolded());
+            """.formatted(dto.gameState(), dto.currentBet(), dto.pot(), dto.playerFolded());
     }
 
     public String formatCardsDealt(DealCardsUseCase.CardsResponse response) {

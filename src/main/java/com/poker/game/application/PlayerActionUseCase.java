@@ -1,5 +1,6 @@
 package com.poker.game.application;
 
+import com.poker.game.application.dto.PlayerActionDTO;
 import com.poker.game.domain.events.PlayerActionEvent;
 import com.poker.game.domain.model.BettingRound;
 import com.poker.game.domain.model.Game;
@@ -12,6 +13,7 @@ import com.poker.shared.domain.events.DomainEventPublisher;
 
 /**
  * Use case for executing player actions during a game.
+ * Returns PlayerActionDTO to decouple the application layer from domain entities.
  */
 public class PlayerActionUseCase {
     private final GameRepository gameRepository;
@@ -22,7 +24,7 @@ public class PlayerActionUseCase {
         this.eventPublisher = eventPublisher;
     }
 
-    public ActionResponse execute(PlayerActionCommand command) {
+    public PlayerActionDTO execute(PlayerActionCommand command) {
         // Load game
         Game game = gameRepository.findById(GameId.from(command.gameId()))
             .orElseThrow(() -> new IllegalArgumentException("Game not found"));
@@ -66,7 +68,7 @@ public class PlayerActionUseCase {
         );
         eventPublisher.publishToScope(command.gameId(), event);
 
-        return new ActionResponse(
+        return PlayerActionDTO.fromDomain(
             game.getState().name(),
             round.getCurrentBet(),
             round.getPot().getAmount(),
@@ -79,12 +81,5 @@ public class PlayerActionUseCase {
         String playerId,
         PlayerAction action,
         int amount
-    ) {}
-    
-    public record ActionResponse(
-        String gameState,
-        int currentBet,
-        int pot,
-        boolean playerFolded
     ) {}
 }

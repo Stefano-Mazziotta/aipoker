@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.poker.game.application.dto.PlayerActionDTO;
+import com.poker.game.application.dto.StartGameDTO;
 import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
@@ -26,6 +28,10 @@ import com.poker.shared.domain.events.NoOpEventPublisher;
 
 /**
  * Integration tests for game use cases.
+ * 
+ * These tests validate the behavior of the application layer use cases,
+ * working exclusively with DTOs to decouple tests from domain implementation details.
+ * This approach ensures tests remain stable even when domain models evolve.
  */
 class GameUseCaseTest {
 
@@ -59,33 +65,34 @@ class GameUseCaseTest {
                 bob.getId().getValue().toString()
         );
 
-        // Start game
+        // Start game - receives StartGameDTO
         var startCommand = new StartGameUseCase.StartGameCommand(
                 playerIds,
                 new Blinds(10, 20)
         );
-        var startResponse = startGameUseCase.execute(startCommand);
+        StartGameDTO startGameDTO = startGameUseCase.execute(startCommand);
 
-        assertNotNull(startResponse.gameId());
-        assertEquals(2, startResponse.players().size());
+        // Assert on DTO fields - test works with DTOs, not domain entities
+        assertNotNull(startGameDTO.gameId());
+        assertEquals(2, startGameDTO.players().size());
 
-        // Get the game to check current player
-        Game game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
+        // Get the game to check current player (domain layer check for test setup)
+        Game game = gameRepository.findById(GameId.from(startGameDTO.gameId())).orElseThrow();
         Player currentPlayer = game.getCurrentPlayer();
         assertNotNull(currentPlayer);
 
-        // Current player folds (simpler test flow)
+        // Current player folds - receives PlayerActionDTO
         var foldCommand = new PlayerActionUseCase.PlayerActionCommand(
-                startResponse.gameId(),
+                startGameDTO.gameId(),
                 currentPlayer.getId().getValue().toString(),
                 PlayerAction.FOLD,
                 0
         );
-        var foldResponse = playerActionUseCase.execute(foldCommand);
+        PlayerActionDTO playerActionDTO = playerActionUseCase.execute(foldCommand);
 
-        // Verify fold was successful
-        assertNotNull(foldResponse);
-        assertTrue(foldResponse.playerFolded());
+        // Assert on DTO fields - verify fold was successful
+        assertNotNull(playerActionDTO);
+        assertTrue(playerActionDTO.playerFolded());
     }
 
     @Test
@@ -102,26 +109,28 @@ class GameUseCaseTest {
                 ),
                 new Blinds(10, 20)
         );
-        var startResponse = startGameUseCase.execute(startCommand);
+        // Start game - receives StartGameDTO
+        StartGameDTO startGameDTO = startGameUseCase.execute(startCommand);
 
-        // Get the game to check current player
-        Game game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
+        // Get the game to check current player (domain layer check for test setup)
+        Game game = gameRepository.findById(GameId.from(startGameDTO.gameId())).orElseThrow();
         Player currentPlayer = game.getCurrentPlayer();
         assertNotNull(currentPlayer);
 
-        // Current player folds
+        // Current player folds - receives PlayerActionDTO
         var foldCommand = new PlayerActionUseCase.PlayerActionCommand(
-                startResponse.gameId(),
+                startGameDTO.gameId(),
                 currentPlayer.getId().getValue().toString(),
                 PlayerAction.FOLD,
                 0
         );
-        var foldResponse = playerActionUseCase.execute(foldCommand);
+        PlayerActionDTO playerActionDTO = playerActionUseCase.execute(foldCommand);
 
-        assertTrue(foldResponse.playerFolded());
+        // Assert on DTO fields
+        assertTrue(playerActionDTO.playerFolded());
 
-        // Reload game and verify player is folded
-        game = gameRepository.findById(GameId.from(startResponse.gameId())).orElseThrow();
+        // Reload game and verify player is folded (domain layer verification)
+        game = gameRepository.findById(GameId.from(startGameDTO.gameId())).orElseThrow();
         Player foldedPlayer = game.getPlayers().stream()
                 .filter(p -> p.getId().equals(currentPlayer.getId()))
                 .findFirst()
