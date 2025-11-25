@@ -1,6 +1,7 @@
 package com.poker.shared.infrastructure.events;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +25,10 @@ import jakarta.websocket.Session;
  */
 public class WebSocketEventPublisher implements DomainEventPublisher {
     private static final Logger LOGGER = Logger.getLogger(WebSocketEventPublisher.class.getName());
-    private static final Gson gson = new GsonBuilder().create();
+    private static final Gson gson = new GsonBuilder()
+        .registerTypeAdapter(Instant.class, (com.google.gson.JsonSerializer<Instant>) (src, typeOfSrc, context) -> 
+            new com.google.gson.JsonPrimitive(src.toString()))
+        .create();
     private static WebSocketEventPublisher instance;
     
     // Map of scopeId (gameId/lobbyId) -> Set of subscribed WebSocket sessions
