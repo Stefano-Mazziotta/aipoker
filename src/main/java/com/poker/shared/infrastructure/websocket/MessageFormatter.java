@@ -6,8 +6,7 @@ import com.poker.game.application.GetGameStateUseCase;
 import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
-import com.poker.lobby.application.CreateLobbyUseCase;
-import com.poker.lobby.application.JoinLobbyUseCase;
+import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
 
@@ -82,7 +81,7 @@ public class MessageFormatter {
             """.formatted(response.winnerName(), response.winnerId(), response.potWon(), response.totalChips());
     }
 
-    public String formatLobbyCreated(CreateLobbyUseCase.LobbyResponse response) {
+    public String formatLobbyCreated(LobbyDTO response) {
         return """
             SUCCESS: Lobby created
             Lobby ID: %s
@@ -94,7 +93,7 @@ public class MessageFormatter {
             response.maxPlayers(), response.adminPlayerId(), response.isOpen());
     }
 
-    public String formatLobbyJoined(JoinLobbyUseCase.LobbyResponse response) {
+    public String formatLobbyJoined(LobbyDTO response) {
         return """
             SUCCESS: Joined lobby
             Lobby ID: %s

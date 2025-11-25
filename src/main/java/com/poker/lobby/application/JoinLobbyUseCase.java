@@ -1,5 +1,6 @@
 package com.poker.lobby.application;
 
+import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.lobby.domain.events.PlayerJoinedLobbyEvent;
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
@@ -24,7 +25,7 @@ public class JoinLobbyUseCase {
         this.eventPublisher = eventPublisher;
     }
 
-    public LobbyResponse execute(JoinLobbyCommand command) {
+    public LobbyDTO execute(JoinLobbyCommand command) {
         // Load lobby
         Lobby lobby = lobbyRepository.findById(new LobbyId(command.lobbyId()))
             .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
@@ -50,7 +51,7 @@ public class JoinLobbyUseCase {
         );
         eventPublisher.publishToScope(lobby.getId().getValue(), event);
 
-        return new LobbyResponse(
+        return LobbyDTO.fromDomain(
             lobby.getId().getValue(),
             lobby.getName(),
             lobby.getPlayers().size(),
@@ -61,13 +62,4 @@ public class JoinLobbyUseCase {
     }
 
     public record JoinLobbyCommand(String lobbyId, String playerId) {}
-    
-    public record LobbyResponse(
-        String lobbyId,
-        String name,
-        int currentPlayers,
-        int maxPlayers,
-        boolean isOpen,
-        String adminPlayerId
-    ) {}
 }
