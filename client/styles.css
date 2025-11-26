@@ -9,7 +9,8 @@ body {
     background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
     color: #fff;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* ===== SCREEN MANAGEMENT ===== */
@@ -27,8 +28,8 @@ body {
 #onboardingScreen {
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 20px;
+    justify-content: flex-start; /* Changed from center to flex-start */
+    padding: 40px 20px 20px 20px; /* Added more top padding */
     overflow-y: auto;
 }
 
@@ -104,9 +105,9 @@ body {
 }
 
 .status-indicator.connected {
-    background: #28a745;
-    box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);
-    animation: pulse-green 2s infinite;
+    background: #28a745 !important;
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.5) !important;
+    animation: pulse-green 2s infinite !important;
 }
 
 @keyframes pulse-red {
@@ -140,6 +141,12 @@ body {
 .lobby-player-item.you {
     background: rgba(255, 215, 0, 0.2);
     border: 2px solid #ffd700;
+}
+
+.player-chips-header {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
 }
 
 .onboarding-log {
@@ -196,8 +203,10 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 150px 20px 20px 20px; /* Increased top padding for seats */
     position: relative;
+    overflow: visible;
+    min-height: 800px; /* Ensure enough height for all seats */
 }
 
 .poker-table-game {
@@ -208,6 +217,8 @@ body {
     border: 5px solid #8b4513;
     border-radius: 300px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.3);
+    overflow: visible; /* Allow seats positioned outside to be visible */
+    margin: 100px auto; /* Add margin to prevent clipping */
 }
 
 /* ===== PLAYER SEATS AROUND TABLE ===== */
