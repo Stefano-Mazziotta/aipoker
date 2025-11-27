@@ -53,15 +53,18 @@ export class WebSocketClient {
         try {
           const response = JSON.parse(event.data);
           
-          // Backend sends: { type: "...", data: {...}, success: true/false, message: "..." }
-          // Convert to our event format: { type: "...", data: {...} }
+          // Backend sends two formats:
+          // 1. Command responses: { type: "...", data: {...}, success: true/false, message: "..." }
+          // 2. Domain events: { eventType: "...", data: {...}, timestamp: "...", eventId: "..." }
+          // Convert both to our event format: { type: "...", data: {...} }
+          const eventType = response.type || response.eventType;
           const message: WebSocketEvent = {
-            type: response.type?.toUpperCase() || 'UNKNOWN',
+            type: eventType?.toUpperCase() || 'UNKNOWN',
             data: response.data || response
           };
           
           // Log errors
-          if (!response.success && response.message) {
+          if (response.success === false && response.message) {
             console.error('WebSocket error response:', response.message);
           }
           
