@@ -93,8 +93,9 @@ This project serves as a **learning resource** and **production template** for b
 
 ### System Features
 - ✅ **WebSocket Server**: Real-time bidirectional communication (Jakarta WebSocket API 2.1.1)
+- ✅ **JSON Protocol**: Type-safe communication with structured DTOs
 - ✅ **Player Management**: Registration, authentication, chip tracking
-- ✅ **Lobby System**: Create rooms, join games, matchmaking
+- ✅ **Lobby System**: Create rooms, join games, real-time player updates
 - ✅ **Leaderboard**: Player rankings by chips and statistics
 - ✅ **Persistence**: SQLite database for all state
 - ✅ **Event-Driven**: Domain events for game state changes and notifications
@@ -152,20 +153,49 @@ java -jar target/poker-server.jar
 
 ### Connect as a Player
 
+The server uses a **JSON-based WebSocket protocol** for all communication.
+
 ```bash
 # Using wscat (install: npm install -g wscat)
 wscat -c ws://localhost:8080/poker
 
-# Example JSON commands
-{"type":"REGISTER","name":"Alice","chips":1000}
-> {"type":"REGISTERED","playerId":"550e8400-e29b-41d4-a716-446655440000","name":"Alice","chips":1000}
+# Register a player
+> REGISTER Alice
 
-{"type":"CREATE_LOBBY","name":"High Stakes","maxPlayers":6}
-> {"type":"LOBBY_CREATED","lobbyId":"abc123","name":"High Stakes","maxPlayers":6}
+# Create a lobby
+> CREATE_LOBBY "Friday Night Poker" 6 <playerId>
 
-{"type":"HELP"}
-> {"type":"COMMAND_LIST","commands":[...]}
+# Join a lobby
+> JOIN_LOBBY <lobbyId> <playerId>
+
+# Get help
+> HELP
 ```
+
+**JSON Response Format:**
+All server responses follow this structure:
+```json
+{
+  "type": "PLAYER_REGISTERED",
+  "message": "Player registered successfully",
+  "data": {
+    "playerId": "550e8400-e29b-41d4-a716-446655440000",
+    "playerName": "Alice",
+    "chipCount": 1000
+  },
+  "timestamp": "2024-11-26T22:00:00.123Z",
+  "success": true
+}
+```
+
+**Available Commands:**
+- `REGISTER <name>` - Register a new player
+- `CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>` - Create a new lobby
+- `JOIN_LOBBY <lobbyId> <playerId>` - Join an existing lobby
+- `START_GAME <lobbyId>` - Start the game (admin only)
+- `PLAYER_ACTION <gameId> <playerId> <action> [amount]` - Perform game action
+- `GET_GAME_STATE <gameId>` - Get current game state
+- `HELP` - List all available commands
 
 ---
 

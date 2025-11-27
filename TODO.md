@@ -6,7 +6,14 @@
 ✅ ~~6. when game is started render the table with others players~~ (COMPLETED)
 ✅ ~~7. when game is started the users must see others players in the table and his action based on the game flow.~~ (COMPLETED)
 ✅ ~~8. show game flow and real time update of the table state.~~ (COMPLETED)
-9. test game flow
+✅ ~~9. Migrate WebSocket protocol from text-based to JSON-based~~ (COMPLETED)
+   - ✅ Created WebSocketResponse<T> wrapper class
+   - ✅ Updated ProtocolHandler to return JSON-serializable responses
+   - ✅ Updated client to parse JSON responses
+   - ✅ Removed MessageFormatter class
+   - ✅ All responses now follow consistent JSON structure
+
+10. Test complete game flow with multiple players
 
 
 
@@ -28,27 +35,13 @@
 
 ## 🔴 Critical Priority
 
-### Security & Authentication
-
-- [ ] **JWT Authentication for WebSocket**
-  - Add token-based authentication
-  - Validate JWT on WebSocket connection
-  - Refresh token mechanism
-  - Status: Not started
-  
-- [ ] **Rate Limiting**
-  - Prevent command spam
-  - Limit connections per IP
-  - Protect against DoS attacks
-  - Status: Not started
-
-- [ ] **Input Validation & Sanitization**
-  - Validate all command parameters
-  - Prevent injection attacks
-  - Sanitize player names and messages
-  - Status: Partial (basic validation exists)
-
 ### Core Game Features
+
+- [ ] **Complete Game Flow Testing**
+  - Test full workflow: register → create lobby → join → start game → play hands
+  - Verify JSON protocol works for all game actions
+  - Test with 2-9 players
+  - Status: Protocol refactored, needs end-to-end testing
 
 - [ ] **Side Pot Management**
   - Handle all-in scenarios with multiple side pots

@@ -1040,26 +1040,158 @@ public class GameEventPublisher {
 
 #### 6. WebSocket Endpoint (Primary Adapter)
 ```java
-@ServerEndpoint("/ws/poker")
+@ServerEndpoint("/poker")
 public class PokerWebSocketEndpoint {
     private static ProtocolHandler protocolHandler;
-    private static GameEventPublisher eventPublisher;
+    private static WebSocketEventPublisher eventPublisher;
+    private Gson gson = new Gson();
     
     @OnMessage
     public void onMessage(String message, Session session) {
-        JsonObject json = JsonParser.parseString(message).getAsJsonObject();
-        String command = json.get("command").getAsString();
-        
-        if (command.startsWith("SUBSCRIBE_GAME")) {
-            String gameId = command.split(" ")[1];
-            eventPublisher.subscribeToGame(gameId, session, "player-id");
-            return;
+        try {
+            // Protocol handler returns WebSocketResponse<?> 
+            WebSocketResponse<?> response = protocolHandler.handle(message);
+            
+            // Serialize to JSON
+            String jsonResponse = gson.toJson(response);
+            session.getBasicRemote().sendText(jsonResponse);
+            
+        } catch (Exception e) {
+            // Send error response
+            WebSocketResponse<?> error = WebSocketResponse.error(e.getMessage());
+            session.getBasicRemote().sendText(gson.toJson(error));
         }
-        
-        // Delegate to protocol handler
-        String response = protocolHandler.handle(command);
-        session.getBasicRemote().sendText(response);
     }
+    
+    // Handle game/lobby subscriptions
+    private String handleGameSubscription(String command) {
+        String[] parts = command.split(" ");
+        String gameId = parts[1];
+        String playerId = parts[2];
+        
+        eventPublisher.subscribeToGame(gameId, session, playerId);
+        return gson.toJson(WebSocketResponse.successMessage("Subscribed to game updates"));
+    }
+}
+```
+
+#### 7. WebSocket Response Wrapper
+All responses follow a consistent JSON structure:
+
+```java
+public class WebSocketResponse<T> {
+    private final String type;
+    private final String message;
+    private final T data;
+    private final String timestamp;
+    private final boolean success;
+    
+    public static <T> WebSocketResponse<T> success(String type, T data) {
+        return new WebSocketResponse<>(type, null, data, LocalDateTime.now().toString(), true);
+    }
+    
+    public static WebSocketResponse<?> error(String message) {
+        return new WebSocketResponse<>("ERROR", message, null, LocalDateTime.now().toString(), false);
+    }
+}
+```
+
+**JSON Response Format:**
+```json
+{
+  "type": "PLAYER_REGISTERED",
+  "message": "Player registered successfully",
+  "data": {
+    "playerId": "550e8400-e29b-41d4-a716-446655440000",
+    "playerName": "Alice",
+    "chipCount": 1000
+  },
+  "timestamp": "2024-11-26T22:00:00",
+  "success": true
+}
+```
+
+#### 8. Protocol Handler (Command Router)
+```java
+public class ProtocolHandler {
+    private final RegisterPlayerUseCase registerPlayerUseCase;
+    private final CreateLobbyUseCase createLobbyUseCase;
+    // ... other use cases
+    
+    public WebSocketResponse<?> handle(String command) {
+        String[] parts = command.trim().split(" ", 2);
+        String commandType = parts[0].toUpperCase();
+        
+        return switch (commandType) {
+            case "REGISTER" -> handleRegister(parts);
+            case "CREATE_LOBBY" -> handleCreateLobby(parts);
+            case "JOIN_LOBBY" -> handleJoinLobby(parts);
+            // ... other commands
+            default -> WebSocketResponse.error("Unknown command: " + commandType);
+        };
+    }
+    
+    private WebSocketResponse<RegisterPlayerDTO> handleRegister(String[] parts) {
+        String playerName = parts[1];
+        RegisterPlayerDTO dto = registerPlayerUseCase.execute(playerName);
+        return WebSocketResponse.success("PLAYER_REGISTERED", dto);
+    }
+    
+    private WebSocketResponse<LobbyDTO> handleCreateLobby(String[] parts) {
+        // Parse: CREATE_LOBBY "name" maxPlayers adminId
+        CreateLobbyCommand command = parseCreateLobbyCommand(parts[1]);
+        LobbyDTO lobby = createLobbyUseCase.execute(command);
+        return WebSocketResponse.success("LOBBY_CREATED", lobby);
+    }
+}
+```
+
+#### 9. Client-Side JSON Handling (JavaScript)
+```javascript
+// WebSocket message handler
+function handleMessage(data) {
+    const message = JSON.parse(data);
+    
+    switch(message.type) {
+        case 'PLAYER_REGISTERED':
+            handlePlayerRegistered(message);
+            break;
+        case 'LOBBY_CREATED':
+            handleLobbyCreated(message);
+            break;
+        case 'LOBBY_JOINED':
+            handleLobbyJoined(message);
+            break;
+        case 'ERROR':
+            showError(message.message);
+            break;
+    }
+}
+
+function handlePlayerRegistered(message) {
+    const data = message.data;
+    playerId = data.playerId;
+    playerName = data.playerName;
+    playerChips = data.chipCount;
+    
+    // Update UI
+    updatePlayerInfo(data);
+}
+
+function handleLobbyCreated(message) {
+    const data = message.data;
+    lobbyId = data.lobbyId;
+    
+    // Parse players array from JSON
+    data.players.forEach(player => {
+        lobbyPlayers.push({
+            id: player.playerId,
+            name: player.playerName,
+            chips: 1000
+        });
+    });
+    
+    updateLobbyDisplay();
 }
 ```
 
