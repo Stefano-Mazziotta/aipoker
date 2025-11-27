@@ -25,15 +25,10 @@ public class PokerWebSocketEndpoint {
     
     // These will be injected/configured
     private static ProtocolHandler protocolHandler;
-    private static MessageFormatter messageFormatter;
-    private static WebSocketEventPublisher eventPublisher = WebSocketEventPublisher.getInstance();
+    private static final WebSocketEventPublisher eventPublisher = WebSocketEventPublisher.getInstance();
 
     public static void setProtocolHandler(ProtocolHandler handler) {
         protocolHandler = handler;
-    }
-
-    public static void setMessageFormatter(MessageFormatter formatter) {
-        messageFormatter = formatter;
     }
 
     @OnOpen
@@ -42,11 +37,15 @@ public class PokerWebSocketEndpoint {
         
         try {
             // Send welcome message
-            String welcome = messageFormatter != null ? 
-                messageFormatter.formatWelcome() : 
-                "Welcome to Texas Hold'em Poker Server";
-            session.getBasicRemote().sendText(createJsonResponse("welcome", welcome));
-        } catch (Exception e) {
+            String welcomeText = """
+                ╔═══════════════════════════════════════════════╗
+                ║   TEXAS HOLD'EM POKER SERVER                 ║
+                ║   Type 'HELP' for available commands         ║
+                ╚═══════════════════════════════════════════════╝
+                """;
+            WebSocketResponse<String> welcome = WebSocketResponse.success("welcome", welcomeText);
+            session.getBasicRemote().sendText(gson.toJson(welcome));
+        } catch (java.io.IOException e) {
             LOGGER.warning(() -> String.format("Error sending welcome: %s", e.getMessage()));
         }
     }
@@ -71,17 +70,19 @@ public class PokerWebSocketEndpoint {
             
             // Process command through protocol handler
             if (protocolHandler != null) {
-                String response = protocolHandler.handle(command);
-                session.getBasicRemote().sendText(createJsonResponse("response", response));
+                WebSocketResponse<?> response = protocolHandler.handle(command);
+                session.getBasicRemote().sendText(gson.toJson(response));
             } else {
-                session.getBasicRemote().sendText(createJsonResponse("error", "Server not initialized"));
+                WebSocketResponse<Void> error = WebSocketResponse.error("Server not initialized");
+                session.getBasicRemote().sendText(gson.toJson(error));
             }
             
-        } catch (Exception e) {
+        } catch (com.google.gson.JsonSyntaxException | java.io.IOException e) {
             LOGGER.warning(() -> String.format("Error processing message: %s", e.getMessage()));
             try {
-                session.getBasicRemote().sendText(createJsonResponse("error", e.getMessage()));
-            } catch (Exception ex) {
+                WebSocketResponse<Void> error = WebSocketResponse.error(e.getMessage());
+                session.getBasicRemote().sendText(gson.toJson(error));
+            } catch (java.io.IOException ex) {
                 LOGGER.severe(() -> String.format("Failed to send error response: %s", ex.getMessage()));
             }
         }
@@ -103,8 +104,8 @@ public class PokerWebSocketEndpoint {
         try {
             String[] parts = command.split(" ");
             if (parts.length < 3) {
-                session.getBasicRemote().sendText(createJsonResponse("error", 
-                    "Usage: SUBSCRIBE_GAME <gameId> <playerId>"));
+                WebSocketResponse<Void> error = WebSocketResponse.error("Usage: SUBSCRIBE_GAME <gameId> <playerId>");
+                session.getBasicRemote().sendText(gson.toJson(error));
                 return;
             }
             
@@ -112,10 +113,10 @@ public class PokerWebSocketEndpoint {
             String playerId = parts[2];
             
             eventPublisher.subscribe(gameId, session, playerId);
-            session.getBasicRemote().sendText(createJsonResponse("success", 
-                "Subscribed to game " + gameId));
+            WebSocketResponse<Void> success = WebSocketResponse.successMessage("Subscribed to game " + gameId);
+            session.getBasicRemote().sendText(gson.toJson(success));
                 
-        } catch (Exception e) {
+        } catch (java.io.IOException e) {
             LOGGER.warning(() -> String.format("Game subscription error: %s", e.getMessage()));
         }
     }
@@ -124,8 +125,8 @@ public class PokerWebSocketEndpoint {
         try {
             String[] parts = command.split(" ");
             if (parts.length < 3) {
-                session.getBasicRemote().sendText(createJsonResponse("error", 
-                    "Usage: SUBSCRIBE_LOBBY <lobbyId> <playerId>"));
+                WebSocketResponse<Void> error = WebSocketResponse.error("Usage: SUBSCRIBE_LOBBY <lobbyId> <playerId>");
+                session.getBasicRemote().sendText(gson.toJson(error));
                 return;
             }
             
@@ -133,19 +134,11 @@ public class PokerWebSocketEndpoint {
             String playerId = parts[2];
             
             eventPublisher.subscribe(lobbyId, session, playerId);
-            session.getBasicRemote().sendText(createJsonResponse("success", 
-                "Subscribed to lobby " + lobbyId));
+            WebSocketResponse<Void> success = WebSocketResponse.successMessage("Subscribed to lobby " + lobbyId);
+            session.getBasicRemote().sendText(gson.toJson(success));
                 
-        } catch (Exception e) {
+        } catch (java.io.IOException e) {
             LOGGER.warning(() -> String.format("Lobby subscription error: %s", e.getMessage()));
         }
-    }
-
-    private String createJsonResponse(String type, String content) {
-        JsonObject response = new JsonObject();
-        response.addProperty("type", type);
-        response.addProperty("content", content);
-        response.addProperty("timestamp", System.currentTimeMillis());
-        return gson.toJson(response);
     }
 }
