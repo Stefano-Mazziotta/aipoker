@@ -451,6 +451,9 @@ function handleMessage(data) {
             case 'PLAYER_JOINED_LOBBY':
                 handlePlayerJoinedLobby(message);
                 break;
+            case 'PLAYER_LEFT_LOBBY':
+                handlePlayerLeftLobby(message);
+                break;
             case 'GAME_STARTED':
                 handleGameStarted(message);
                 break;
@@ -566,8 +569,8 @@ function handleTextResponse(content) {
             // Show lobby players container
             document.getElementById('lobbyPlayersContainer').style.display = 'block';
             
-            // Initialize lobby players with yourself
-            lobbyPlayers = [{ id: playerId, name: playerName, chips: playerChips }];
+            // Parse player list from response
+            lobbyPlayers = parsePlayerListFromResponse(content);
             
             // Update lobby display on onboarding screen
             updateLobbyPlayersList();
@@ -638,8 +641,8 @@ function handleTextResponse(content) {
             // Show lobby players container
             document.getElementById('lobbyPlayersContainer').style.display = 'block';
             
-            // Initialize lobby players with yourself
-            lobbyPlayers = [{ id: playerId, name: playerName, chips: playerChips }];
+            // Parse player list from response
+            lobbyPlayers = parsePlayerListFromResponse(content);
             
             // Update lobby display on onboarding screen
             updateLobbyPlayersList();
@@ -753,13 +756,16 @@ function handlePlayerJoinedLobby(message) {
     // Add player to lobby players list if not already present
     if (lobbyId === data.lobbyId) {
         const existingPlayer = lobbyPlayers.find(p => p.id === joinedPlayerId);
-        if (!existingPlayer && joinedPlayerId !== playerId) {
-            // Add new player
+        if (!existingPlayer) {
+            // Add new player (including ourselves if we just joined)
             lobbyPlayers.push({
                 id: joinedPlayerId,
                 name: joinedPlayerName,
                 chips: 1000 // Default value, actual value will be from game
             });
+            
+            console.log(`Added player to lobby: ${joinedPlayerName} (${joinedPlayerId})`);
+            console.log(`Current lobby players:`, lobbyPlayers);
         }
         
         // Always update displays for all clients
@@ -767,6 +773,56 @@ function handlePlayerJoinedLobby(message) {
         updateLobbySeatsDisplay(); // Update seats to show new player
         updateButtonStates(); // Update start button when lobby size changes
     }
+}
+
+// Handle Player Left Lobby (Event from WebSocket)
+function handlePlayerLeftLobby(message) {
+    const data = message.data || message;
+    const leftPlayerId = data.playerId;
+    const leftPlayerName = data.playerName || 'Unknown';
+    const currentCount = data.currentPlayerCount;
+    const maxPlayers = data.maxPlayers;
+    
+    // Log to both onboarding and game events
+    addMessage('event', `👋 ${leftPlayerName} left lobby (${currentCount}/${maxPlayers} players)`);
+    addMessage('event', `👋 ${leftPlayerName} left lobby (${currentCount}/${maxPlayers} players)`, 'game');
+    
+    // Remove player from lobby players list
+    if (lobbyId === data.lobbyId) {
+        lobbyPlayers = lobbyPlayers.filter(p => p.id !== leftPlayerId);
+        
+        console.log(`Removed player from lobby: ${leftPlayerName} (${leftPlayerId})`);
+        console.log(`Current lobby players:`, lobbyPlayers);
+        
+        // Always update displays for all clients
+        updateLobbyPlayersList();
+        updateLobbySeatsDisplay();
+        updateButtonStates();
+    }
+}
+
+// Helper function to parse player list from server response
+function parsePlayerListFromResponse(response) {
+    const players = [];
+    const playerListMatch = response.match(/PlayerList:\n((?:\s+-\s+[^\n]+\n?)+)/);
+    
+    if (playerListMatch) {
+        const playerLines = playerListMatch[1].trim().split('\n');
+        for (const line of playerLines) {
+            // Format: "  - <playerId>:<playerName>"
+            const match = line.match(/\s+-\s+([^:]+):(.+)/);
+            if (match) {
+                players.push({
+                    id: match[1].trim(),
+                    name: match[2].trim(),
+                    chips: 1000 // Default
+                });
+            }
+        }
+    }
+    
+    console.log('Parsed players from response:', players);
+    return players;
 }
 
 // Handle other domain events

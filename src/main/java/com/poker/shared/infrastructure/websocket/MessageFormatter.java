@@ -83,27 +83,33 @@ public class MessageFormatter {
     }
 
     public String formatLobbyCreated(LobbyDTO response) {
-        return """
-            SUCCESS: Lobby created
-            Lobby ID: %s
-            Name: %s
-            Players: %d/%d
-            Admin: %s
-            Open: %s
-            """.formatted(response.lobbyId(), response.name(), response.currentPlayers(),
-            response.maxPlayers(), response.adminPlayerId(), response.isOpen());
+        StringBuilder sb = new StringBuilder();
+        sb.append("SUCCESS: Lobby created\n");
+        sb.append("Lobby ID: ").append(response.lobbyId()).append("\n");
+        sb.append("Name: ").append(response.name()).append("\n");
+        sb.append("Players: ").append(response.currentPlayers()).append("/").append(response.maxPlayers()).append("\n");
+        sb.append("Admin: ").append(response.adminPlayerId()).append("\n");
+        sb.append("Open: ").append(response.isOpen()).append("\n");
+        sb.append("PlayerList:\n");
+        for (var player : response.players()) {
+            sb.append("  - ").append(player.playerId()).append(":").append(player.playerName()).append("\n");
+        }
+        return sb.toString();
     }
 
     public String formatLobbyJoined(LobbyDTO response) {
-        return """
-            SUCCESS: Joined lobby
-            Lobby ID: %s
-            Name: %s
-            Players: %d/%d
-            Admin: %s
-            Open: %s
-            """.formatted(response.lobbyId(), response.name(), response.currentPlayers(),
-            response.maxPlayers(), response.adminPlayerId(), response.isOpen());
+        StringBuilder sb = new StringBuilder();
+        sb.append("SUCCESS: Joined lobby\n");
+        sb.append("Lobby ID: ").append(response.lobbyId()).append("\n");
+        sb.append("Name: ").append(response.name()).append("\n");
+        sb.append("Players: ").append(response.currentPlayers()).append("/").append(response.maxPlayers()).append("\n");
+        sb.append("Admin: ").append(response.adminPlayerId()).append("\n");
+        sb.append("Open: ").append(response.isOpen()).append("\n");
+        sb.append("PlayerList:\n");
+        for (var player : response.players()) {
+            sb.append("  - ").append(player.playerId()).append(":").append(player.playerName()).append("\n");
+        }
+        return sb.toString();
     }
 
     public String formatLeaderboard(GetLeaderboardUseCase.LeaderboardResponse response) {

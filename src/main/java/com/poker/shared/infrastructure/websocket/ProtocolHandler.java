@@ -14,6 +14,7 @@ import com.poker.game.application.StartGameUseCase;
 import com.poker.game.domain.model.Blinds;
 import com.poker.lobby.application.CreateLobbyUseCase;
 import com.poker.lobby.application.JoinLobbyUseCase;
+import com.poker.lobby.application.LeaveLobbyUseCase;
 import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.model.PlayerAction;
@@ -32,6 +33,7 @@ public class ProtocolHandler {
     private final DetermineWinnerUseCase determineWinner;
     private final CreateLobbyUseCase createLobby;
     private final JoinLobbyUseCase joinLobby;
+    private final LeaveLobbyUseCase leaveLobby;
     private final GetLeaderboardUseCase getLeaderboard;
     private final GetPlayerCardsUseCase getPlayerCards;
     private final GetGameStateUseCase getGameState;
@@ -45,6 +47,7 @@ public class ProtocolHandler {
             DetermineWinnerUseCase determineWinner,
             CreateLobbyUseCase createLobby,
             JoinLobbyUseCase joinLobby,
+            LeaveLobbyUseCase leaveLobby,
             GetLeaderboardUseCase getLeaderboard,
             GetPlayerCardsUseCase getPlayerCards,
             GetGameStateUseCase getGameState,
@@ -56,6 +59,7 @@ public class ProtocolHandler {
         this.determineWinner = determineWinner;
         this.createLobby = createLobby;
         this.joinLobby = joinLobby;
+        this.leaveLobby = leaveLobby;
         this.getLeaderboard = getLeaderboard;
         this.getPlayerCards = getPlayerCards;
         this.getGameState = getGameState;
@@ -85,6 +89,7 @@ public class ProtocolHandler {
                 case "DETERMINE_WINNER" -> handleDetermineWinner(parts);
                 case "CREATE_LOBBY" -> handleCreateLobby(parts);
                 case "JOIN_LOBBY" -> handleJoinLobby(parts);
+                case "LEAVE_LOBBY" -> handleLeaveLobby(parts);
                 case "LEADERBOARD" -> handleLeaderboard(parts);
                 case "GET_MY_CARDS" -> handleGetMyCards(parts);
                 case "GET_GAME_STATE" -> handleGetGameState(parts);
@@ -245,6 +250,18 @@ public class ProtocolHandler {
         );
         
         return formatter.formatLobbyJoined(response);
+    }
+
+    private String handleLeaveLobby(String[] parts) {
+        if (parts.length < 3) {
+            return formatter.formatError("Usage: LEAVE_LOBBY <lobbyId> <playerId>");
+        }
+        
+        leaveLobby.execute(
+            new LeaveLobbyUseCase.LeaveLobbyCommand(parts[1], parts[2])
+        );
+        
+        return formatter.formatInfo("Successfully left lobby");
     }
 
     private String handleLeaderboard(String[] parts) {
