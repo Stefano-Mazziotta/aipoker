@@ -52,7 +52,6 @@ export class WebSocketClient {
       this.ws.onmessage = (event) => {
         try {
           const response = JSON.parse(event.data);
-          console.log('Received WebSocket message:', response);
           
           // Backend sends: { type: "...", data: {...}, success: true/false, message: "..." }
           // Convert to our event format: { type: "...", data: {...} }
@@ -98,7 +97,6 @@ export class WebSocketClient {
     if (this.ws?.readyState === WebSocket.OPEN) {
       // Wrap command in JSON format as expected by the backend
       const message = JSON.stringify({ command });
-      console.log('Sending command:', command, '→', message);
       this.ws.send(message);
     } else {
       console.error('WebSocket is not connected. Cannot send command:', command);

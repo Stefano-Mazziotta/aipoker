@@ -42,9 +42,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     wsClientRef.current?.send(command);
   }, []);
 
-  const subscribe = useCallback((handler: (event: WebSocketEvent) => void) => {
-    return wsClientRef.current?.onMessage(handler) || (() => {});
-  }, []);
+  // Don't memoize subscribe - it needs to access current wsClientRef
+  const subscribe = (handler: (event: WebSocketEvent) => void) => {
+    if (!wsClientRef.current) {
+      console.warn('WebSocket client not initialized yet');
+      return () => {};
+    }
+    return wsClientRef.current.onMessage(handler);
+  };
 
   const isConnected = status === 'connected';
 
