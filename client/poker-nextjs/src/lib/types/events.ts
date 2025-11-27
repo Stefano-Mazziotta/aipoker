@@ -44,6 +44,7 @@ export interface LobbyJoinedData {
 export interface PlayerJoinedLobbyData {
   playerId: string;
   playerName: string;
+  playerChips: number;
   currentPlayerCount: number;
 }
 

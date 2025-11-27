@@ -81,7 +81,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
             const newPlayer = {
               id: data.playerId,
               name: data.playerName,
-              chips: 0, // Will be updated when game starts
+              chips: data.playerChips,
             };
             console.log('Adding new player:', newPlayer);
             return [...prev, newPlayer];

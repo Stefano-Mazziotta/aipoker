@@ -49,6 +49,7 @@ public class JoinLobbyUseCase {
             lobby.getId().getValue(),
             playerId.getValue().toString(),
             player.getName(),
+            player.getChips().getAmount(),
             lobby.getPlayers().size(),
             lobby.getMaxPlayers()
         );
@@ -62,7 +63,8 @@ public class JoinLobbyUseCase {
         List<LobbyDTO.PlayerInLobbyDTO> players = lobby.getPlayers().stream()
             .map(p -> new LobbyDTO.PlayerInLobbyDTO(
                 p.getId().getValue().toString(),
-                p.getName()
+                p.getName(),
+                p.getChips().getAmount()
             ))
             .collect(Collectors.toList());
 

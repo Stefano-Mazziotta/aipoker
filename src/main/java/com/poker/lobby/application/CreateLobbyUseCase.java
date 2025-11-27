@@ -47,7 +47,8 @@ public class CreateLobbyUseCase {
         List<LobbyDTO.PlayerInLobbyDTO> players = lobby.getPlayers().stream()
             .map(p -> new LobbyDTO.PlayerInLobbyDTO(
                 p.getId().getValue().toString(),
-                p.getName()
+                p.getName(),
+                p.getChips().getAmount()
             ))
             .collect(Collectors.toList());
 

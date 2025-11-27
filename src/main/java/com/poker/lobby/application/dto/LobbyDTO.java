@@ -21,5 +21,5 @@ public record LobbyDTO(
         return new LobbyDTO(lobbyId, name, currentPlayers, maxPlayers, isOpen, adminPlayerId, players);
     }
     
-    public record PlayerInLobbyDTO(String playerId, String playerName) {}
+    public record PlayerInLobbyDTO(String playerId, String playerName, int chips) {}
 }
