@@ -60,10 +60,10 @@ public class PokerWebSocketEndpoint {
             String command = json.has("command") ? json.get("command").getAsString() : message;
             
             // Handle special subscription commands
-            if (command.startsWith("SUBSCRIBE_GAME ")) {
+            if (WebSocketCommand.SUBSCRIBE_GAME.isPrefixOf(command)) {
                 handleGameSubscription(command, session);
                 return;
-            } else if (command.startsWith("SUBSCRIBE_LOBBY ")) {
+            } else if (WebSocketCommand.SUBSCRIBE_LOBBY.isPrefixOf(command)) {
                 handleLobbySubscription(command, session);
                 return;
             }
@@ -161,10 +161,10 @@ public class PokerWebSocketEndpoint {
             String[] parts = command.trim().split("\\s+");
             String playerId;
             
-            if (command.startsWith("CREATE_LOBBY")) {
+            if (WebSocketCommand.CREATE_LOBBY.isPrefixOf(command)) {
                 if (parts.length < 4) return;
                 playerId = parts[3]; // adminPlayerId
-            } else if (command.startsWith("JOIN_LOBBY")) {
+            } else if (WebSocketCommand.JOIN_LOBBY.isPrefixOf(command)) {
                 if (parts.length < 3) return;
                 playerId = parts[2]; // playerId
             } else {

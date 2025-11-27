@@ -70,30 +70,30 @@ public class ProtocolHandler {
         }
 
         String[] parts = command.trim().split("\\s+");
-        String cmd = parts[0].toUpperCase();
+        WebSocketCommand cmd = WebSocketCommand.fromString(parts[0]);
 
         try {
             return switch (cmd) {
-                case "REGISTER" -> handleRegister(parts);
-                case "START_GAME" -> handleStartGame(parts);
-                case "FOLD" -> handleFold(parts);
-                case "CHECK" -> handleCheck(parts);
-                case "CALL" -> handleCall(parts);
-                case "RAISE" -> handleRaise(parts);
-                case "ALL_IN" -> handleAllIn(parts);
-                case "DEAL_FLOP" -> handleDealFlop(parts);
-                case "DEAL_TURN" -> handleDealTurn(parts);
-                case "DEAL_RIVER" -> handleDealRiver(parts);
-                case "DETERMINE_WINNER" -> handleDetermineWinner(parts);
-                case "CREATE_LOBBY" -> handleCreateLobby(parts);
-                case "JOIN_LOBBY" -> handleJoinLobby(parts);
-                case "LEAVE_LOBBY" -> handleLeaveLobby(parts);
-                case "LEADERBOARD" -> handleLeaderboard(parts);
-                case "GET_MY_CARDS" -> handleGetMyCards(parts);
-                case "GET_GAME_STATE" -> handleGetGameState(parts);
-                case "HELP" -> WebSocketResponse.info(getHelpText());
-                case "QUIT" -> WebSocketResponse.successMessage("Goodbye!");
-                default -> WebSocketResponse.error("Unknown command: " + cmd);
+                case REGISTER -> handleRegister(parts);
+                case START_GAME -> handleStartGame(parts);
+                case FOLD -> handleFold(parts);
+                case CHECK -> handleCheck(parts);
+                case CALL -> handleCall(parts);
+                case RAISE -> handleRaise(parts);
+                case ALL_IN -> handleAllIn(parts);
+                case DEAL_FLOP -> handleDealFlop(parts);
+                case DEAL_TURN -> handleDealTurn(parts);
+                case DEAL_RIVER -> handleDealRiver(parts);
+                case DETERMINE_WINNER -> handleDetermineWinner(parts);
+                case CREATE_LOBBY -> handleCreateLobby(parts);
+                case JOIN_LOBBY -> handleJoinLobby(parts);
+                case LEAVE_LOBBY -> handleLeaveLobby(parts);
+                case LEADERBOARD -> handleLeaderboard(parts);
+                case GET_MY_CARDS -> handleGetMyCards(parts);
+                case GET_GAME_STATE -> handleGetGameState(parts);
+                case HELP -> WebSocketResponse.info(getHelpText());
+                case QUIT -> WebSocketResponse.successMessage("Goodbye!");
+                default -> WebSocketResponse.error("Unknown command: " + parts[0]);
             };
         } catch (Exception e) {
             LOGGER.warning(() -> String.format("Command error: %s", e.getMessage()));
