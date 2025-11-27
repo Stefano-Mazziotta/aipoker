@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { useLobby } from '@/contexts/LobbyContext';
 import ConnectionStatus from '@/components/auth/ConnectionStatus';
@@ -24,7 +23,7 @@ export default function Home() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl md:text-6xl font-bold text-yellow-500 mb-3 drop-shadow-lg">
-          ♠️ Texas Hold'em Poker ♥️
+          ♠️ Texas Hold&apos;em Poker ♥️
         </h1>
         <p className="text-lg md:text-xl text-gray-300 mb-4">
           Join a game and test your poker skills!
@@ -58,7 +57,7 @@ export default function Home() {
               <p>2. <strong className="text-white">Create a lobby</strong> or <strong className="text-white">join</strong> an existing one</p>
               <p>3. Wait for other players to join (min 2 players required)</p>
               <p>4. The lobby admin starts the game when ready</p>
-              <p>5. Play Texas Hold'em poker with standard rules!</p>
+              <p>5. Play Texas Hold&apos;em poker with standard rules!</p>
             </div>
             
             <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">

@@ -24,8 +24,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [playerChips, setPlayerChips] = useState<number>(0);
   const { subscribe, sendCommand, commands, isConnected } = useWebSocket();
 
+  // Restore from localStorage on mount
   useEffect(() => {
-    // Subscribe to WebSocket events
+    const storedPlayerId = localStorage.getItem('playerId');
+    const storedPlayerName = localStorage.getItem('playerName');
+    const storedPlayerChips = localStorage.getItem('playerChips');
+    
+    if (storedPlayerId && storedPlayerName && storedPlayerChips) {
+      setPlayerId(storedPlayerId);
+      setPlayerName(storedPlayerName);
+      setPlayerChips(parseInt(storedPlayerChips, 10));
+    }
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = subscribe((event: WebSocketEvent) => {
       switch (event.type) {
         case 'PLAYER_REGISTERED': {
@@ -33,7 +45,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setPlayerId(data.id);
           setPlayerName(data.name);
           setPlayerChips(data.chips);
-          // Store in localStorage for persistence
           localStorage.setItem('playerId', data.id);
           localStorage.setItem('playerName', data.name);
           localStorage.setItem('playerChips', data.chips.toString());
@@ -45,17 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
-
-    // Try to restore from localStorage
-    const storedPlayerId = localStorage.getItem('playerId');
-    const storedPlayerName = localStorage.getItem('playerName');
-    const storedPlayerChips = localStorage.getItem('playerChips');
-    
-    if (storedPlayerId && storedPlayerName && storedPlayerChips) {
-      setPlayerId(storedPlayerId);
-      setPlayerName(storedPlayerName);
-      setPlayerChips(parseInt(storedPlayerChips, 10));
-    }
 
     return unsubscribe;
   }, [subscribe]);

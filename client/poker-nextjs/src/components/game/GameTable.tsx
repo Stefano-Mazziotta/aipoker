@@ -29,7 +29,7 @@ export default function GameTable() {
       {/* Game info header */}
       <div className="mb-6 text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-yellow-500 mb-2">
-          ♠️ Texas Hold'em ♥️
+          ♠️ Texas Hold&apos;em ♥️
         </h1>
         <div className="flex gap-6 justify-center text-white">
           <div className="bg-black/60 px-4 py-2 rounded-lg">

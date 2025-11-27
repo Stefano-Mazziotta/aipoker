@@ -83,4 +83,12 @@ backup_*.sql
 # OS
 .DS_Store
 Thumbs.db
+
+# Node.js (for Next.js frontend in client/poker-nextjs)
+client/poker-nextjs/node_modules/
+client/poker-nextjs/.next/
+client/poker-nextjs/out/
+client/poker-nextjs/.env*.local
+client/poker-nextjs/.vercel
+
 .env

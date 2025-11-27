@@ -1,5 +1,5 @@
-import { PlayerDTO, PlayerInfo } from './player';
-import { GameStateDTO, GameAction } from './game';
+import { PlayerInfo } from './player';
+import { GameAction } from './game';
 
 // WebSocket event types
 export type EventType =
@@ -15,7 +15,7 @@ export type EventType =
   | 'ERROR';
 
 // Base WebSocket event structure
-export interface WebSocketEvent<T = any> {
+export interface WebSocketEvent<T = unknown> {
   type: EventType;
   data: T;
 }

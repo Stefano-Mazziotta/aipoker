@@ -38,7 +38,6 @@ export default function PlayerSeat({ player, position, isCurrentPlayer }: Player
 
   const isYou = player.id === playerId;
   const isFolded = player.folded;
-  const isActive = player.isActive && !isFolded;
 
   return (
     <div className={`absolute ${SEAT_POSITIONS[position]}`}>

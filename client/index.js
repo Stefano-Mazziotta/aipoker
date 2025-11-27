@@ -437,11 +437,15 @@ function handleMessage(data) {
     try {
         const message = JSON.parse(data);
         const type = message.type || message.eventType;
+        
+        console.log('Parsed message type:', type, 'Message:', message);
 
         switch(type) {
             // Command responses (from ProtocolHandler)
             case 'PLAYER_REGISTERED':
+                console.log('🔥 PLAYER_REGISTERED case matched! Calling handlePlayerRegistered...');
                 handlePlayerRegistered(message);
+                console.log('🔥 handlePlayerRegistered returned, playerId is now:', playerId);
                 break;
             case 'LOBBY_CREATED':
                 handleLobbyCreated(message);
@@ -504,28 +508,67 @@ function handleMessage(data) {
                 break;
         }
     } catch (e) {
-        console.error('Error parsing message:', e, data);
+        console.error('❌ Error parsing message:', e);
+        console.error('❌ Error stack:', e.stack);
+        console.error('❌ Raw data:', data);
     }
 }
 
 // Handle Player Registered
 function handlePlayerRegistered(message) {
-    const data = message.data;
-    if (!data) return;
+    console.log('🎯 handlePlayerRegistered CALLED with message:', message);
     
-    playerId = data.id;
-    playerName = data.name;
-    playerChips = data.chips;
+    const data = message.data;
+    if (!data) {
+        console.error('handlePlayerRegistered: No data in message', message);
+        return;
+    }
+    
+    console.log('🎯 Data extracted:', data);
+    
+    // Extract player data with validation
+    playerId = data.id || data.playerId;
+    playerName = data.name || data.playerName;
+    playerChips = data.chips || 1000;
+    
+    console.log('🎯 Player registered successfully:', { playerId, playerName, playerChips });
+    console.log('🎯 Raw data received:', data);
+    
+    // Validate that we have a player ID
+    if (!playerId) {
+        console.error('Player ID is undefined after registration!', data);
+        addMessage('error', '❌ Registration failed: No player ID received');
+        return;
+    }
     
     currentGameState = GameState.REGISTERED;
     
     // Show player ID field
-    document.getElementById('playerIdDisplay').style.display = 'block';
-    document.getElementById('playerIdText').value = playerId;
+    const playerIdDisplay = document.getElementById('playerIdDisplay');
+    const playerIdTextInput = document.getElementById('playerIdText');
+    
+    if (playerIdDisplay) {
+        playerIdDisplay.style.display = 'block';
+    }
+    
+    if (playerIdTextInput) {
+        playerIdTextInput.value = playerId || '';
+        console.log('Set playerIdText input value to:', playerId, 'Input element value:', playerIdTextInput.value);
+    } else {
+        console.error('playerIdText element not found!');
+    }
     
     // Show current chips
-    document.getElementById('currentChipsDisplay').style.display = 'block';
-    document.getElementById('currentChipsAmount').textContent = playerChips;
+    const currentChipsDisplay = document.getElementById('currentChipsDisplay');
+    const currentChipsAmount = document.getElementById('currentChipsAmount');
+    
+    if (currentChipsDisplay) {
+        currentChipsDisplay.style.display = 'block';
+    }
+    
+    if (currentChipsAmount) {
+        currentChipsAmount.textContent = playerChips;
+    }
     
     const btnRegister = document.getElementById('btnRegister');
     if (btnRegister) {
@@ -849,31 +892,6 @@ function updateLobbyPlayerCount(current, max) {
     console.log(`Lobby players: ${current}/${max}`);
 }
 
-// Handle Player Registered
-function handlePlayerRegistered(message) {
-    // Handled in handleTextResponse - kept for JSON compatibility
-    playerId = message.playerId;
-    playerName = message.name;
-    playerChips = message.chips;
-    
-    currentGameState = GameState.REGISTERED;
-    
-    document.getElementById('playerIdDisplay').style.display = 'block';
-    document.getElementById('playerIdText').value = playerId;
-    const btnRegister = document.getElementById('btnRegister');
-    if (btnRegister) {
-        btnRegister.textContent = 'REGISTERED ✓';
-    }
-    
-    registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
-    // Don't update players list here - only used in lobby context
-    
-    // Don't show lobby step - it's already visible
-    addMessage('success', '✅ Registration complete! Now you can create or join a lobby');
-    
-    updateButtonStates();
-}
-
 // Handle Game Started
 function handleGameStarted(message) {
     console.log('Game started event:', message);
@@ -1060,8 +1078,10 @@ function registerPlayer() {
 
 // Create Lobby
 function createLobby() {
+    console.log('🏠 createLobby called, playerId:', playerId, 'type:', typeof playerId, 'is falsy?', !playerId);
     if (!playerId) {
         addMessage('error', 'Please register first');
+        console.error('🏠 Cannot create lobby - playerId is:', playerId);
         return;
     }
     
@@ -1076,6 +1096,7 @@ function createLobby() {
 
 // Join Lobby
 function joinLobby() {
+    console.log('joinLobby called, playerId:', playerId);
     if (!playerId) {
         addMessage('error', 'Please register first');
         return;
