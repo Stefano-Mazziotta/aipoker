@@ -40,14 +40,26 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
         case 'LOBBY_CREATED': {
           const data = event.data as LobbyCreatedData;
           setLobbyId(data.lobbyId);
-          setLobbyPlayers(data.players);
+          // Map backend format to frontend format
+          const players = data.players.map((p: any) => ({
+            id: p.playerId || p.id,
+            name: p.playerName || p.name,
+            chips: p.chips || 0
+          }));
+          setLobbyPlayers(players);
           setIsLobbyAdmin(true);
           break;
         }
         case 'LOBBY_JOINED': {
           const data = event.data as LobbyJoinedData;
           setLobbyId(data.lobbyId);
-          setLobbyPlayers(data.players);
+          // Map backend format to frontend format
+          const players = data.players.map((p: any) => ({
+            id: p.playerId || p.id,
+            name: p.playerName || p.name,
+            chips: p.chips || 0
+          }));
+          setLobbyPlayers(players);
           setIsLobbyAdmin(false);
           break;
         }

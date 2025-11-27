@@ -10,8 +10,15 @@ export default function LobbyControls() {
   const [joinLobbyId, setJoinLobbyId] = useState('');
   const [showCreate, setShowCreate] = useState(true);
   
-  const { createLobby, joinLobby, leaveLobby, isInLobby, startGame, isLobbyAdmin, lobbyPlayers } = useLobby();
+  const { createLobby, joinLobby, leaveLobby, isInLobby, startGame, isLobbyAdmin, lobbyPlayers, lobbyId } = useLobby();
   const { isRegistered } = useAuth();
+
+  const copyLobbyId = () => {
+    if (lobbyId) {
+      navigator.clipboard.writeText(lobbyId);
+      alert('Lobby ID copied to clipboard!');
+    }
+  };
 
   const handleCreateLobby = (e: FormEvent) => {
     e.preventDefault();
@@ -51,6 +58,22 @@ export default function LobbyControls() {
       <div className="bg-linear-to-br from-green-900/50 to-green-950/50 p-6 rounded-2xl border-2 border-yellow-500/50">
         <h3 className="text-2xl font-bold text-yellow-500 mb-4">🎮 In Lobby</h3>
         <div className="space-y-4">
+          {lobbyId && (
+            <div className="bg-black/30 p-3 rounded-lg">
+              <label className="text-sm text-gray-300 block mb-1">Lobby ID (share with others)</label>
+              <div 
+                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-black/50 p-2 rounded"
+                onClick={copyLobbyId}
+                title="Click to copy"
+              >
+                <code className="text-yellow-400 font-mono text-sm flex-1 break-all">
+                  {lobbyId}
+                </code>
+                <span className="text-2xl">📋</span>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
             <span className="text-white">Players: {lobbyPlayers.length}</span>
             {isLobbyAdmin && (
