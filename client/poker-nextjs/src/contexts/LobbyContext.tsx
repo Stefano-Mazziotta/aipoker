@@ -36,6 +36,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = subscribe((event: WebSocketEvent) => {
+      console.log('LobbyContext received event:', event.type, event.data);
       switch (event.type) {
         case 'LOBBY_CREATED': {
           const data = event.data as LobbyCreatedData;
@@ -65,16 +66,21 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
         }
         case 'PLAYER_JOINED_LOBBY': {
           const data = event.data as PlayerJoinedLobbyData;
+          console.log('PLAYER_JOINED_LOBBY event received:', data);
           setLobbyPlayers(prev => {
+            console.log('Current players:', prev);
             // Check if player already exists
             if (prev.some(p => p.id === data.playerId)) {
+              console.log('Player already in list, skipping');
               return prev;
             }
-            return [...prev, {
+            const newPlayer = {
               id: data.playerId,
               name: data.playerName,
               chips: 0, // Will be updated when game starts
-            }];
+            };
+            console.log('Adding new player:', newPlayer);
+            return [...prev, newPlayer];
           });
           break;
         }
