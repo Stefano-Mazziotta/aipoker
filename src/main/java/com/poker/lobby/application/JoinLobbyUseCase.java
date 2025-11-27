@@ -1,5 +1,8 @@
 package com.poker.lobby.application;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.lobby.domain.events.PlayerJoinedLobbyEvent;
 import com.poker.lobby.domain.model.Lobby;
@@ -26,7 +29,7 @@ public class JoinLobbyUseCase {
     }
 
     public LobbyDTO execute(JoinLobbyCommand command) {
-        // Load lobby
+        // Load lobby (with all players via JOIN)
         Lobby lobby = lobbyRepository.findById(new LobbyId(command.lobbyId()))
             .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
 
@@ -36,7 +39,7 @@ public class JoinLobbyUseCase {
             .orElseThrow(() -> new IllegalArgumentException("Player not found"));
         
         // Add player to lobby
-        lobby.addPlayer(playerId);
+        lobby.addPlayer(player);
         
         // Save updated lobby
         lobbyRepository.save(lobby);
@@ -51,13 +54,26 @@ public class JoinLobbyUseCase {
         );
         eventPublisher.publishToScope(lobby.getId().getValue(), event);
 
+        // Reload lobby to get fresh data (ensures consistency)
+        lobby = lobbyRepository.findById(lobby.getId())
+            .orElseThrow(() -> new IllegalStateException("Lobby not found after save"));
+
+        // Build player list - now it's simple! Lobby already has players
+        List<LobbyDTO.PlayerInLobbyDTO> players = lobby.getPlayers().stream()
+            .map(p -> new LobbyDTO.PlayerInLobbyDTO(
+                p.getId().getValue().toString(),
+                p.getName()
+            ))
+            .collect(Collectors.toList());
+
         return LobbyDTO.fromDomain(
             lobby.getId().getValue(),
             lobby.getName(),
             lobby.getPlayers().size(),
             lobby.getMaxPlayers(),
             lobby.isOpen(),
-            lobby.getAdminPlayerId().getValue().toString()
+            lobby.getAdminPlayerId().getValue().toString(),
+            players
         );
     }
 
