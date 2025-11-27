@@ -21,6 +21,7 @@ import com.poker.player.domain.model.PlayerAction;
 
 /**
  * Handles protocol commands and delegates to appropriate use cases.
+ * Returns WebSocketResponse objects that will be serialized to JSON.
  * Command format: COMMAND [args...]
  */
 public class ProtocolHandler {
@@ -37,7 +38,6 @@ public class ProtocolHandler {
     private final GetLeaderboardUseCase getLeaderboard;
     private final GetPlayerCardsUseCase getPlayerCards;
     private final GetGameStateUseCase getGameState;
-    private final MessageFormatter formatter;
 
     public ProtocolHandler(
             RegisterPlayerUseCase registerPlayer,
@@ -50,8 +50,7 @@ public class ProtocolHandler {
             LeaveLobbyUseCase leaveLobby,
             GetLeaderboardUseCase getLeaderboard,
             GetPlayerCardsUseCase getPlayerCards,
-            GetGameStateUseCase getGameState,
-            MessageFormatter formatter) {
+            GetGameStateUseCase getGameState) {
         this.registerPlayer = registerPlayer;
         this.startGame = startGame;
         this.playerAction = playerAction;
@@ -63,12 +62,11 @@ public class ProtocolHandler {
         this.getLeaderboard = getLeaderboard;
         this.getPlayerCards = getPlayerCards;
         this.getGameState = getGameState;
-        this.formatter = formatter;
     }
 
-    public String handle(String command) {
+    public WebSocketResponse<?> handle(String command) {
         if (command == null || command.trim().isEmpty()) {
-            return formatter.formatError("Empty command");
+            return WebSocketResponse.error("Empty command");
         }
 
         String[] parts = command.trim().split("\\s+");
@@ -93,19 +91,19 @@ public class ProtocolHandler {
                 case "LEADERBOARD" -> handleLeaderboard(parts);
                 case "GET_MY_CARDS" -> handleGetMyCards(parts);
                 case "GET_GAME_STATE" -> handleGetGameState(parts);
-                case "HELP" -> handleHelp();
-                case "QUIT" -> formatter.formatInfo("Goodbye!");
-                default -> formatter.formatError("Unknown command: " + cmd);
+                case "HELP" -> WebSocketResponse.info(getHelpText());
+                case "QUIT" -> WebSocketResponse.successMessage("Goodbye!");
+                default -> WebSocketResponse.error("Unknown command: " + cmd);
             };
         } catch (Exception e) {
             LOGGER.warning(() -> String.format("Command error: %s", e.getMessage()));
-            return formatter.formatError(e.getMessage());
+            return WebSocketResponse.error(e.getMessage());
         }
     }
 
-    private String handleRegister(String[] parts) {
+    private WebSocketResponse<?> handleRegister(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: REGISTER <name> <chips>");
+            return WebSocketResponse.error("Usage: REGISTER <name> <chips>");
         }
         
         String name = parts[1];
@@ -115,12 +113,12 @@ public class ProtocolHandler {
             new RegisterPlayerUseCase.RegisterPlayerCommand(name, chips)
         );
         
-        return formatter.formatPlayerRegistered(response);
+        return WebSocketResponse.success("PLAYER_REGISTERED", response);
     }
 
-    private String handleStartGame(String[] parts) {
+    private WebSocketResponse<?> handleStartGame(String[] parts) {
         if (parts.length < 5) {
-            return formatter.formatError("Usage: START_GAME <player1Id> <player2Id> ... <smallBlind> <bigBlind>");
+            return WebSocketResponse.error("Usage: START_GAME <player1Id> <player2Id> ... <smallBlind> <bigBlind>");
         }
         
         int numPlayers = parts.length - 3;
@@ -132,101 +130,101 @@ public class ProtocolHandler {
             new StartGameUseCase.StartGameCommand(playerIds, new Blinds(smallBlind, bigBlind))
         );
         
-        return formatter.formatGameStarted(response);
+        return WebSocketResponse.success("GAME_STARTED", response);
     }
 
-    private String handleFold(String[] parts) {
+    private WebSocketResponse<?> handleFold(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: FOLD <gameId> <playerId>");
+            return WebSocketResponse.error("Usage: FOLD <gameId> <playerId>");
         }
         
         return executePlayerAction(parts[1], parts[2], PlayerAction.FOLD, 0);
     }
 
-    private String handleCheck(String[] parts) {
+    private WebSocketResponse<?> handleCheck(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: CHECK <gameId> <playerId>");
+            return WebSocketResponse.error("Usage: CHECK <gameId> <playerId>");
         }
         
         return executePlayerAction(parts[1], parts[2], PlayerAction.CHECK, 0);
     }
 
-    private String handleCall(String[] parts) {
+    private WebSocketResponse<?> handleCall(String[] parts) {
         if (parts.length < 4) {
-            return formatter.formatError("Usage: CALL <gameId> <playerId> <amount>");
+            return WebSocketResponse.error("Usage: CALL <gameId> <playerId> <amount>");
         }
         
         int amount = Integer.parseInt(parts[3]);
         return executePlayerAction(parts[1], parts[2], PlayerAction.CALL, amount);
     }
 
-    private String handleRaise(String[] parts) {
+    private WebSocketResponse<?> handleRaise(String[] parts) {
         if (parts.length < 4) {
-            return formatter.formatError("Usage: RAISE <gameId> <playerId> <amount>");
+            return WebSocketResponse.error("Usage: RAISE <gameId> <playerId> <amount>");
         }
         
         int amount = Integer.parseInt(parts[3]);
         return executePlayerAction(parts[1], parts[2], PlayerAction.RAISE, amount);
     }
 
-    private String handleAllIn(String[] parts) {
+    private WebSocketResponse<?> handleAllIn(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: ALL_IN <gameId> <playerId>");
+            return WebSocketResponse.error("Usage: ALL_IN <gameId> <playerId>");
         }
         
         return executePlayerAction(parts[1], parts[2], PlayerAction.ALL_IN, 0);
     }
 
-    private String executePlayerAction(String gameId, String playerId, PlayerAction action, int amount) {
+    private WebSocketResponse<?> executePlayerAction(String gameId, String playerId, PlayerAction action, int amount) {
         var response = playerAction.execute(
             new PlayerActionUseCase.PlayerActionCommand(gameId, playerId, action, amount)
         );
         
-        return formatter.formatActionExecuted(response);
+        return WebSocketResponse.success("PLAYER_ACTION", response);
     }
 
-    private String handleDealFlop(String[] parts) {
+    private WebSocketResponse<?> handleDealFlop(String[] parts) {
         if (parts.length < 2) {
-            return formatter.formatError("Usage: DEAL_FLOP <gameId>");
+            return WebSocketResponse.error("Usage: DEAL_FLOP <gameId>");
         }
         
         var response = dealCards.dealFlop(new DealCardsUseCase.DealCardsCommand(parts[1]));
-        return formatter.formatCardsDealt(response);
+        return WebSocketResponse.success("FLOP_DEALT", response);
     }
 
-    private String handleDealTurn(String[] parts) {
+    private WebSocketResponse<?> handleDealTurn(String[] parts) {
         if (parts.length < 2) {
-            return formatter.formatError("Usage: DEAL_TURN <gameId>");
+            return WebSocketResponse.error("Usage: DEAL_TURN <gameId>");
         }
         
         var response = dealCards.dealTurn(new DealCardsUseCase.DealCardsCommand(parts[1]));
-        return formatter.formatCardsDealt(response);
+        return WebSocketResponse.success("TURN_DEALT", response);
     }
 
-    private String handleDealRiver(String[] parts) {
+    private WebSocketResponse<?> handleDealRiver(String[] parts) {
         if (parts.length < 2) {
-            return formatter.formatError("Usage: DEAL_RIVER <gameId>");
+            return WebSocketResponse.error("Usage: DEAL_RIVER <gameId>");
         }
         
         var response = dealCards.dealRiver(new DealCardsUseCase.DealCardsCommand(parts[1]));
-        return formatter.formatCardsDealt(response);
+        return WebSocketResponse.success("RIVER_DEALT", response);
     }
 
-    private String handleDetermineWinner(String[] parts) {
+    private WebSocketResponse<?> handleDetermineWinner(String[] parts) {
         if (parts.length < 2) {
-            return formatter.formatError("Usage: DETERMINE_WINNER <gameId>");
+            return WebSocketResponse.error("Usage: DETERMINE_WINNER <gameId>");
         }
         
         var response = determineWinner.execute(
             new DetermineWinnerUseCase.DetermineWinnerCommand(parts[1])
         );
         
-        return formatter.formatWinnerDetermined(response);
+        return WebSocketResponse.success("WINNER_DETERMINED", response);
     }
 
-    private String handleCreateLobby(String[] parts) {
+    private WebSocketResponse<?> handleCreateLobby(String[] parts) {
         if (parts.length < 4) {
-            return formatter.formatError("Usage: CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>");
+            return WebSocketResponse.error("Usage: CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>");
         }
         
         String name = parts[1];
@@ -237,68 +235,68 @@ public class ProtocolHandler {
             new CreateLobbyUseCase.CreateLobbyCommand(name, maxPlayers, adminPlayerId)
         );
         
-        return formatter.formatLobbyCreated(response);
+        return WebSocketResponse.success("LOBBY_CREATED", response);
     }
 
-    private String handleJoinLobby(String[] parts) {
+    private WebSocketResponse<?> handleJoinLobby(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: JOIN_LOBBY <lobbyId> <playerId>");
+            return WebSocketResponse.error("Usage: JOIN_LOBBY <lobbyId> <playerId>");
         }
         
         var response = joinLobby.execute(
             new JoinLobbyUseCase.JoinLobbyCommand(parts[1], parts[2])
         );
         
-        return formatter.formatLobbyJoined(response);
+        return WebSocketResponse.success("LOBBY_JOINED", response);
     }
 
-    private String handleLeaveLobby(String[] parts) {
+    private WebSocketResponse<?> handleLeaveLobby(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: LEAVE_LOBBY <lobbyId> <playerId>");
+            return WebSocketResponse.error("Usage: LEAVE_LOBBY <lobbyId> <playerId>");
         }
         
         leaveLobby.execute(
             new LeaveLobbyUseCase.LeaveLobbyCommand(parts[1], parts[2])
         );
         
-        return formatter.formatInfo("Successfully left lobby");
+        return WebSocketResponse.successMessage("Successfully left lobby");
     }
 
-    private String handleLeaderboard(String[] parts) {
+    private WebSocketResponse<?> handleLeaderboard(String[] parts) {
         int limit = parts.length > 1 ? Integer.parseInt(parts[1]) : 10;
         
         var response = getLeaderboard.execute(
             new GetLeaderboardUseCase.GetLeaderboardCommand(limit)
         );
         
-        return formatter.formatLeaderboard(response);
+        return WebSocketResponse.success("LEADERBOARD", response);
     }
 
-    private String handleGetMyCards(String[] parts) {
+    private WebSocketResponse<?> handleGetMyCards(String[] parts) {
         if (parts.length < 3) {
-            return formatter.formatError("Usage: GET_MY_CARDS <gameId> <playerId>");
+            return WebSocketResponse.error("Usage: GET_MY_CARDS <gameId> <playerId>");
         }
         
         var response = getPlayerCards.execute(
             new PlayerCardsCommand(parts[1], parts[2])
         );
         
-        return formatter.formatPlayerCards(response);
+        return WebSocketResponse.success("PLAYER_CARDS", response);
     }
 
-    private String handleGetGameState(String[] parts) {
+    private WebSocketResponse<?> handleGetGameState(String[] parts) {
         if (parts.length < 2) {
-            return formatter.formatError("Usage: GET_GAME_STATE <gameId>");
+            return WebSocketResponse.error("Usage: GET_GAME_STATE <gameId>");
         }
         
         var response = getGameState.execute(
             new GameStateCommand(parts[1])
         );
         
-        return formatter.formatGameState(response);
+        return WebSocketResponse.success("GAME_STATE", response);
     }
 
-    private String handleHelp() {
+    private String getHelpText() {
         return """
             Available commands:
             
