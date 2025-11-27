@@ -95,13 +95,14 @@ public class WebSocketServer {
      * Wait for server to terminate.
      */
     public void awaitTermination() {
-        try {
-            while (running) {
+        while (running) {
+            try {
                 Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOGGER.warning("Server await interrupted");
+                break;
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.warning("Server await interrupted");
         }
     }
 }
