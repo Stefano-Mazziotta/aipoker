@@ -72,6 +72,13 @@ public class PokerWebSocketEndpoint {
             if (protocolHandler != null) {
                 WebSocketResponse<?> response = protocolHandler.handle(command);
                 session.getBasicRemote().sendText(gson.toJson(response));
+                
+                // Auto-subscribe to lobby after CREATE_LOBBY or JOIN_LOBBY
+                if (response.isSuccess() && response.getType() != null) {
+                    if (response.getType().equals("LOBBY_CREATED") || response.getType().equals("LOBBY_JOINED")) {
+                        autoSubscribeToLobby(command, response, session);
+                    }
+                }
             } else {
                 WebSocketResponse<Void> error = WebSocketResponse.error("Server not initialized");
                 session.getBasicRemote().sendText(gson.toJson(error));
@@ -141,4 +148,52 @@ public class PokerWebSocketEndpoint {
             LOGGER.warning(() -> String.format("Lobby subscription error: %s", e.getMessage()));
         }
     }
+
+    /**
+     * Automatically subscribes player to lobby after CREATE_LOBBY or JOIN_LOBBY.
+     * Extracts lobbyId and playerId from the command and response data.
+     */
+    private void autoSubscribeToLobby(String command, WebSocketResponse<?> response, Session session) {
+        try {
+            // Extract player ID from command
+            // CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>
+            // JOIN_LOBBY <lobbyId> <playerId>
+            String[] parts = command.trim().split("\\s+");
+            String playerId;
+            
+            if (command.startsWith("CREATE_LOBBY")) {
+                if (parts.length < 4) return;
+                playerId = parts[3]; // adminPlayerId
+            } else if (command.startsWith("JOIN_LOBBY")) {
+                if (parts.length < 3) return;
+                playerId = parts[2]; // playerId
+            } else {
+                return;
+            }
+            
+            // Extract lobby data from response
+            Object data = response.getData();
+            if (data == null) {
+                return;
+            }
+            
+            // Convert response data to JSON to extract lobbyId
+            JsonObject lobbyData = gson.toJsonTree(data).getAsJsonObject();
+            
+            if (!lobbyData.has("lobbyId")) {
+                LOGGER.warning("Cannot auto-subscribe: missing lobbyId in response");
+                return;
+            }
+            
+            String lobbyId = lobbyData.get("lobbyId").getAsString();
+            
+            // Subscribe player to lobby
+            eventPublisher.subscribe(lobbyId, session, playerId);
+            LOGGER.info(() -> String.format("Auto-subscribed player %s to lobby %s", playerId, lobbyId));
+            
+        } catch (Exception e) {
+            LOGGER.warning(() -> String.format("Auto-subscription error: %s", e.getMessage()));
+        }
+    }
 }
+

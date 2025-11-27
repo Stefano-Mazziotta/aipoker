@@ -49,12 +49,8 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
           }));
           setLobbyPlayers(players);
           setIsLobbyAdmin(true);
-          // Subscribe to lobby events
-          if (playerId) {
-            console.log('Subscribing to lobby:', data.lobbyId);
-            const subscribeCmd = commands.subscribeLobby(data.lobbyId, playerId);
-            sendCommand(subscribeCmd);
-          }
+          // Backend auto-subscribes to lobby
+          console.log('Lobby created, backend will auto-subscribe');
           break;
         }
         case 'LOBBY_JOINED': {
@@ -68,12 +64,8 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
           }));
           setLobbyPlayers(players);
           setIsLobbyAdmin(false);
-          // Subscribe to lobby events
-          if (playerId) {
-            console.log('Subscribing to lobby:', data.lobbyId);
-            const subscribeCmd = commands.subscribeLobby(data.lobbyId, playerId);
-            sendCommand(subscribeCmd);
-          }
+          // Backend auto-subscribes to lobby
+          console.log('Lobby joined, backend will auto-subscribe');
           break;
         }
         case 'PLAYER_JOINED_LOBBY': {
@@ -123,7 +115,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
     });
 
     return unsubscribe;
-  }, [subscribe, playerId, commands, sendCommand]);
+  }, [subscribe, playerId]);
 
   const createLobby = useCallback((lobbyName: string, maxPlayersCount: number) => {
     if (!playerId) {
