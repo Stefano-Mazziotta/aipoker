@@ -1,10 +1,10 @@
 # 🎰 Texas Hold'em Poker - Full Stack Application
 
-> A production-ready multiplayer Texas Hold'em poker game with **Next.js 14 + TypeScript frontend** and **Java backend** showcasing **Hexagonal Architecture**, **Domain-Driven Design**, **Screaming Architecture**, and **Event-Driven Architecture** patterns.
+> A production-ready multiplayer Texas Hold'em poker game showcasing **Hexagonal Architecture**, **Domain-Driven Design**, **Screaming Architecture**, and **Event-Driven Architecture** in Java backend with modern web frontend.
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.0.5-black.svg)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-blue.svg)](https://react.dev/)
 [![WebSocket](https://img.shields.io/badge/WebSocket-Jakarta%202.1-blue.svg)](https://jakarta.ee/specifications/websocket/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-blue.svg)](https://alistair.cockburn.us/hexagonal-architecture/)
 [![DDD](https://img.shields.io/badge/DDD-Enabled-green.svg)](https://www.domainlanguage.com/ddd/)
@@ -52,44 +52,40 @@ docker compose logs -f                     # View logs
 
 ## 🎯 What is This Project?
 
-This is a **full-stack multiplayer Texas Hold'em poker application** with a modern web UI and enterprise-level backend architecture. It consists of:
+This is a **multiplayer Texas Hold'em poker server** demonstrating enterprise-level software architecture and design patterns in Java. The focus is on **clean architecture, SOLID principles, and domain-driven design** on the backend, with a web UI for demonstration.
 
-### Frontend (Next.js 14 + TypeScript)
-- ⚛️ **Modern React** with Server/Client components
-- 🎨 **Tailwind CSS** for styling
-- 🔌 **Real-time WebSocket** communication
-- 📱 **Responsive Design** for mobile/desktop
-- 🎮 **Interactive Game Table** with 9 player seats
-- 🃏 **Card animations** and smooth UX
+### Backend Architecture (Core Focus)
+- 🏗️ **Hexagonal Architecture** (Ports & Adapters) - Framework-independent core
+- 🎯 **Domain-Driven Design** (DDD) - Rich domain model, ubiquitous language
+- 📢 **Event-Driven Architecture** - Decoupled real-time updates
+- ✨ **SOLID Principles** - Single Responsibility, Open/Closed, etc.
+- 🎨 **Design Patterns** - Repository, Factory, Strategy, Observer
+- 🔐 **Type-safe Protocol** - JSON-based WebSocket communication
+- 💾 **Repository Pattern** - Swappable persistence (SQLite)
+- 🧪 **57+ Tests** - Comprehensive test coverage
 
-### Backend (Java + Hexagonal Architecture)
-- 🏗️ **Hexagonal Architecture** (Ports & Adapters)
-- 🎯 **Domain-Driven Design** (DDD)
-- 📢 **Event-Driven Architecture** (Real-time updates)
-- 🔐 **Type-safe JSON Protocol**
-- 💾 **SQLite Persistence**
-- 🧪 **57+ Tests** with high coverage
-
-### The Product
-
-A complete poker platform supporting:
-- ♠️ **Complete Texas Hold'em rules** - All 9 hand rankings, proper betting rounds
-- 👥 **Multiplayer gameplay** - Real-time WebSocket communication
+### Game Features
+- ♠️ **Complete Texas Hold'em rules** - All 9 hand rankings, betting rounds
+- 👥 **Multiplayer support** - Real-time WebSocket communication
 - 🎮 **Lobby system** - Create and join game rooms
 - 🏆 **Player rankings** - Leaderboards and statistics
-- 💾 **Persistent state** - All game data saved
-- 🧪 **Comprehensive testing** - Backend and frontend tested
+- 💾 **Persistent state** - Database storage
+
+### Frontend (Demonstration UI)
+- **Next.js 16.0.5** with React 19.2 and TypeScript
+- WebSocket client for real-time game interaction
+- Simple interface to showcase backend capabilities
 
 ### Why This Architecture?
 
-This project serves as a **learning resource** and **production template** for building maintainable, testable, and scalable full-stack applications. It demonstrates:
+This project serves as a **reference implementation** for:
 
-1. **Clean separation** between frontend and backend
-2. **Type-safe communication** via JSON WebSocket protocol
-3. **Business logic isolation** from technical concerns
-4. **Real-time multiplayer** with event-driven design
-5. **Modern UI/UX** with Next.js and Tailwind CSS
-6. **Production-ready** code organization and testing
+1. **Hexagonal Architecture** in Java - Business logic isolated from frameworks
+2. **Domain-Driven Design** - Proper aggregates, entities, value objects
+3. **SOLID Principles** - Clean, maintainable, extensible code
+4. **Event-Driven Design** - Decoupled components via domain events
+5. **Clean Code** - Feature-first organization, testable without mocks
+6. **Production Patterns** - Repository, Use Cases, DTOs
 
 > **For Architecture Details**: See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for in-depth explanations of Hexagonal Architecture, DDD, Screaming Architecture, Event-Driven Architecture, and all patterns used.
 
@@ -104,24 +100,22 @@ This project serves as a **learning resource** and **production template** for b
 - ✅ **Pot Management**: Main pot, side pots, winner determination
 - ✅ **Game States**: Pre-flop → Flop → Turn → River → Showdown
 
-### System Features
-- ✅ **WebSocket Server**: Real-time bidirectional communication (Jakarta WebSocket API 2.1.1)
-- ✅ **JSON Protocol**: Type-safe communication with structured DTOs
-- ✅ **Next.js Frontend**: Modern React with TypeScript and Tailwind CSS
-- ✅ **Real-time UI**: Instant updates for all game events
-- ✅ **Player Management**: Registration, authentication, chip tracking
-- ✅ **Lobby System**: Create rooms, join games, real-time player updates
-- ✅ **Leaderboard**: Player rankings by chips and statistics
-- ✅ **Persistence**: SQLite database for all state
-- ✅ **Responsive Design**: Works on desktop and mobile devices
-- ✅ **Event-Driven**: Domain events for game state changes and notifications
+### Architecture & Design Patterns
+- ✅ **Hexagonal Architecture**: Clean separation of business logic and infrastructure
+- ✅ **Domain-Driven Design**: Aggregates (Game, Player, Lobby), Value Objects (Chips, Cards)
+- ✅ **Repository Pattern**: Abstract persistence, swappable implementations
+- ✅ **Use Case Pattern**: Single responsibility, orchestration layer
+- ✅ **Event-Driven**: Domain events and pub/sub for real-time updates
+- ✅ **SOLID Principles**: SRP, OCP, LSP, ISP, DIP throughout codebase
+- ✅ **Screaming Architecture**: Feature-first organization (game/, player/, lobby/)
 
-### Technical Features
-- ✅ **Clean Architecture**: Perfect separation of concerns
-- ✅ **Rich Domain Model**: DDD aggregates, value objects, repositories
-- ✅ **Testability**: 40+ tests, 85%+ coverage, no mocking needed
-- ✅ **Scalability**: Stateless use cases, concurrent connections
-- ✅ **Maintainability**: Feature-first organization, SOLID principles
+### Technical Implementation
+- ✅ **WebSocket Server**: Jakarta WebSocket API 2.1.1
+- ✅ **JSON Protocol**: Type-safe DTOs for client-server communication
+- ✅ **SQLite Database**: With repository abstraction
+- ✅ **Comprehensive Tests**: 57+ tests, 85%+ coverage
+- ✅ **No Framework Lock-in**: Pure Java domain, swappable adapters
+- ✅ **Concurrent Support**: Thread-safe game state management
 
 ---
 
@@ -280,112 +274,72 @@ npm start
 
 ## 📁 Project Structure
 
-### High-Level Organization
+### Backend Architecture (Hexagonal + DDD)
 
 ```
-aipoker/
-├── client/poker-nextjs/               # Next.js Frontend
-│   ├── src/
-│   │   ├── app/                       # Next.js app router
-│   │   │   ├── page.tsx               # Registration + Lobby
-│   │   │   ├── layout.tsx             # Root layout
-│   │   │   └── game/[lobbyId]/        # Game page
-│   │   ├── components/                # React components
-│   │   │   ├── auth/                  # Registration, connection
-│   │   │   ├── lobby/                 # Lobby management
-│   │   │   └── game/                  # Game table, cards, actions
-│   │   ├── contexts/                  # React Context providers
-│   │   │   ├── WebSocketContext.tsx   # WebSocket connection
-│   │   │   ├── AuthContext.tsx        # Player state
-│   │   │   ├── GameContext.tsx        # Game state
-│   │   │   └── LobbyContext.tsx       # Lobby state
-│   │   ├── lib/                       # Utilities & types
-│   │   │   ├── websocket/             # WebSocket client & commands
-│   │   │   └── types/                 # TypeScript types
-│   │   └── hooks/                     # Custom React hooks
-│   └── public/                        # Static assets
+src/main/java/com/poker/
+├── player/                            # Player Bounded Context
+│   ├── domain/
+│   │   ├── model/
+│   │   │   └── Player.java            # Aggregate Root
+│   │   ├── valueobject/
+│   │   │   ├── PlayerId.java          # Value Object
+│   │   │   └── Chips.java             # Value Object
+│   │   └── repository/
+│   │       └── PlayerRepository.java  # Port (Interface)
+│   ├── application/
+│   │   ├── RegisterPlayerUseCase.java # Use Case
+│   │   └── dto/
+│   │       └── RegisterPlayerDTO.java # Data Transfer Object
+│   └── infrastructure/
+│       └── persistence/
+│           └── SQLitePlayerRepository.java  # Adapter (Implementation)
 │
-├── src/main/java/com/poker/           # Java Backend
-│   ├── player/                        # Player management
-│   │   ├── domain/                    # Player entities
-│   │   ├── application/               # Player use cases
-│   │   └── infrastructure/            # Player persistence
-│   ├── game/                          # Game logic
-│   │   ├── domain/                    # Game entities
-│   │   ├── application/               # Game use cases
-│   │   └── infrastructure/            # Game persistence
-│   ├── lobby/                         # Lobby system
-│   │   ├── domain/                    # Lobby entities
-│   │   ├── application/               # Lobby use cases
-│   │   └── infrastructure/            # Lobby persistence
-│   └── shared/                        # Shared infrastructure
-│       ├── domain/                    # Common domain objects
-│       └── infrastructure/            # WebSocket, events, DB
+├── game/                              # Game Bounded Context
+│   ├── domain/
+│   │   ├── model/
+│   │   │   ├── Game.java              # Aggregate Root
+│   │   │   ├── Card.java              # Entity
+│   │   │   └── Hand.java              # Entity
+│   │   ├── valueobject/
+│   │   │   ├── GameId.java
+│   │   │   └── Pot.java
+│   │   └── service/
+│   │       └── HandEvaluator.java     # Domain Service
+│   ├── application/
+│   │   ├── StartGameUseCase.java
+│   │   └── PlayerActionUseCase.java
+│   └── infrastructure/
+│       └── persistence/
 │
-├── src/test/java/com/poker/           # Backend tests
-│   ├── integration/                   # End-to-end tests
-│   ├── player/                        # Player tests
-│   ├── game/                          # Game tests
-│   └── lobby/                         # Lobby tests
+├── lobby/                             # Lobby Bounded Context
+│   ├── domain/
+│   ├── application/
+│   └── infrastructure/
 │
-├── ARCHITECTURE.md                    # Architecture deep-dive
-├── README.md                          # This file
-└── docker-compose.yml                 # Docker orchestration
+└── shared/                            # Shared Kernel
+    ├── domain/
+    │   └── events/                    # Domain Events
+    └── infrastructure/
+        ├── websocket/                 # WebSocket Adapter
+        │   ├── PokerWebSocketEndpoint.java
+        │   └── ProtocolHandler.java
+        └── persistence/               # Database Setup
 ```
 
-### Feature-First Structure (Backend)
-
-Each backend feature follows hexagonal architecture:
+### Frontend (Client Demo)
 
 ```
-feature/                               # e.g., player/, game/, lobby/
-├── domain/                            # Pure business logic (no dependencies)
-│   ├── model/                         # Aggregates and entities
-│   ├── valueobject/                   # Immutable value objects
-│   ├── repository/                    # Repository interfaces (ports)
-│   └── exception/                     # Domain exceptions
-│
-├── application/                       # Use cases (orchestration)
-│   ├── RegisterPlayerUseCase.java    # Business operations
-│   ├── dto/                           # Data Transfer Objects
-│   └── GetLeaderboardUseCase.java
-│
-└── infrastructure/                    # Adapters (implementations)
-    └── persistence/                   # Database adapters
-        └── SQLitePlayerRepository.java
+client/poker-nextjs/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   ├── components/                   # UI Components
+│   ├── contexts/                     # State Management
+│   └── lib/
+│       ├── websocket/client.ts       # WebSocket Client
+│       └── types/                    # TypeScript Types
+└── package.json                      # Dependencies
 ```
-
-### Frontend Structure (Client-Side Rendering)
-
-All game components use `'use client'` directive for real-time WebSocket communication:
-
-```
-src/
-├── app/                               # Next.js App Router (SSR + CSR)
-│   ├── page.tsx                       # Main page (CSR)
-│   └── game/[lobbyId]/page.tsx        # Game table (CSR)
-│
-├── components/                        # All CSR components
-│   ├── auth/RegisterForm.tsx          # Player registration form
-│   ├── lobby/LobbyControls.tsx        # Create/Join/Leave lobby
-│   └── game/GameTable.tsx             # Interactive game table
-│
-├── contexts/                          # Global state management
-│   ├── WebSocketContext.tsx           # WebSocket connection & events
-│   ├── AuthContext.tsx                # Player authentication
-│   └── GameContext.tsx                # Game state updates
-│
-└── lib/
-    ├── websocket/
-    │   ├── client.ts                  # WebSocket client (JSON protocol)
-    │   └── commands.ts                # Command builders
-    └── types/
-        ├── events.ts                  # WebSocket event types
-        ├── game.ts                    # Game-related types
-        └── player.ts                  # Player DTOs
-```
-
-> **Why this structure?** See the [Screaming Architecture](./ARCHITECTURE.md#screaming-architecture) section in ARCHITECTURE.md
 
 ---
 

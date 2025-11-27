@@ -1,122 +1,74 @@
 # 🏛️ Architecture Guide
 
-> Comprehensive guide to the architectural patterns used in the Texas Hold'em Poker Application: **Full-Stack Architecture**, **Hexagonal Architecture**, **Domain-Driven Design**, **Screaming Architecture**, and **Event-Driven Architecture**.
+> Comprehensive guide to the architectural patterns used in the Texas Hold'em Poker Server: **Hexagonal Architecture**, **Domain-Driven Design**, **Screaming Architecture**, and **Event-Driven Architecture**.
 
 ---
 
 ## 📖 Table of Contents
 
 1. [Overview](#overview)
-2. [Full-Stack Architecture](#full-stack-architecture)
-3. [Hexagonal Architecture](#hexagonal-architecture-ports--adapters)
-4. [Domain-Driven Design (DDD)](#domain-driven-design-ddd)
-5. [Screaming Architecture](#screaming-architecture)
-6. [Event-Driven Architecture (EDA)](#event-driven-architecture-eda)
-7. [Data Transfer Objects (DTO)](#data-transfer-objects-dto)
-8. [WebSocket Protocol](#websocket-protocol)
-9. [How They Work Together](#how-they-work-together)
-10. [Code Examples](#code-examples)
+2. [Hexagonal Architecture](#hexagonal-architecture-ports--adapters)
+3. [Domain-Driven Design (DDD)](#domain-driven-design-ddd)
+4. [Screaming Architecture](#screaming-architecture)
+5. [Event-Driven Architecture (EDA)](#event-driven-architecture-eda)
+6. [Data Transfer Objects (DTO)](#data-transfer-objects-dto)
+7. [WebSocket Protocol](#websocket-protocol)
+8. [How They Work Together](#how-they-work-together)
+9. [Code Examples](#code-examples)
 
 ---
 
 ## Overview
 
-This project combines multiple complementary architectural approaches across frontend and backend:
+This project demonstrates enterprise Java architecture patterns with a focus on **clean code, SOLID principles, and maintainability**:
 
-| Pattern | Layer | Purpose | Benefit |
-|---------|-------|---------|---------|
-| **Full-Stack Architecture** | System | Frontend-Backend separation | Clear boundaries, independent scaling |
-| **Hexagonal Architecture** | Backend | Structure & Isolation | Testable, framework-independent core |
-| **Domain-Driven Design** | Backend | Business Modeling | Rich domain model, ubiquitous language |
-| **Screaming Architecture** | Backend | Organization | Self-documenting structure |
-| **Event-Driven Architecture** | Both | Communication | Decoupled, real-time updates |
-| **Client-Side Rendering** | Frontend | Real-time UI | Instant WebSocket updates |
+| Pattern | Purpose | Benefit |
+|---------|---------|---------|
+| **Hexagonal Architecture** | Isolate business logic | Framework-independent, testable core |
+| **Domain-Driven Design** | Model business domain | Rich model, ubiquitous language |
+| **Screaming Architecture** | Feature-first organization | Self-documenting structure |
+| **Event-Driven Architecture** | Decouple components | Real-time updates, scalability |
+| **Repository Pattern** | Abstract persistence | Swappable data sources |
+| **Use Case Pattern** | Single responsibility | Clear business operations |
 
-Together, they create a system that is:
-- ✅ **Testable** - Business logic isolated from infrastructure
+The result:
+- ✅ **Pure Domain Logic** - No framework dependencies in core
+- ✅ **Highly Testable** - 57+ tests without mocking frameworks
+- ✅ **SOLID Principles** - Throughout the codebase
 - ✅ **Maintainable** - Clear separation of concerns
 - ✅ **Scalable** - Event-driven for real-time multiplayer
 - ✅ **Flexible** - Easy to swap implementations
-- ✅ **Understandable** - Structure reveals intent
-- ✅ **Modern** - Latest web technologies and patterns
 
 ---
 
-## Full-Stack Architecture
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CLIENT (Browser)                         │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │         Next.js 14 + TypeScript + Tailwind           │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
-│  │  │  React UI   │  │   Context   │  │  WebSocket  │  │  │
-│  │  │ Components  │  │  Providers  │  │   Client    │  │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-                      │ WebSocket (JSON)
-                      │ ws://localhost:8081/ws/poker
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│               SERVER (Java Backend)                         │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │         Jakarta WebSocket + Hexagonal Arch           │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
-│  │  │  WebSocket  │→ │  Use Cases  │→ │   Domain    │  │  │
-│  │  │  Endpoint   │  │   (App)     │  │   Model     │  │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  │  │
-│  │                           ↓                           │  │
-│  │                    ┌─────────────┐                    │  │
-│  │                    │  SQLite DB  │                    │  │
-│  │                    └─────────────┘                    │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
+## System Architecture
 
 ### Technology Stack
 
-**Frontend:**
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript 5
-- **Styling:** Tailwind CSS
-- **State:** React Context API
-- **Communication:** Native WebSocket API
-- **Rendering:** Client-Side Rendering (CSR) for real-time features
-
-**Backend:**
+**Backend (Core Focus):**
 - **Language:** Java 21
-- **WebSocket:** Jakarta WebSocket API 2.1.1
-- **Database:** SQLite (with Repository pattern for easy swapping)
+- **WebSocket:** Jakarta WebSocket API 2.1.1  
+- **Database:** SQLite (swappable via Repository pattern)
 - **Build:** Maven
 - **Testing:** JUnit 5
+- **Protocol:** JSON over WebSocket
 
-### Communication Protocol
+**Frontend (Demo UI):**
+- **Framework:** Next.js 16.0.5
+- **Language:** TypeScript
+- **UI:** React 19.2 + Tailwind CSS 4
 
-**Format:** JSON over WebSocket
+### Communication
 
-**Client Request:**
-```json
-{
-  "command": "REGISTER Alice 1000"
-}
 ```
-
-**Server Response:**
-```json
-{
-  "type": "PLAYER_REGISTERED",
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "name": "Alice",
-    "chips": 1000
-  },
-  "timestamp": 1732664400000
-}
+Client (Browser)          Server (Java)
+     │                         │
+     │  {"command":"REGISTER Alice 1000"}
+     ├────────────────────────>│
+     │                         │
+     │  {"type":"PLAYER_REGISTERED", "data":{...}}
+     │<────────────────────────┤
+     │                         │
 ```
 
 ---
