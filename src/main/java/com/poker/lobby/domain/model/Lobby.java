@@ -3,16 +3,21 @@ package com.poker.lobby.domain.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerId;
 
 /**
- * Lobby aggregate root (stub for future implementation).
+ * Lobby aggregate root.
  * Represents a waiting room where players gather before starting a game.
+ * 
+ * Business Rule: A lobby contains actual Player entities, not just IDs.
+ * This makes sense from a business perspective - when you're in a lobby,
+ * you can see the other players (their names, chips, etc).
  */
 public class Lobby {
     private final LobbyId id;
     private final String name;
-    private final List<PlayerId> players;
+    private final List<Player> players;
     private final int maxPlayers;
     private final PlayerId adminPlayerId;
     private boolean started;
@@ -23,16 +28,17 @@ public class Lobby {
         this.maxPlayers = maxPlayers;
         this.adminPlayerId = adminPlayerId;
         this.players = new ArrayList<>();
-        this.players.add(adminPlayerId); // Admin auto-joins
         this.started = false;
     }
 
-    public static Lobby create(String name, int maxPlayers, PlayerId adminPlayerId) {
-        return new Lobby(LobbyId.generate(), name, maxPlayers, adminPlayerId);
+    public static Lobby create(String name, int maxPlayers, Player adminPlayer) {
+        Lobby lobby = new Lobby(LobbyId.generate(), name, maxPlayers, adminPlayer.getId());
+        lobby.addPlayer(adminPlayer); // Admin auto-joins
+        return lobby;
     }
 
-    public void addPlayer(PlayerId playerId) {
-        if (players.contains(playerId)) {
+    public void addPlayer(Player player) {
+        if (containsPlayer(player.getId())) {
             return; // Player already in lobby
         }
         if (players.size() >= maxPlayers) {
@@ -41,11 +47,15 @@ public class Lobby {
         if (started) {
             throw new IllegalStateException("Lobby already started");
         }
-        players.add(playerId);
+        players.add(player);
     }
 
     public void removePlayer(PlayerId playerId) {
-        players.remove(playerId);
+        players.removeIf(p -> p.getId().equals(playerId));
+    }
+
+    public boolean containsPlayer(PlayerId playerId) {
+        return players.stream().anyMatch(p -> p.getId().equals(playerId));
     }
 
     public void start(PlayerId requestingPlayerId) {
@@ -69,7 +79,7 @@ public class Lobby {
     // Getters
     public LobbyId getId() { return id; }
     public String getName() { return name; }
-    public List<PlayerId> getPlayers() { return List.copyOf(players); }
+    public List<Player> getPlayers() { return List.copyOf(players); }
     public int getMaxPlayers() { return maxPlayers; }
     public boolean isStarted() { return started; }
     public PlayerId getAdminPlayerId() { return adminPlayerId; }
