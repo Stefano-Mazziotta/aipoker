@@ -51,10 +51,24 @@ export class WebSocketClient {
 
       this.ws.onmessage = (event) => {
         try {
-          const message: WebSocketEvent = JSON.parse(event.data);
+          const response = JSON.parse(event.data);
+          console.log('Received WebSocket message:', response);
+          
+          // Backend sends: { type: "...", data: {...}, success: true/false, message: "..." }
+          // Convert to our event format: { type: "...", data: {...} }
+          const message: WebSocketEvent = {
+            type: response.type?.toUpperCase() || 'UNKNOWN',
+            data: response.data || response
+          };
+          
+          // Log errors
+          if (!response.success && response.message) {
+            console.error('WebSocket error response:', response.message);
+          }
+          
           this.notifyMessageHandlers(message);
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          console.error('Failed to parse WebSocket message:', error, event.data);
         }
       };
     } catch (error) {
@@ -82,7 +96,10 @@ export class WebSocketClient {
 
   send(command: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(command);
+      // Wrap command in JSON format as expected by the backend
+      const message = JSON.stringify({ command });
+      console.log('Sending command:', command, '→', message);
+      this.ws.send(message);
     } else {
       console.error('WebSocket is not connected. Cannot send command:', command);
     }

@@ -12,7 +12,11 @@ export type EventType =
   | 'GAME_STATE'
   | 'PLAYER_ACTION'
   | 'GAME_ENDED'
-  | 'ERROR';
+  | 'ERROR'
+  | 'WELCOME'
+  | 'SUCCESS'
+  | 'INFO'
+  | 'UNKNOWN';
 
 // Base WebSocket event structure
 export interface WebSocketEvent<T = unknown> {

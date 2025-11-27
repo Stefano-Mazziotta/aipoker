@@ -1,35 +1,37 @@
-# 🎰 Texas Hold'em Poker Server
+# 🎰 Texas Hold'em Poker - Full Stack Application
 
-> A production-ready multiplayer Texas Hold'em poker server showcasing **Hexagonal Architecture**, **Domain-Driven Design**, **Screaming Architecture**, and **Event-Driven Architecture** patterns.
+> A production-ready multiplayer Texas Hold'em poker game with **Next.js 14 + TypeScript frontend** and **Java backend** showcasing **Hexagonal Architecture**, **Domain-Driven Design**, **Screaming Architecture**, and **Event-Driven Architecture** patterns.
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![WebSocket](https://img.shields.io/badge/WebSocket-Jakarta%202.1-blue.svg)](https://jakarta.ee/specifications/websocket/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-blue.svg)](https://alistair.cockburn.us/hexagonal-architecture/)
 [![DDD](https://img.shields.io/badge/DDD-Enabled-green.svg)](https://www.domainlanguage.com/ddd/)
-[![EDA](https://img.shields.io/badge/Event--Driven-Architecture-purple.svg)]()
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-57%20Passing-success.svg)]()
 
 ---
 
-## ⚡ Quick Reference
+## ⚡ Quick Start
 
 ```bash
-# Build and test
-mvn clean test                        # Run all tests (57 tests)
-mvn test jacoco:report                # Generate coverage report
+# Backend (Java WebSocket Server)
+mvn clean package                          # Build
+java -jar target/poker-server.jar --server # Run on port 8081
 
-# Run server
-docker compose up -d                  # Docker (recommended)
-java -jar target/poker-server.jar     # Local build
+# Frontend (Next.js)
+cd client/poker-nextjs
+npm install                                # Install dependencies
+npm run dev                                # Run on http://localhost:3000
 
-# Connect as client (WebSocket)
-wscat -c ws://localhost:8080/poker    # WebSocket test client
-# Or use a WebSocket client library in your preferred language
+# Testing
+mvn clean test                             # Backend tests (57 tests)
+mvn test jacoco:report                     # Coverage report
+cd client/poker-nextjs && npm test         # Frontend tests
 
-# Development
-docker compose logs -f                # View server logs
-mvn clean package                     # Build JAR file
+# Docker (Full Stack)
+docker compose up -d                       # Start all services
+docker compose logs -f                     # View logs
 ```
 
 ---
@@ -50,33 +52,44 @@ mvn clean package                     # Build JAR file
 
 ## 🎯 What is This Project?
 
-This is a **fully functional multiplayer Texas Hold'em poker server** that demonstrates enterprise-level software architecture principles. Originally a monolithic application, it has been completely refactored using:
+This is a **full-stack multiplayer Texas Hold'em poker application** with a modern web UI and enterprise-level backend architecture. It consists of:
 
-- **Hexagonal Architecture** (Ports & Adapters)
-- **Domain-Driven Design** (DDD)
-- **Screaming Architecture** (Feature-first organization)
-- **Event-Driven Architecture** (Domain events & messaging)
-- **SOLID Principles**
+### Frontend (Next.js 14 + TypeScript)
+- ⚛️ **Modern React** with Server/Client components
+- 🎨 **Tailwind CSS** for styling
+- 🔌 **Real-time WebSocket** communication
+- 📱 **Responsive Design** for mobile/desktop
+- 🎮 **Interactive Game Table** with 9 player seats
+- 🃏 **Card animations** and smooth UX
+
+### Backend (Java + Hexagonal Architecture)
+- 🏗️ **Hexagonal Architecture** (Ports & Adapters)
+- 🎯 **Domain-Driven Design** (DDD)
+- 📢 **Event-Driven Architecture** (Real-time updates)
+- 🔐 **Type-safe JSON Protocol**
+- 💾 **SQLite Persistence**
+- 🧪 **57+ Tests** with high coverage
 
 ### The Product
 
-A WebSocket-based poker server supporting:
+A complete poker platform supporting:
 - ♠️ **Complete Texas Hold'em rules** - All 9 hand rankings, proper betting rounds
 - 👥 **Multiplayer gameplay** - Real-time WebSocket communication
 - 🎮 **Lobby system** - Create and join game rooms
 - 🏆 **Player rankings** - Leaderboards and statistics
-- 💾 **Persistent state** - SQLite database for all game data
-- 🧪 **Comprehensive testing** - 57+ test cases with 85%+ coverage
+- 💾 **Persistent state** - All game data saved
+- 🧪 **Comprehensive testing** - Backend and frontend tested
 
 ### Why This Architecture?
 
-This project serves as a **learning resource** and **production template** for building maintainable, testable, and scalable applications. It demonstrates how to:
+This project serves as a **learning resource** and **production template** for building maintainable, testable, and scalable full-stack applications. It demonstrates:
 
-1. **Separate business logic from technical concerns**
-2. **Make your codebase screams what it does, not how**
-3. **Write testable code without mocking frameworks**
-4. **Organize large applications by business features**
-5. **Apply DDD patterns and event-driven design in real-world scenarios**
+1. **Clean separation** between frontend and backend
+2. **Type-safe communication** via JSON WebSocket protocol
+3. **Business logic isolation** from technical concerns
+4. **Real-time multiplayer** with event-driven design
+5. **Modern UI/UX** with Next.js and Tailwind CSS
+6. **Production-ready** code organization and testing
 
 > **For Architecture Details**: See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for in-depth explanations of Hexagonal Architecture, DDD, Screaming Architecture, Event-Driven Architecture, and all patterns used.
 
@@ -94,10 +107,13 @@ This project serves as a **learning resource** and **production template** for b
 ### System Features
 - ✅ **WebSocket Server**: Real-time bidirectional communication (Jakarta WebSocket API 2.1.1)
 - ✅ **JSON Protocol**: Type-safe communication with structured DTOs
+- ✅ **Next.js Frontend**: Modern React with TypeScript and Tailwind CSS
+- ✅ **Real-time UI**: Instant updates for all game events
 - ✅ **Player Management**: Registration, authentication, chip tracking
 - ✅ **Lobby System**: Create rooms, join games, real-time player updates
 - ✅ **Leaderboard**: Player rankings by chips and statistics
 - ✅ **Persistence**: SQLite database for all state
+- ✅ **Responsive Design**: Works on desktop and mobile devices
 - ✅ **Event-Driven**: Domain events for game state changes and notifications
 
 ### Technical Features
@@ -121,67 +137,130 @@ This project serves as a **learning resource** and **production template** for b
 ### Option 1: Run with Docker (Recommended)
 
 ```bash
-# Start the server (port 8080)
+# Start all services (backend + frontend)
 docker compose up -d
 
 # View logs
 docker compose logs -f
 
-# Test connection (WebSocket)
-wscat -c ws://localhost:8080/poker
-
-# Stop the server
+# Stop all services
 docker compose down
 ```
 
-**Configuration**: Edit `docker-compose.yml` to change ports or settings. Database persists in `./data/poker.db`.
+**Ports:**
+- Backend: `ws://localhost:8081/ws/poker`
+- Frontend: `http://localhost:3000`
+- Database: `./data/poker.db` (SQLite)
 
 ### Option 2: Run Locally
 
+**Backend (Java):**
 ```bash
-# Clone and build
-git clone https://github.com/yourusername/aipoker.git
-cd aipoker
+# Build
 mvn clean package
+
+# Run server (port 8081)
+java -jar target/poker-server.jar --server
 
 # Run tests
 mvn test
-
-# Start server
-java -jar target/poker-server.jar
+mvn test jacoco:report  # Coverage report
 ```
 
-### Connect as a Player
-
-The server uses a **JSON-based WebSocket protocol** for all communication.
-
+**Frontend (Next.js):**
 ```bash
-# Using wscat (install: npm install -g wscat)
-wscat -c ws://localhost:8080/poker
+cd client/poker-nextjs
 
-# Register a player
-> REGISTER Alice
+# Install dependencies
+npm install
 
-# Create a lobby
-> CREATE_LOBBY "Friday Night Poker" 6 <playerId>
+# Run development server (port 3000)
+npm run dev
 
-# Join a lobby
-> JOIN_LOBBY <lobbyId> <playerId>
-
-# Get help
-> HELP
+# Build for production
+npm run build
+npm start
 ```
 
-**JSON Response Format:**
-All server responses follow this structure:
+### Play the Game
+
+1. **Open browser:** `http://localhost:3000`
+2. **Register:** Enter name and starting chips
+3. **Create/Join Lobby:** Start a new game or join existing
+4. **Play:** Make your moves (CHECK, CALL, RAISE, FOLD)
+
+---
+
+## 🔌 WebSocket Protocol
+
+### Communication Format
+
+**Client → Server (Commands)**
+```json
+{
+  "command": "REGISTER Alice 1000"
+}
+```
+
+**Server → Client (Events)**
 ```json
 {
   "type": "PLAYER_REGISTERED",
-  "message": "Player registered successfully",
+  "success": true,
   "data": {
-    "playerId": "550e8400-e29b-41d4-a716-446655440000",
-    "playerName": "Alice",
-    "chipCount": 1000
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Alice",
+    "chips": 1000
+  },
+  "timestamp": 1732664400000
+}
+```
+
+### Available Commands
+
+**Player Management:**
+- `REGISTER <name> <chips>` - Register a new player
+- `LEADERBOARD` - Get player rankings
+
+**Lobby Operations:**
+- `CREATE_LOBBY <name> <maxPlayers> <playerId>` - Create lobby
+- `JOIN_LOBBY <lobbyId> <playerId>` - Join lobby
+- `LEAVE_LOBBY <lobbyId> <playerId>` - Leave lobby
+
+**Game Actions:**
+- `START_GAME <playerIds...> <smallBlind> <bigBlind>` - Start game
+- `CHECK <gameId> <playerId>` - Check
+- `CALL <gameId> <playerId>` - Call current bet
+- `RAISE <gameId> <playerId> <amount>` - Raise bet
+- `FOLD <gameId> <playerId>` - Fold hand
+- `ALL_IN <gameId> <playerId>` - Go all-in
+
+**Game State:**
+- `GET_GAME_STATE <gameId>` - Get current game state
+- `GET_MY_CARDS <gameId> <playerId>` - Get player's cards
+- `HELP` - List all commands
+
+### Event Types
+
+**Player Events:**
+- `PLAYER_REGISTERED` - Player successfully registered
+
+**Lobby Events:**
+- `LOBBY_CREATED` - New lobby created
+- `LOBBY_JOINED` - Player joined lobby
+- `PLAYER_JOINED_LOBBY` - Another player joined
+- `PLAYER_LEFT_LOBBY` - Player left lobby
+
+**Game Events:**
+- `GAME_STARTED` - Game begins
+- `GAME_STATE` - Current game state update
+- `PLAYER_ACTION` - Player made an action
+- `GAME_ENDED` - Game finished, winner determined
+
+**System Events:**
+- `WELCOME` - Connection established
+- `SUCCESS` - Operation successful
+- `ERROR` - Error occurred
   },
   "timestamp": "2024-11-26T22:00:00.123Z",
   "success": true
@@ -205,13 +284,45 @@ All server responses follow this structure:
 
 ```
 aipoker/
-├── src/main/java/com/poker/          # Production code
-│   ├── player/                        # Player management feature
-│   ├── game/                          # Game logic feature
-│   ├── lobby/                         # Lobby system feature
-│   └── shared/                        # Shared infrastructure
+├── client/poker-nextjs/               # Next.js Frontend
+│   ├── src/
+│   │   ├── app/                       # Next.js app router
+│   │   │   ├── page.tsx               # Registration + Lobby
+│   │   │   ├── layout.tsx             # Root layout
+│   │   │   └── game/[lobbyId]/        # Game page
+│   │   ├── components/                # React components
+│   │   │   ├── auth/                  # Registration, connection
+│   │   │   ├── lobby/                 # Lobby management
+│   │   │   └── game/                  # Game table, cards, actions
+│   │   ├── contexts/                  # React Context providers
+│   │   │   ├── WebSocketContext.tsx   # WebSocket connection
+│   │   │   ├── AuthContext.tsx        # Player state
+│   │   │   ├── GameContext.tsx        # Game state
+│   │   │   └── LobbyContext.tsx       # Lobby state
+│   │   ├── lib/                       # Utilities & types
+│   │   │   ├── websocket/             # WebSocket client & commands
+│   │   │   └── types/                 # TypeScript types
+│   │   └── hooks/                     # Custom React hooks
+│   └── public/                        # Static assets
 │
-├── src/test/java/com/poker/           # Test code
+├── src/main/java/com/poker/           # Java Backend
+│   ├── player/                        # Player management
+│   │   ├── domain/                    # Player entities
+│   │   ├── application/               # Player use cases
+│   │   └── infrastructure/            # Player persistence
+│   ├── game/                          # Game logic
+│   │   ├── domain/                    # Game entities
+│   │   ├── application/               # Game use cases
+│   │   └── infrastructure/            # Game persistence
+│   ├── lobby/                         # Lobby system
+│   │   ├── domain/                    # Lobby entities
+│   │   ├── application/               # Lobby use cases
+│   │   └── infrastructure/            # Lobby persistence
+│   └── shared/                        # Shared infrastructure
+│       ├── domain/                    # Common domain objects
+│       └── infrastructure/            # WebSocket, events, DB
+│
+├── src/test/java/com/poker/           # Backend tests
 │   ├── integration/                   # End-to-end tests
 │   ├── player/                        # Player tests
 │   ├── game/                          # Game tests
@@ -219,28 +330,59 @@ aipoker/
 │
 ├── ARCHITECTURE.md                    # Architecture deep-dive
 ├── README.md                          # This file
-└── build.sh                           # Build script
+└── docker-compose.yml                 # Docker orchestration
 ```
 
-### Feature-First Structure (Screaming Architecture)
+### Feature-First Structure (Backend)
 
-Each feature follows the same internal structure:
+Each backend feature follows hexagonal architecture:
 
 ```
 feature/                               # e.g., player/, game/, lobby/
-├── domain/                            # Pure business logic
+├── domain/                            # Pure business logic (no dependencies)
 │   ├── model/                         # Aggregates and entities
 │   ├── valueobject/                   # Immutable value objects
 │   ├── repository/                    # Repository interfaces (ports)
 │   └── exception/                     # Domain exceptions
 │
-├── application/                       # Use cases (application services)
+├── application/                       # Use cases (orchestration)
 │   ├── RegisterPlayerUseCase.java    # Business operations
+│   ├── dto/                           # Data Transfer Objects
 │   └── GetLeaderboardUseCase.java
 │
-└── infrastructure/                    # Adapters
-    ├── persistence/                   # Database implementations
-    └── socket/                        # Network adapters
+└── infrastructure/                    # Adapters (implementations)
+    └── persistence/                   # Database adapters
+        └── SQLitePlayerRepository.java
+```
+
+### Frontend Structure (Client-Side Rendering)
+
+All game components use `'use client'` directive for real-time WebSocket communication:
+
+```
+src/
+├── app/                               # Next.js App Router (SSR + CSR)
+│   ├── page.tsx                       # Main page (CSR)
+│   └── game/[lobbyId]/page.tsx        # Game table (CSR)
+│
+├── components/                        # All CSR components
+│   ├── auth/RegisterForm.tsx          # Player registration form
+│   ├── lobby/LobbyControls.tsx        # Create/Join/Leave lobby
+│   └── game/GameTable.tsx             # Interactive game table
+│
+├── contexts/                          # Global state management
+│   ├── WebSocketContext.tsx           # WebSocket connection & events
+│   ├── AuthContext.tsx                # Player authentication
+│   └── GameContext.tsx                # Game state updates
+│
+└── lib/
+    ├── websocket/
+    │   ├── client.ts                  # WebSocket client (JSON protocol)
+    │   └── commands.ts                # Command builders
+    └── types/
+        ├── events.ts                  # WebSocket event types
+        ├── game.ts                    # Game-related types
+        └── player.ts                  # Player DTOs
 ```
 
 > **Why this structure?** See the [Screaming Architecture](./ARCHITECTURE.md#screaming-architecture) section in ARCHITECTURE.md
