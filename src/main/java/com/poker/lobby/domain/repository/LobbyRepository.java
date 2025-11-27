@@ -1,14 +1,18 @@
 package com.poker.lobby.domain.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
 import com.poker.player.domain.model.PlayerId;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository port for Lobby aggregate.
  * Defines persistence operations without implementation details.
+ * 
+ * Note: Lobby now contains Player entities directly, so all repository
+ * methods will load the complete lobby with players in a single query.
  */
 public interface LobbyRepository {
     
@@ -18,7 +22,8 @@ public interface LobbyRepository {
     void save(Lobby lobby);
     
     /**
-     * Find lobby by unique identifier.
+     * Find lobby by unique identifier with all players loaded.
+     * Uses efficient JOIN query to load lobby and all its players.
      */
     Optional<Lobby> findById(LobbyId id);
     

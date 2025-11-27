@@ -6,12 +6,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
 import com.poker.lobby.domain.repository.LobbyRepository;
+import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.shared.infrastructure.database.DatabaseConnection;
 
@@ -93,9 +96,9 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         // Insert current players
         String insertSql = "INSERT INTO lobby_players (lobby_id, player_id) VALUES (?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-            for (PlayerId playerId : lobby.getPlayers()) {
+            for (Player player : lobby.getPlayers()) {
                 stmt.setString(1, lobby.getId().getValue());
-                stmt.setString(2, playerId.getValue().toString());
+                stmt.setString(2, player.getId().getValue().toString());
                 stmt.executeUpdate();
             }
         }
@@ -106,22 +109,91 @@ public class SQLiteLobbyRepository implements LobbyRepository {
         Connection conn = null;
         try {
             conn = dbConnection.getConnection();
-            String sql = "SELECT * FROM lobbies WHERE id = ?";
+            
+            // Single query with JOIN to fetch lobby and all players at once
+            // This avoids the N+1 query problem
+            String sql = """
+                SELECT 
+                    l.id as lobby_id,
+                    l.name as lobby_name,
+                    l.max_players,
+                    l.started,
+                    l.admin_player_id,
+                    p.id as player_id,
+                    p.name as player_name,
+                    p.chips as player_chips
+                FROM lobbies l
+                LEFT JOIN lobby_players lp ON l.id = lp.lobby_id
+                LEFT JOIN players p ON lp.player_id = p.id
+                WHERE l.id = ?
+                ORDER BY lp.rowid
+                """;
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, id.getValue());
                 ResultSet rs = stmt.executeQuery();
 
-                if (rs.next()) {
-                    return Optional.of(reconstructLobby(conn, rs));
-                }
+                return reconstructLobbyWithPlayers(rs);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to find lobby", e);
+            throw new RuntimeException("Failed to find lobby with players", e);
         } finally {
             dbConnection.close(conn);
         }
-        return Optional.empty();
+    }
+
+    /**
+     * Reconstructs a Lobby from a result set with JOIN data.
+     * This method processes multiple rows where lobby data is repeated
+     * and player data varies for each player in the lobby.
+     */
+    private Optional<Lobby> reconstructLobbyWithPlayers(ResultSet rs) throws SQLException {
+        Lobby lobby = null;
+        Map<String, Player> playerMap = new HashMap<>();
+
+        while (rs.next()) {
+            // Reconstruct lobby only once (same for all rows)
+            if (lobby == null) {
+                String lobbyId = rs.getString("lobby_id");
+                String lobbyName = rs.getString("lobby_name");
+                int maxPlayers = rs.getInt("max_players");
+                String adminPlayerId = rs.getString("admin_player_id");
+
+                lobby = new Lobby(
+                    new LobbyId(lobbyId),
+                    lobbyName,
+                    maxPlayers,
+                    PlayerId.from(adminPlayerId)
+                );
+            }
+
+            // Reconstruct each player (avoid duplicates)
+            String playerId = rs.getString("player_id");
+            if (playerId != null && !playerMap.containsKey(playerId)) {
+                String playerName = rs.getString("player_name");
+                int playerChips = rs.getInt("player_chips");
+
+                // Players in lobby context are not "folded" - that's a game state
+                // So we always pass false for folded status
+                Player player = Player.reconstitute(
+                    PlayerId.from(playerId),
+                    playerName,
+                    playerChips,
+                    false  // Folded is game state, not relevant in lobby context
+                );
+                
+                playerMap.put(playerId, player);
+                
+                // Add player to lobby
+                lobby.addPlayer(player);
+            }
+        }
+
+        if (lobby == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(lobby);
     }
 
     @Override
@@ -250,21 +322,33 @@ public class SQLiteLobbyRepository implements LobbyRepository {
 
         Lobby lobby = new Lobby(new LobbyId(id), name, maxPlayers, PlayerId.from(adminPlayerId));
 
-        // Load players
+        // Load players with their full data using JOIN
         loadLobbyPlayers(conn, lobby);
 
         return lobby;
     }
 
     private void loadLobbyPlayers(Connection conn, Lobby lobby) throws SQLException {
-        String sql = "SELECT player_id FROM lobby_players WHERE lobby_id = ?";
+        String sql = """
+            SELECT p.id, p.name, p.chips
+            FROM lobby_players lp
+            JOIN players p ON lp.player_id = p.id
+            WHERE lp.lobby_id = ?
+            ORDER BY lp.rowid
+            """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, lobby.getId().getValue());
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                lobby.addPlayer(PlayerId.from(rs.getString("player_id")));
+                Player player = Player.reconstitute(
+                    PlayerId.from(rs.getString("id")),
+                    rs.getString("name"),
+                    rs.getInt("chips"),
+                    false  // Folded is game state, not relevant in lobby context
+                );
+                lobby.addPlayer(player);
             }
         }
     }
