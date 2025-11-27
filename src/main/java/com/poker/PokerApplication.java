@@ -13,6 +13,7 @@ import com.poker.game.domain.repository.GameRepository;
 import com.poker.game.infrastructure.persistence.SQLiteGameRepository;
 import com.poker.lobby.application.CreateLobbyUseCase;
 import com.poker.lobby.application.JoinLobbyUseCase;
+import com.poker.lobby.application.LeaveLobbyUseCase;
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.lobby.infrastructure.persistence.SQLiteLobbyRepository;
 import com.poker.player.application.GetLeaderboardUseCase;
@@ -72,12 +73,13 @@ public class PokerApplication {
         GetGameStateUseCase getGameState = new GetGameStateUseCase(gameRepository);
         
         // Lobby use cases
-        CreateLobbyUseCase createLobby = new CreateLobbyUseCase(lobbyRepository);
+        CreateLobbyUseCase createLobby = new CreateLobbyUseCase(lobbyRepository, playerRepository);
         JoinLobbyUseCase joinLobby = new JoinLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
+        LeaveLobbyUseCase leaveLobby = new LeaveLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
         
         if (serverMode) {
             startWebSocketServer(registerPlayer, startGame, playerAction, dealCards, 
-                            determineWinner, createLobby, joinLobby, getLeaderboard,
+                            determineWinner, createLobby, joinLobby, leaveLobby, getLeaderboard,
                             getPlayerCards, getGameState);
         } else {
             runDemo(registerPlayer, startGame, getLeaderboard, createLobby);
@@ -91,6 +93,7 @@ public class PokerApplication {
                                          DetermineWinnerUseCase determineWinner,
                                          CreateLobbyUseCase createLobby,
                                          JoinLobbyUseCase joinLobby,
+                                         LeaveLobbyUseCase leaveLobby,
                                          GetLeaderboardUseCase getLeaderboard,
                                          GetPlayerCardsUseCase getPlayerCards,
                                          GetGameStateUseCase getGameState) {
@@ -101,7 +104,7 @@ public class PokerApplication {
         // Create protocol handler with all use cases
         ProtocolHandler protocolHandler = new ProtocolHandler(
             registerPlayer, startGame, playerAction, dealCards,
-            determineWinner, createLobby, joinLobby, getLeaderboard,
+            determineWinner, createLobby, joinLobby, leaveLobby, getLeaderboard,
             getPlayerCards, getGameState, new MessageFormatter()
         );
         

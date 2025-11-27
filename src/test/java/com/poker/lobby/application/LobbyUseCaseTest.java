@@ -39,7 +39,7 @@ public class LobbyUseCaseTest {
         lobbyRepository = new SQLiteLobbyRepository();
         playerRepository = new SQLitePlayerRepository();
 
-        createLobby = new CreateLobbyUseCase(lobbyRepository);
+        createLobby = new CreateLobbyUseCase(lobbyRepository, playerRepository);
         joinLobby = new JoinLobbyUseCase(lobbyRepository, playerRepository, new NoOpEventPublisher());
         registerPlayer = new RegisterPlayerUseCase(playerRepository);
     }
