@@ -439,6 +439,7 @@ function handleMessage(data) {
         const type = message.type || message.eventType;
 
         switch(type) {
+            // Command responses (from ProtocolHandler)
             case 'PLAYER_REGISTERED':
                 handlePlayerRegistered(message);
                 break;
@@ -448,26 +449,8 @@ function handleMessage(data) {
             case 'LOBBY_JOINED':
                 handleLobbyJoined(message);
                 break;
-            case 'PLAYER_JOINED_LOBBY':
-                handlePlayerJoinedLobby(message);
-                break;
-            case 'PLAYER_LEFT_LOBBY':
-                handlePlayerLeftLobby(message);
-                break;
             case 'GAME_STARTED':
                 handleGameStarted(message);
-                break;
-            case 'GAME_STATE_CHANGED':
-                handleGameStateChanged(message);
-                break;
-            case 'CARDS_DEALT':
-                handleCardsDealt(message);
-                break;
-            case 'PLAYER_ACTION':
-                handlePlayerAction(message);
-                break;
-            case 'WINNER_DETERMINED':
-                handleWinnerDetermined(message);
                 break;
             case 'PLAYER_CARDS':
                 handlePlayerCards(message);
@@ -475,273 +458,225 @@ function handleMessage(data) {
             case 'GAME_STATE':
                 handleGameState(message);
                 break;
+            case 'PLAYER_ACTION':
+                handlePlayerAction(message);
+                break;
+            case 'WINNER_DETERMINED':
+                handleWinnerDetermined(message);
+                break;
             case 'FLOP_DEALT':
             case 'TURN_DEALT':
             case 'RIVER_DEALT':
                 handleCommunityCards(message);
                 break;
-            case 'ERROR':
-                addMessage('error', message.message || message.content || 'An error occurred');
-                addMessage('error', message.message || message.content || 'An error occurred', 'game');
+                
+            // Domain events (from WebSocketEventPublisher)
+            case 'PLAYER_JOINED_LOBBY':
+                handlePlayerJoinedLobby(message);
                 break;
-            case 'INFO':
-                addMessage('info', message.message || message.content);
-                addMessage('info', message.message || message.content, 'game');
+            case 'PLAYER_LEFT_LOBBY':
+                handlePlayerLeftLobby(message);
+                break;
+            case 'GAME_STATE_CHANGED':
+                handleGameStateChanged(message);
+                break;
+            case 'CARDS_DEALT':
+                handleCardsDealt(message);
+                break;
+                
+            // System messages
+            case 'welcome':
+                addMessage('info', message.data || message.content);
                 break;
             case 'success':
-                addMessage('info', message.content);
+                addMessage('success', message.message || message.content);
                 break;
-            case 'response':
-                handleTextResponse(message.content);
+            case 'error':
+                addMessage('error', message.message || message.content);
+                addMessage('error', message.message || message.content, 'game');
+                break;
+            case 'info':
+                addMessage('info', message.data || message.content);
+                addMessage('info', message.data || message.content, 'game');
                 break;
             default:
-                // Try to handle as text response first
-                handleTextResponse(data);
+                console.log('Unknown message type:', type, message);
+                break;
         }
     } catch (e) {
-        // Plain text message - parse it
-        console.log('Parsing as text response:', data);
-        handleTextResponse(data);
+        console.error('Error parsing message:', e, data);
     }
 }
 
-// Handle Text Response (from server's MessageFormatter)
-function handleTextResponse(content) {
-    addMessage('info', content);
+// Handle Player Registered
+function handlePlayerRegistered(message) {
+    const data = message.data;
+    if (!data) return;
     
-    // Parse player registration
-    if (content.includes('SUCCESS: Player registered')) {
-        const idMatch = content.match(/ID:\s*([a-f0-9-]+)/);
-        const nameMatch = content.match(/Name:\s*(\w+)/);
-        const chipsMatch = content.match(/Chips:\s*(\d+)/);
-        
-        if (idMatch && nameMatch && chipsMatch) {
-            playerId = idMatch[1];
-            playerName = nameMatch[1];
-            playerChips = parseInt(chipsMatch[1]);
-            
-            currentGameState = GameState.REGISTERED;
-            
-            // Show player ID field
-            document.getElementById('playerIdDisplay').style.display = 'block';
-            document.getElementById('playerIdText').value = playerId;
-            
-            // Show current chips
-            document.getElementById('currentChipsDisplay').style.display = 'block';
-            document.getElementById('currentChipsAmount').textContent = playerChips;
-            
-            const btnRegister = document.getElementById('btnRegister');
-            if (btnRegister) {
-                btnRegister.textContent = 'REGISTERED ✓';
-            }
-            
-            registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
-            // Don't update players list here - only used in lobby context
-            
-            // Don't show lobby step - it's already visible
-            addMessage('success', '✅ Registration complete! Now you can create or join a lobby');
-            
-            updateButtonStates();
-        }
+    playerId = data.id;
+    playerName = data.name;
+    playerChips = data.chips;
+    
+    currentGameState = GameState.REGISTERED;
+    
+    // Show player ID field
+    document.getElementById('playerIdDisplay').style.display = 'block';
+    document.getElementById('playerIdText').value = playerId;
+    
+    // Show current chips
+    document.getElementById('currentChipsDisplay').style.display = 'block';
+    document.getElementById('currentChipsAmount').textContent = playerChips;
+    
+    const btnRegister = document.getElementById('btnRegister');
+    if (btnRegister) {
+        btnRegister.textContent = 'REGISTERED ✓';
     }
     
-    // Parse lobby creation
-    if (content.includes('SUCCESS: Lobby created')) {
-        const idMatch = content.match(/Lobby ID:\s*([a-f0-9-]+)/);
-        const playersMatch = content.match(/Players:\s*(\d+)\/(\d+)/);
-        
-        if (idMatch) {
-            lobbyId = idMatch[1];
-            isLobbyAdmin = true;
-            
-            // Extract maxPlayers from the response
-            if (playersMatch) {
-                maxLobbyPlayers = parseInt(playersMatch[2]);
-                addMessage('info', `📊 Lobby capacity: ${maxLobbyPlayers} players`);
-            }
-            
-            currentGameState = GameState.IN_LOBBY;
-            
-            // Show lobby ID in onboarding
-            document.getElementById('lobbyIdDisplay').style.display = 'block';
-            document.getElementById('lobbyIdText').value = lobbyId;
-            
-            // Show lobby players container
-            document.getElementById('lobbyPlayersContainer').style.display = 'block';
-            
-            // Parse player list from response
-            lobbyPlayers = parsePlayerListFromResponse(content);
-            
-            // Update lobby display on onboarding screen
-            updateLobbyPlayersList();
-            
-            // Transition to game screen to show seats
-            showGameScreen();
-            updateLobbySeatsDisplay();
-            
-            // Show lobby panel, hide game panel
-            const lobbyPanel = document.getElementById('lobbyActionsPanel');
-            const gamePanel = document.getElementById('gameActionsPanel');
-            if (lobbyPanel) lobbyPanel.style.display = 'block';
-            if (gamePanel) gamePanel.style.display = 'none';
-            
-            // Enable start button for admin with enough players
-            const btnStartInGame = document.getElementById('btnStartInGame');
-            if (btnStartInGame) {
-                btnStartInGame.disabled = !(isLobbyAdmin && lobbyPlayers.length >= 2);
-            }
-            
-            // Update footer lobby ID
-            const lobbyIdFooter = document.getElementById('lobbyIdFooter');
-            if (lobbyIdFooter) {
-                lobbyIdFooter.value = lobbyId;
-            }
-            
-            // Update header in game screen
-            const lobbyHeader = document.getElementById('lobbyIdHeaderDisplay');
-            if (lobbyHeader) {
-                lobbyHeader.textContent = lobbyId.substring(0, 8) + '...';
-            }
-            
-            // Update player chips in header
-            const chipsHeader = document.getElementById('playerChipsHeader');
-            if (chipsHeader) {
-                chipsHeader.textContent = playerChips;
-            }
-            
-            addMessage('event', '🏠 You are the lobby admin - You can START the game');
-            addMessage('info', `📋 Share this Lobby ID with friends: ${lobbyId}`);
-            updateButtonStates();
-            
-            // Subscribe to lobby events for real-time updates
-            sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
-        }
-    }
+    registeredPlayers.push({ id: playerId, name: playerName, chips: playerChips });
     
-    // Parse lobby join
-    if (content.includes('SUCCESS: Joined lobby')) {
-        const idMatch = content.match(/Lobby ID:\s*([a-f0-9-]+)/);
-        const playersMatch = content.match(/Players:\s*(\d+)\/(\d+)/);
-        
-        if (idMatch) {
-            lobbyId = idMatch[1];
-            
-            // Extract maxPlayers from the response
-            if (playersMatch) {
-                maxLobbyPlayers = parseInt(playersMatch[2]);
-                addMessage('info', `📊 Lobby capacity: ${maxLobbyPlayers} players`);
-            }
-            
-            currentGameState = GameState.IN_LOBBY;
-            
-            // Show lobby ID in onboarding
-            document.getElementById('lobbyIdDisplay').style.display = 'block';
-            document.getElementById('lobbyIdText').value = lobbyId;
-            
-            // Show lobby players container
-            document.getElementById('lobbyPlayersContainer').style.display = 'block';
-            
-            // Parse player list from response
-            lobbyPlayers = parsePlayerListFromResponse(content);
-            
-            // Update lobby display on onboarding screen
-            updateLobbyPlayersList();
-            
-            // Transition to game screen to show seats
-            showGameScreen();
-            updateLobbySeatsDisplay();
-            
-            // Show lobby panel, hide game panel
-            const lobbyPanel = document.getElementById('lobbyActionsPanel');
-            const gamePanel = document.getElementById('gameActionsPanel');
-            if (lobbyPanel) lobbyPanel.style.display = 'block';
-            if (gamePanel) gamePanel.style.display = 'none';
-            
-            // Disable start button (not admin)
-            const btnStartInGame = document.getElementById('btnStartInGame');
-            if (btnStartInGame) {
-                btnStartInGame.disabled = true;
-            }
-            
-            // Update footer lobby ID
-            const lobbyIdFooter = document.getElementById('lobbyIdFooter');
-            if (lobbyIdFooter) {
-                lobbyIdFooter.value = lobbyId;
-            }
-            
-            // Update header in game screen
-            const lobbyHeader = document.getElementById('lobbyIdHeaderDisplay');
-            if (lobbyHeader) {
-                lobbyHeader.textContent = lobbyId.substring(0, 8) + '...';
-            }
-            
-            // Update player chips in header
-            const chipsHeader = document.getElementById('playerChipsHeader');
-            if (chipsHeader) {
-                chipsHeader.textContent = playerChips;
-            }
-            
-            addMessage('event', '🏠 Joined lobby - Waiting for admin to start...', 'game');
-            addMessage('info', `📋 Lobby ID: ${lobbyId}`, 'game');
-            updateButtonStates();
-            
-            // Subscribe to lobby events for real-time updates
-            sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
-        }
-    }
+    addMessage('success', `✅ Player registered: ${playerName} (ID: ${playerId}, Chips: ${playerChips})`);
+    addMessage('success', '✅ Registration complete! Now you can create or join a lobby');
     
-    // Parse game start
-    if (content.includes('SUCCESS: Game started')) {
-        const idMatch = content.match(/Game ID:\s*([a-f0-9-]+)/);
-        if (idMatch) {
-            gameId = idMatch[1];
-            isGameActive = true;
-            
-            currentGameState = GameState.IN_GAME;
-            
-            // Update footer to show game info instead of lobby
-            const lobbyPanel = document.getElementById('lobbyActionsPanel');
-            const gamePanel = document.getElementById('gameActionsPanel');
-            if (lobbyPanel) lobbyPanel.style.display = 'none';
-            if (gamePanel) gamePanel.style.display = 'block';
-            
-            // Keep header simple - don't need to show game ID there
-            
-            // Reset seat display for game mode (clear "Open Seat" styling)
-            playerSeats.fill(null);
-            for (let i = 0; i < 9; i++) {
-                const seatElement = document.getElementById(`seat-${i}`);
-                if (seatElement) {
-                    seatElement.style.display = 'none';
-                    seatElement.style.opacity = '1';
-                    seatElement.style.border = '3px solid #ffd700';
-                }
-            }
-            
-            addMessage('event', '🎮 Game started!', 'game');
-            addMessage('info', `🎲 Game ID: ${gameId}`, 'game');
-            updateButtonStates();
-            
-            // Request initial state
-            setTimeout(() => {
-                sendCommand(`GET_GAME_STATE ${gameId}`);
-                sendCommand(`GET_MY_CARDS ${gameId} ${playerId}`);
-            }, 500);
-        }
-    }
+    updateButtonStates();
 }
 
-// Handle Lobby Created
+// Handle Lobby Created  
 function handleLobbyCreated(message) {
-    // Handled in handleTextResponse
+    const data = message.data;
+    if (!data) return;
+    
+    lobbyId = data.lobbyId;
+    isLobbyAdmin = true;
+    maxLobbyPlayers = data.maxPlayers;
+    
+    // Build players list from DTO
+    lobbyPlayers = data.players.map(p => ({
+        id: p.playerId,
+        name: p.playerName,
+        chips: 1000
+    }));
+    
+    console.log('Lobby created - players:', lobbyPlayers);
+    
+    currentGameState = GameState.IN_LOBBY;
+    
+    // Show lobby ID in onboarding
+    document.getElementById('lobbyIdDisplay').style.display = 'block';
+    document.getElementById('lobbyIdText').value = lobbyId;
+    
+    // Show lobby players container
+    document.getElementById('lobbyPlayersContainer').style.display = 'block';
+    
+    // Update lobby display on onboarding screen
+    updateLobbyPlayersList();
+    
+    // Transition to game screen to show seats
+    showGameScreen();
+    updateLobbySeatsDisplay();
+    
+    // Show lobby panel, hide game panel
+    const lobbyPanel = document.getElementById('lobbyActionsPanel');
+    const gamePanel = document.getElementById('gameActionsPanel');
+    if (lobbyPanel) lobbyPanel.style.display = 'block';
+    if (gamePanel) gamePanel.style.display = 'none';
+    
+    // Enable start button for admin with enough players
+    const btnStartInGame = document.getElementById('btnStartInGame');
+    if (btnStartInGame) {
+        btnStartInGame.disabled = !(isLobbyAdmin && lobbyPlayers.length >= 2);
+    }
+    
+    // Update footer lobby ID
+    const lobbyIdFooter = document.getElementById('lobbyIdFooter');
+    if (lobbyIdFooter) {
+        lobbyIdFooter.value = lobbyId;
+    }
+    
+    // Update header in game screen
+    const lobbyHeader = document.getElementById('lobbyIdHeaderDisplay');
+    if (lobbyHeader) {
+        lobbyHeader.textContent = lobbyId.substring(0, 8) + '...';
+    }
+    
+    // Update player chips in header
+    const chipsHeader = document.getElementById('playerChipsHeader');
+    if (chipsHeader) {
+        chipsHeader.textContent = playerChips;
+    }
+    
+    addMessage('success', `🏠 Lobby created: ${data.name} (${data.currentPlayers}/${data.maxPlayers} players)`);
+    addMessage('event', '🏠 You are the lobby admin - You can START the game');
+    addMessage('info', `📋 Share this Lobby ID with friends: ${lobbyId}`);
+    updateButtonStates();
+    
+    // Subscribe to lobby events for real-time updates
+    sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
 }
 
 // Handle Lobby Joined  
 function handleLobbyJoined(message) {
-    // Handled in handleTextResponse
-}
-
-// Handle Player Joined Lobby (Event from WebSocket)
+    const data = message.data;
+    if (!data) return;
+    
+    lobbyId = data.lobbyId;
+    maxLobbyPlayers = data.maxPlayers;
+    
+    // Build players list from DTO
+    lobbyPlayers = data.players.map(p => ({
+        id: p.playerId,
+        name: p.playerName,
+        chips: 1000
+    }));
+    
+    console.log('Lobby joined - players:', lobbyPlayers);
+    
+    currentGameState = GameState.IN_LOBBY;
+    
+    // Show lobby ID in onboarding
+    document.getElementById('lobbyIdDisplay').style.display = 'block';
+    document.getElementById('lobbyIdText').value = lobbyId;
+    
+    // Show lobby players container
+    document.getElementById('lobbyPlayersContainer').style.display = 'block';
+    
+    // Update lobby display on onboarding screen
+    updateLobbyPlayersList();
+    
+    // Transition to game screen to show seats
+    showGameScreen();
+    updateLobbySeatsDisplay();
+    
+    // Show lobby panel, hide game panel
+    const lobbyPanel = document.getElementById('lobbyActionsPanel');
+    const gamePanel = document.getElementById('gameActionsPanel');
+    if (lobbyPanel) lobbyPanel.style.display = 'block';
+    if (gamePanel) gamePanel.style.display = 'none';
+    
+    // Update footer lobby ID
+    const lobbyIdFooter = document.getElementById('lobbyIdFooter');
+    if (lobbyIdFooter) {
+        lobbyIdFooter.value = lobbyId;
+    }
+    
+    // Update header in game screen
+    const lobbyHeader = document.getElementById('lobbyIdHeaderDisplay');
+    if (lobbyHeader) {
+        lobbyHeader.textContent = lobbyId.substring(0, 8) + '...';
+    }
+    
+    // Update player chips in header
+    const chipsHeader = document.getElementById('playerChipsHeader');
+    if (chipsHeader) {
+        chipsHeader.textContent = playerChips;
+    }
+    
+    addMessage('success', `👍 Joined lobby: ${data.name} (${data.currentPlayers}/${data.maxPlayers} players)`);
+    addMessage('info', `📊 Lobby capacity: ${maxLobbyPlayers} players`);
+    updateButtonStates();
+    
+    // Subscribe to lobby events for real-time updates
+    sendCommand(`SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`);
+}// Handle Player Joined Lobby (Event from WebSocket)
 function handlePlayerJoinedLobby(message) {
     const data = message.data || message;
     const joinedPlayerId = data.playerId;
@@ -801,29 +736,29 @@ function handlePlayerLeftLobby(message) {
     }
 }
 
-// Helper function to parse player list from server response
-function parsePlayerListFromResponse(response) {
-    const players = [];
-    const playerListMatch = response.match(/PlayerList:\n((?:\s+-\s+[^\n]+\n?)+)/);
-    
-    if (playerListMatch) {
-        const playerLines = playerListMatch[1].trim().split('\n');
-        for (const line of playerLines) {
-            // Format: "  - <playerId>:<playerName>"
-            const match = line.match(/\s+-\s+([^:]+):(.+)/);
-            if (match) {
-                players.push({
-                    id: match[1].trim(),
-                    name: match[2].trim(),
-                    chips: 1000 // Default
-                });
-            }
-        }
-    }
-    
-    console.log('Parsed players from response:', players);
-    return players;
+// ========================================
+// DEPRECATED - Old text-based protocol handlers
+// These are no longer used - protocol is now JSON-based
+// ========================================
+
+/*
+// Legacy function - kept for reference only
+function handleTextResponse(content) {
+    // This function is deprecated - all responses now come as JSON
+    console.warn('handleTextResponse called - this function is deprecated');
 }
+
+// Legacy function - kept for reference only
+function parsePlayerListFromResponse(response) {
+    // This function is deprecated - player lists now come in JSON format
+    console.warn('parsePlayerListFromResponse called - this function is deprecated');
+    return [];
+}
+*/
+
+// ========================================
+// End deprecated functions
+// ========================================
 
 // Handle other domain events
 function handleGameStateChanged(message) {
