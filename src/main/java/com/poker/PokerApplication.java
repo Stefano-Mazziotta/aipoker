@@ -23,7 +23,6 @@ import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
 import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
-import com.poker.shared.infrastructure.websocket.MessageFormatter;
 import com.poker.shared.infrastructure.websocket.PokerWebSocketEndpoint;
 import com.poker.shared.infrastructure.websocket.ProtocolHandler;
 import com.poker.shared.infrastructure.websocket.WebSocketServer;
@@ -101,18 +100,15 @@ public class PokerApplication {
         System.out.println("Listening on ws://localhost:8081/ws/poker");
         System.out.println("Press Ctrl+C to stop\n");
         
-        // Create protocol handler with all use cases
+        // Create protocol handler with all use cases (no MessageFormatter needed - using JSON now)
         ProtocolHandler protocolHandler = new ProtocolHandler(
             registerPlayer, startGame, playerAction, dealCards,
             determineWinner, createLobby, joinLobby, leaveLobby, getLeaderboard,
-            getPlayerCards, getGameState, new MessageFormatter()
+            getPlayerCards, getGameState
         );
         
-        MessageFormatter messageFormatter = new MessageFormatter();
-        
-        // Configure WebSocket endpoint with handlers
+        // Configure WebSocket endpoint with handler
         PokerWebSocketEndpoint.setProtocolHandler(protocolHandler);
-        PokerWebSocketEndpoint.setMessageFormatter(messageFormatter);
         
         // Start WebSocket server
         WebSocketServer server = new WebSocketServer("localhost", 8081);
