@@ -19,6 +19,14 @@ export const WebSocketCommands = {
     return `LEAVE_LOBBY ${lobbyId} ${playerId}`;
   },
 
+  subscribeLobby: (lobbyId: string, playerId: string): string => {
+    return `SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`;
+  },
+
+  subscribeGame: (gameId: string, playerId: string): string => {
+    return `SUBSCRIBE_GAME ${gameId} ${playerId}`;
+  },
+
   // Game operations
   startGame: (playerIds: string[], smallBlind: number, bigBlind: number): string => {
     const playerIdsStr = playerIds.join(' ');
