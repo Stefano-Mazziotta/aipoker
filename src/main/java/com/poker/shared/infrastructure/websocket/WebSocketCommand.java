@@ -3,20 +3,19 @@ package com.poker.shared.infrastructure.websocket;
 /**
  * Enumeration of all supported WebSocket commands.
  * Provides type-safe command handling and eliminates magic strings.
+ * Only includes commands used in the actual game flow.
  */
 public enum WebSocketCommand {
     // Player commands
-    REGISTER("REGISTER"),
+    REGISTER("REGISTER_PLAYER"),
     
     // Lobby commands
     CREATE_LOBBY("CREATE_LOBBY"),
     JOIN_LOBBY("JOIN_LOBBY"),
     LEAVE_LOBBY("LEAVE_LOBBY"),
-    SUBSCRIBE_LOBBY("SUBSCRIBE_LOBBY"),
     
     // Game commands
     START_GAME("START_GAME"),
-    SUBSCRIBE_GAME("SUBSCRIBE_GAME"),
     
     // Player action commands
     FOLD("FOLD"),
@@ -25,13 +24,7 @@ public enum WebSocketCommand {
     RAISE("RAISE"),
     ALL_IN("ALL_IN"),
     
-    // Dealing commands
-    DEAL_FLOP("DEAL_FLOP"),
-    DEAL_TURN("DEAL_TURN"),
-    DEAL_RIVER("DEAL_RIVER"),
-    
     // Game state commands
-    DETERMINE_WINNER("DETERMINE_WINNER"),
     GET_MY_CARDS("GET_MY_CARDS"),
     GET_GAME_STATE("GET_GAME_STATE"),
     
@@ -71,17 +64,6 @@ public enum WebSocketCommand {
         }
         
         return UNKNOWN;
-    }
-    
-    /**
-     * Check if command starts with this command prefix.
-     * Useful for commands with arguments like "SUBSCRIBE_LOBBY <lobbyId>".
-     */
-    public boolean isPrefixOf(String commandStr) {
-        if (commandStr == null) {
-            return false;
-        }
-        return commandStr.trim().toUpperCase().startsWith(this.command);
     }
     
     @Override

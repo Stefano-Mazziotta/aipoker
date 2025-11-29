@@ -36,14 +36,11 @@ public class PokerWebSocketEndpoint {
         LOGGER.info(() -> String.format("WebSocket connection opened: %s", session.getId()));
         
         try {
-            // Send welcome message
-            String welcomeText = """
-                ╔═══════════════════════════════════════════════╗
-                ║   TEXAS HOLD'EM POKER SERVER                 ║
-                ║   Type 'HELP' for available commands         ║
-                ╚═══════════════════════════════════════════════╝
-                """;
-            WebSocketResponse<String> welcome = WebSocketResponse.success("welcome", welcomeText);
+            // Send simple welcome message
+            WebSocketResponse<String> welcome = WebSocketResponse.success(
+                "WELCOME", 
+                "Connected to Texas Hold'em Poker Server!"
+            );
             session.getBasicRemote().sendText(gson.toJson(welcome));
         } catch (java.io.IOException e) {
             LOGGER.warning(() -> String.format("Error sending welcome: %s", e.getMessage()));
@@ -55,41 +52,17 @@ public class PokerWebSocketEndpoint {
         LOGGER.info(() -> String.format("Received message from %s: %s", session.getId(), message));
         
         try {
-            // Parse JSON message
-            JsonObject json = gson.fromJson(message, JsonObject.class);
-            String command = json.has("command") ? json.get("command").getAsString() : message;
-            
-            // Handle special subscription commands
-            if (WebSocketCommand.SUBSCRIBE_GAME.isPrefixOf(command)) {
-                handleGameSubscription(command, session);
-                return;
-            } else if (WebSocketCommand.SUBSCRIBE_LOBBY.isPrefixOf(command)) {
-                handleLobbySubscription(command, session);
+            if (protocolHandler == null) {
+                WebSocketResponse<Void> error = WebSocketResponse.error("Server not initialized");
+                session.getBasicRemote().sendText(gson.toJson(error));
                 return;
             }
             
             // Process command through protocol handler
-            if (protocolHandler != null) {
-                WebSocketResponse<?> response = protocolHandler.handle(command);
-                
-                // Handle GAME_STARTED specially - broadcast to lobby and subscribe to game
-                if (response.isSuccess() && "GAME_STARTED".equals(response.getType()) && response.getLobbyId() != null) {
-                    handleGameStarted(response);
-                } else {
-                    // Normal response - just send back to requester
-                    session.getBasicRemote().sendText(gson.toJson(response));
-                }
-                
-                // Auto-subscribe to lobby after CREATE_LOBBY or JOIN_LOBBY
-                if (response.isSuccess() && response.getType() != null) {
-                    if (response.getType().equals("LOBBY_CREATED") || response.getType().equals("LOBBY_JOINED")) {
-                        autoSubscribeToLobby(command, response, session);
-                    }
-                }
-            } else {
-                WebSocketResponse<Void> error = WebSocketResponse.error("Server not initialized");
-                session.getBasicRemote().sendText(gson.toJson(error));
-            }
+            WebSocketResponse<?> response = protocolHandler.handle(message);
+            
+            // Handle special broadcasting and subscription cases
+            handleResponseWithSideEffects(message, response, session);
             
         } catch (com.google.gson.JsonSyntaxException | java.io.IOException e) {
             LOGGER.warning(() -> String.format("Error processing message: %s", e.getMessage()));
@@ -99,6 +72,83 @@ public class PokerWebSocketEndpoint {
             } catch (java.io.IOException ex) {
                 LOGGER.severe(() -> String.format("Failed to send error response: %s", ex.getMessage()));
             }
+        }
+    }
+
+    /**
+     * Handles response side effects: broadcasting events and managing subscriptions.
+     * This is infrastructure logic that coordinates WebSocket sessions.
+     */
+    private void handleResponseWithSideEffects(String message, WebSocketResponse<?> response, Session session) 
+            throws java.io.IOException {
+        
+        if (!response.isSuccess()) {
+            // For errors, just send back to requester
+            session.getBasicRemote().sendText(gson.toJson(response));
+            return;
+        }
+        
+        String responseType = response.getType();
+        if (responseType == null) {
+            session.getBasicRemote().sendText(gson.toJson(response));
+            return;
+        }
+        
+        switch (responseType) {
+            case "GAME_STARTED" -> {
+                // Broadcast to lobby, don't send to requester
+                if (response.getLobbyId() != null) {
+                    broadcastGameStarted(response);
+                }
+            }
+            case "LOBBY_CREATED", "LOBBY_JOINED" -> {
+                // Subscribe player to lobby for future events
+                subscribePlayerToLobby(message, response, session);
+                // Send response back to requester
+                session.getBasicRemote().sendText(gson.toJson(response));
+            }
+            default -> {
+                // Normal response
+                session.getBasicRemote().sendText(gson.toJson(response));
+            }
+        }
+    }
+
+    /**
+     * Infrastructure logic: Subscribe player's WebSocket session to lobby events.
+     * Extracts player and lobby IDs from the command/response.
+     */
+    private void subscribePlayerToLobby(String message, WebSocketResponse<?> response, Session session) {
+        try {
+            // Parse message to extract playerId
+            JsonObject json = gson.fromJson(message, JsonObject.class);
+            if (!json.has("data")) return;
+            
+            JsonObject data = json.getAsJsonObject("data");
+            String playerId = data.has("playerId") ? data.get("playerId").getAsString() : null;
+            if (playerId == null) {
+                LOGGER.warning("Cannot subscribe: missing playerId in command");
+                return;
+            }
+            
+            // Extract lobbyId from response
+            Object responseData = response.getData();
+            if (responseData == null) return;
+            
+            JsonObject lobbyData = gson.toJsonTree(responseData).getAsJsonObject();
+            if (!lobbyData.has("lobbyId")) {
+                LOGGER.warning("Cannot subscribe: missing lobbyId in response");
+                return;
+            }
+            
+            String lobbyId = lobbyData.get("lobbyId").getAsString();
+            
+            // Subscribe session to lobby scope
+            eventPublisher.subscribe(lobbyId, session, playerId);
+            LOGGER.info(() -> String.format("Subscribed player %s to lobby %s", playerId, lobbyId));
+            
+        } catch (Exception e) {
+            LOGGER.warning(() -> String.format("Subscription error: %s", e.getMessage()));
         }
     }
 
@@ -114,100 +164,11 @@ public class PokerWebSocketEndpoint {
             session.getId(), throwable.getMessage()));
     }
 
-    private void handleGameSubscription(String command, Session session) {
-        try {
-            String[] parts = command.split(" ");
-            if (parts.length < 3) {
-                WebSocketResponse<Void> error = WebSocketResponse.error("Usage: SUBSCRIBE_GAME <gameId> <playerId>");
-                session.getBasicRemote().sendText(gson.toJson(error));
-                return;
-            }
-            
-            String gameId = parts[1];
-            String playerId = parts[2];
-            
-            eventPublisher.subscribe(gameId, session, playerId);
-            WebSocketResponse<Void> success = WebSocketResponse.successMessage("Subscribed to game " + gameId);
-            session.getBasicRemote().sendText(gson.toJson(success));
-                
-        } catch (java.io.IOException e) {
-            LOGGER.warning(() -> String.format("Game subscription error: %s", e.getMessage()));
-        }
-    }
-
-    private void handleLobbySubscription(String command, Session session) {
-        try {
-            String[] parts = command.split(" ");
-            if (parts.length < 3) {
-                WebSocketResponse<Void> error = WebSocketResponse.error("Usage: SUBSCRIBE_LOBBY <lobbyId> <playerId>");
-                session.getBasicRemote().sendText(gson.toJson(error));
-                return;
-            }
-            
-            String lobbyId = parts[1];
-            String playerId = parts[2];
-            
-            eventPublisher.subscribe(lobbyId, session, playerId);
-            WebSocketResponse<Void> success = WebSocketResponse.successMessage("Subscribed to lobby " + lobbyId);
-            session.getBasicRemote().sendText(gson.toJson(success));
-                
-        } catch (java.io.IOException e) {
-            LOGGER.warning(() -> String.format("Lobby subscription error: %s", e.getMessage()));
-        }
-    }
-
     /**
-     * Automatically subscribes player to lobby after CREATE_LOBBY or JOIN_LOBBY.
-     * Extracts lobbyId and playerId from the command and response data.
+     * Infrastructure logic: Broadcast game started event to all lobby participants.
+     * Handles the special case where START_GAME response goes to lobby, not requester.
      */
-    private void autoSubscribeToLobby(String command, WebSocketResponse<?> response, Session session) {
-        try {
-            // Extract player ID from command
-            // CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>
-            // JOIN_LOBBY <lobbyId> <playerId>
-            String[] parts = command.trim().split("\\s+");
-            String playerId;
-            
-            if (WebSocketCommand.CREATE_LOBBY.isPrefixOf(command)) {
-                if (parts.length < 4) return;
-                playerId = parts[3]; // adminPlayerId
-            } else if (WebSocketCommand.JOIN_LOBBY.isPrefixOf(command)) {
-                if (parts.length < 3) return;
-                playerId = parts[2]; // playerId
-            } else {
-                return;
-            }
-            
-            // Extract lobby data from response
-            Object data = response.getData();
-            if (data == null) {
-                return;
-            }
-            
-            // Convert response data to JSON to extract lobbyId
-            JsonObject lobbyData = gson.toJsonTree(data).getAsJsonObject();
-            
-            if (!lobbyData.has("lobbyId")) {
-                LOGGER.warning("Cannot auto-subscribe: missing lobbyId in response");
-                return;
-            }
-            
-            String lobbyId = lobbyData.get("lobbyId").getAsString();
-            
-            // Subscribe player to lobby
-            eventPublisher.subscribe(lobbyId, session, playerId);
-            LOGGER.info(() -> String.format("Auto-subscribed player %s to lobby %s", playerId, lobbyId));
-            
-        } catch (Exception e) {
-            LOGGER.warning(() -> String.format("Auto-subscription error: %s", e.getMessage()));
-        }
-    }
-
-    /**
-     * Handles GAME_STARTED by broadcasting to lobby and subscribing players to game scope.
-     * Extracts lobbyId from response and gameId/playerIds from response data.
-     */
-    private void handleGameStarted(WebSocketResponse<?> response) {
+    private void broadcastGameStarted(WebSocketResponse<?> response) {
         try {
             String lobbyId = response.getLobbyId();
             if (lobbyId == null) {

@@ -66,7 +66,7 @@ public class ProtocolHandler {
 
         // Parse JSON request
         try {
-            LOGGER.info(() -> "Received command: " + command);
+            LOGGER.info(() -> "Parsing message: " + command);
             
             JsonObject jsonRequest = gson.fromJson(command, JsonObject.class);
             if (jsonRequest == null || !jsonRequest.has("command")) {
@@ -74,20 +74,17 @@ public class ProtocolHandler {
             }
             
             String commandName = jsonRequest.get("command").getAsString();
+            LOGGER.info(() -> "Processing command: " + commandName);
             
-            // Safely extract data - handle both object and primitive cases
+            // Extract data field - must be a JSON object
             JsonObject data;
             if (jsonRequest.has("data")) {
                 var dataElement = jsonRequest.get("data");
-                if (dataElement.isJsonObject()) {
-                    data = dataElement.getAsJsonObject();
-                } else if (dataElement.isJsonPrimitive()) {
-                    // If data is a primitive, log and return error
-                    LOGGER.warning(() -> "Data is primitive, not object: " + dataElement);
-                    return WebSocketResponse.error("Invalid data format. Expected JSON object, got: " + dataElement);
-                } else {
-                    data = new JsonObject();
+                if (!dataElement.isJsonObject()) {
+                    LOGGER.warning(() -> "Invalid data type for command " + commandName + ": " + dataElement);
+                    return WebSocketResponse.error("Invalid data format. Expected JSON object.");
                 }
+                data = dataElement.getAsJsonObject();
             } else {
                 data = new JsonObject();
             }
@@ -122,8 +119,10 @@ public class ProtocolHandler {
     
     private WebSocketResponse<?> handleRegister(JsonObject data) {
         String playerName = data.get("playerName").getAsString();
-        // Default chips to 1000 if not provided
+        // Chips can be provided by client, or default to 1000
         int chips = data.has("chips") ? data.get("chips").getAsInt() : 1000;
+        
+        LOGGER.info(() -> String.format("Registering player: %s with chips: %d", playerName, chips));
         
         var response = registerPlayer.execute(
             new RegisterPlayerUseCase.RegisterPlayerCommand(playerName, chips)
