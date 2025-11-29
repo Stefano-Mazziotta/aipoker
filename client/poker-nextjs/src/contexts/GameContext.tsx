@@ -9,8 +9,11 @@ import {
   isGameStartedEvent,
   isPlayerActionEvent,
   isGameStateChangedEvent,
+  isCardsDealtEvent,
+  isWinnerDeterminedEvent,
 } from '@/lib/types/server-events';
 import { WebSocketCommand } from '@/lib/types/commands';
+import { ALL_GAME_EVENT_TYPES } from '@/lib/constants/event-types';
 
 interface GameContextType {
   gameId: string | null;
@@ -30,6 +33,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = subscribe((event: ServerEvent) => {
+      // Only handle game-related events
+      if (!ALL_GAME_EVENT_TYPES.includes(event.eventType as any)) {
+        return;
+      }
+      
       if (isGameStartedEvent(event)) {
         console.log('Game started event received:', event);
         setGameId(event.gameId);
@@ -38,14 +46,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           console.log('Requesting game state for:', event.gameId);
           sendCommand(commands.getGameState(event.gameId));
         }
-      } else if ((event as any).eventType === 'GAME_STATE' || (event as any).gameId) {
-        // GAME_STATE is not a domain event in our types, but server sends it
-        console.log('Game state received:', event);
+      } else if (isGameStateChangedEvent(event)) {
+        // Handle game state changes
+        console.log('Game state changed:', event);
         setGameState(event as any);
       } else if (isPlayerActionEvent(event)) {
         console.log('Player action:', event);
         // Optionally update local game state based on action
-      } else if (event.eventType === 'WINNER_DETERMINED') {
+      } else if (isCardsDealtEvent(event)) {
+        console.log('Cards dealt:', event);
+        // Optionally update local game state with community cards
+      } else if (isWinnerDeterminedEvent(event)) {
+        console.log('Winner determined:', event);
         // Handle game end
         setTimeout(() => {
           setGameId(null);

@@ -2,10 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './WebSocketContext';
-import {
-  WebSocketEvent,
-  PlayerRegisteredData,
-} from '@/lib/types/events';
+import { ServerEvent, isPlayerRegisteredEvent } from '@/lib/types/server-events';
+import { AUTH_EVENTS } from '@/lib/constants/event-types';
 
 interface AuthContextType {
   playerId: string | null;
@@ -38,22 +36,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = subscribe((event: WebSocketEvent) => {
-      switch (event.type) {
-        case 'PLAYER_REGISTERED': {
-          const data = event.data as PlayerRegisteredData;
-          setPlayerId(data.id);
-          setPlayerName(data.name);
-          setPlayerChips(data.chips);
-          localStorage.setItem('playerId', data.id);
-          localStorage.setItem('playerName', data.name);
-          localStorage.setItem('playerChips', data.chips.toString());
-          break;
-        }
-        case 'ERROR': {
-          console.error('Auth error:', event.data);
-          break;
-        }
+    const unsubscribe = subscribe((event: ServerEvent) => {
+      // Only handle auth-related events
+      if (event.eventType !== AUTH_EVENTS.PLAYER_REGISTERED) {
+        return;
+      }
+      
+      console.log('AuthContext received event:', event.eventType, event);
+      
+      if (isPlayerRegisteredEvent(event)) {
+        setPlayerId(event.playerId);
+        setPlayerName(event.playerName);
+        setPlayerChips(event.chips);
+        localStorage.setItem('playerId', event.playerId);
+        localStorage.setItem('playerName', event.playerName);
+        localStorage.setItem('playerChips', event.chips.toString());
+        console.log('Player registered:', event.playerName);
       }
     });
 
@@ -65,8 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Cannot register: WebSocket not connected');
       return;
     }
-    // Command only needs playerName, chips is defaulted on server to 1000
-    const command = commands.register(name);
+    // Pass both playerName and chips to the command
+    const command = commands.register(name, chips);
     console.log('Sending register command:', command);
     sendCommand(command);
   }, [isConnected, commands, sendCommand]);

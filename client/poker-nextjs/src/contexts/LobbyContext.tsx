@@ -11,6 +11,7 @@ import {
   isPlayerJoinedLobbyEvent,
   isPlayerLeftLobbyEvent,
 } from '@/lib/types/server-events';
+import { ALL_LOBBY_EVENT_TYPES } from '@/lib/constants/event-types';
 
 interface LobbyContextType {
   lobbyId: string | null;
@@ -36,19 +37,36 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = subscribe((event: ServerEvent) => {
+      // Only handle lobby-related events
+      if (!ALL_LOBBY_EVENT_TYPES.includes(event.eventType as any)) {
+        return;
+      }
+      
       console.log('LobbyContext received event:', event.eventType, event);
       
       if (isLobbyCreatedEvent(event)) {
         setLobbyId(event.lobbyId);
-        setLobbyPlayers(event.players);
+        // Map PlayerDTO to PlayerInfo
+        const mappedPlayers = event.players.map(p => ({
+          id: p.playerId,
+          name: p.playerName,
+          chips: p.chips
+        }));
+        setLobbyPlayers(mappedPlayers);
         setIsLobbyAdmin(true);
         setMaxPlayers(event.maxPlayers);
-        console.log('Lobby created, backend will auto-subscribe');
+        console.log('Lobby created, players:', mappedPlayers);
       } else if (isLobbyJoinedEvent(event)) {
         setLobbyId(event.lobbyId);
-        setLobbyPlayers(event.players);
+        // Map PlayerDTO to PlayerInfo
+        const mappedPlayers = event.players.map(p => ({
+          id: p.playerId,
+          name: p.playerName,
+          chips: p.chips
+        }));
+        setLobbyPlayers(mappedPlayers);
         setIsLobbyAdmin(false);
-        console.log('Lobby joined, backend will auto-subscribe');
+        console.log('Lobby joined, players:', mappedPlayers);
       } else if (isPlayerJoinedLobbyEvent(event)) {
         console.log('PLAYER_JOINED_LOBBY event received:', event);
         setLobbyPlayers(prev => {
