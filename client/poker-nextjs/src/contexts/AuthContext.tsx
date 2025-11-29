@@ -65,7 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Cannot register: WebSocket not connected');
       return;
     }
-    const command = commands.register(name, chips);
+    // Command only needs playerName, chips is defaulted on server to 1000
+    const command = commands.register(name);
+    console.log('Sending register command:', command);
     sendCommand(command);
   }, [isConnected, commands, sendCommand]);
 
