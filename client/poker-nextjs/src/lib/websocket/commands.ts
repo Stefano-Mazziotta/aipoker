@@ -21,7 +21,7 @@ import {
 
 export const commands = {
   // Player commands
-  register: (playerName: string) => createRegisterPlayerCommand(playerName),
+  register: (playerName: string, chips: number) => createRegisterPlayerCommand(playerName, chips),
   
   getLeaderboard: (limit?: number) => createGetLeaderboardCommand(limit),
   

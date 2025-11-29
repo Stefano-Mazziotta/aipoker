@@ -18,6 +18,7 @@ export interface WebSocketCommand<T = unknown> {
 
 export interface RegisterPlayerData {
   playerName: string;
+  chips: number;
 }
 
 export interface GetLeaderboardData {
@@ -101,10 +102,10 @@ export type CommandTypeValue = typeof CommandType[keyof typeof CommandType];
 // Typed Command Constructors
 // ============================================================================
 
-export function createRegisterPlayerCommand(playerName: string): WebSocketCommand<RegisterPlayerData> {
+export function createRegisterPlayerCommand(playerName: string, chips: number): WebSocketCommand<RegisterPlayerData> {
   return {
     command: CommandType.REGISTER_PLAYER,
-    data: { playerName }
+    data: { playerName, chips }
   };
 }
 
