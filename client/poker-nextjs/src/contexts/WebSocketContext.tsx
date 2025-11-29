@@ -2,15 +2,16 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { WebSocketClient, WebSocketStatus } from '@/lib/websocket/client';
-import { WebSocketCommands } from '@/lib/websocket/commands';
-import { WebSocketEvent } from '@/lib/types/events';
+import { commands } from '@/lib/websocket/commands';
+import { ServerEvent } from '@/lib/types/server-events';
+import { WebSocketCommand } from '@/lib/types/commands';
 
 interface WebSocketContextType {
   status: WebSocketStatus;
   isConnected: boolean;
-  sendCommand: (command: string | object) => void;
-  subscribe: (handler: (event: WebSocketEvent) => void) => () => void;
-  commands: typeof WebSocketCommands;
+  sendCommand: (command: WebSocketCommand<unknown>) => void;
+  subscribe: (handler: (event: ServerEvent) => void) => () => void;
+  commands: typeof commands;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -38,12 +39,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const sendCommand = useCallback((command: string | object) => {
+  const sendCommand = useCallback((command: WebSocketCommand<unknown>) => {
     wsClientRef.current?.send(command);
   }, []);
 
   // Don't memoize subscribe - it needs to access current wsClientRef
-  const subscribe = (handler: (event: WebSocketEvent) => void) => {
+  const subscribe = (handler: (event: ServerEvent) => void) => {
     if (!wsClientRef.current) {
       console.warn('WebSocket client not initialized yet');
       return () => {};
@@ -60,7 +61,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         isConnected,
         sendCommand,
         subscribe,
-        commands: WebSocketCommands,
+        commands,
       }}
     >
       {children}

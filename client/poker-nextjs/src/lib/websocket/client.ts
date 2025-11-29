@@ -1,10 +1,11 @@
 'use client';
 
-import { WebSocketEvent } from '../types/events';
+import { ServerEvent } from '../types/server-events';
+import { WebSocketCommand } from '../types/commands';
 
 export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
-export type MessageHandler = (event: WebSocketEvent) => void;
+export type MessageHandler = (event: ServerEvent) => void;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -56,12 +57,12 @@ export class WebSocketClient {
           // Backend sends two formats:
           // 1. Command responses: { type: "...", data: {...}, success: true/false, message: "..." }
           // 2. Domain events: { eventType: "...", data: {...}, timestamp: "...", eventId: "..." }
-          // Convert both to our event format: { type: "...", data: {...} }
           const eventType = response.type || response.eventType;
-          const message: WebSocketEvent = {
-            type: eventType?.toUpperCase() || 'UNKNOWN',
-            data: response.data || response
-          };
+          const message: ServerEvent = {
+            eventType: eventType?.toUpperCase() || 'UNKNOWN',
+            timestamp: response.timestamp || Date.now(),
+            ...response
+          } as ServerEvent;
           
           // Log errors
           if (response.success === false && response.message) {
@@ -96,16 +97,9 @@ export class WebSocketClient {
     }, delay);
   }
 
-  send(command: string | object): void {
+  send(command: WebSocketCommand<unknown>): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      let message: string;
-      if (typeof command === 'string') {
-        // Legacy string command - wrap in JSON format
-        message = JSON.stringify({ command });
-      } else {
-        // Already an object - stringify it
-        message = JSON.stringify(command);
-      }
+      const message = JSON.stringify(command);
       this.ws.send(message);
     } else {
       console.error('WebSocket is not connected. Cannot send command:', command);
@@ -142,7 +136,7 @@ export class WebSocketClient {
     };
   }
 
-  private notifyMessageHandlers(message: WebSocketEvent): void {
+  private notifyMessageHandlers(message: ServerEvent): void {
     this.messageHandlers.forEach(handler => {
       try {
         handler(message);

@@ -1,82 +1,63 @@
-// WebSocket command builders matching Java backend protocol
-// Uses JSON format with typed data for type safety
+/**
+ * WebSocket command builders for client-to-server communication.
+ * Now using strongly-typed commands from the commands module.
+ */
 
-export const WebSocketCommands = {
-  // Player registration
-  register: (name: string, chips: number) => ({
-    command: 'REGISTER',
-    data: { name, chips }
-  }),
+import {
+  createRegisterPlayerCommand,
+  createGetLeaderboardCommand,
+  createCreateLobbyCommand,
+  createJoinLobbyCommand,
+  createLeaveLobbyCommand,
+  createStartGameCommand,
+  createGetGameStateCommand,
+  createGetPlayerCardsCommand,
+  createFoldCommand,
+  createCheckCommand,
+  createCallCommand,
+  createRaiseCommand,
+  createAllInCommand,
+} from '../types/commands';
 
-  // Lobby operations
-  createLobby: (lobbyName: string, maxPlayers: number, playerId: string) => ({
-    command: 'CREATE_LOBBY',
-    data: {
-      name: lobbyName,
-      maxPlayers,
-      adminPlayerId: playerId
-    }
-  }),
-
-  joinLobby: (lobbyId: string, playerId: string) => ({
-    command: 'JOIN_LOBBY',
-    data: { lobbyId, playerId }
-  }),
-
-  leaveLobby: (lobbyId: string, playerId: string) => ({
-    command: 'LEAVE_LOBBY',
-    data: { lobbyId, playerId }
-  }),
-
-  subscribeLobby: (lobbyId: string, playerId: string): string => {
-    // Keep as string for backward compatibility with subscription mechanism
-    return `SUBSCRIBE_LOBBY ${lobbyId} ${playerId}`;
-  },
-
-  subscribeGame: (gameId: string, playerId: string): string => {
-    // Keep as string for backward compatibility with subscription mechanism
-    return `SUBSCRIBE_GAME ${gameId} ${playerId}`;
-  },
-
-  // Game operations
-  startGame: (lobbyId: string, playerIds: string[], smallBlind: number, bigBlind: number) => ({
-    command: 'START_GAME',
-    data: {
-      lobbyId,
-      playerIds,
-      smallBlind,
-      bigBlind
-    }
-  }),
-
-  getGameState: (gameId: string) => ({
-    command: 'GET_GAME_STATE',
-    data: { gameId }
-  }),
-
+export const commands = {
+  // Player commands
+  register: (playerName: string) => createRegisterPlayerCommand(playerName),
+  
+  getLeaderboard: (limit?: number) => createGetLeaderboardCommand(limit),
+  
+  // Lobby commands
+  createLobby: (playerId: string, maxPlayers: number) => 
+    createCreateLobbyCommand(playerId, maxPlayers),
+  
+  joinLobby: (lobbyId: string, playerId: string) => 
+    createJoinLobbyCommand(lobbyId, playerId),
+  
+  leaveLobby: (lobbyId: string, playerId: string) => 
+    createLeaveLobbyCommand(lobbyId, playerId),
+  
+  startGame: (lobbyId: string, playerIds: string[], smallBlind: number, bigBlind: number) =>
+    createStartGameCommand(lobbyId, playerIds, smallBlind, bigBlind),
+  
+  // Game commands
+  getGameState: (gameId: string) => createGetGameStateCommand(gameId),
+  
+  getPlayerCards: (gameId: string, playerId: string) => 
+    createGetPlayerCardsCommand(gameId, playerId),
+  
   // Player actions
-  check: (gameId: string, playerId: string) => ({
-    command: 'CHECK',
-    data: { gameId, playerId }
-  }),
-
-  call: (gameId: string, playerId: string) => ({
-    command: 'CALL',
-    data: { gameId, playerId, amount: 0 }
-  }),
-
-  raise: (gameId: string, playerId: string, amount: number) => ({
-    command: 'RAISE',
-    data: { gameId, playerId, amount }
-  }),
-
-  fold: (gameId: string, playerId: string) => ({
-    command: 'FOLD',
-    data: { gameId, playerId }
-  }),
-
-  allIn: (gameId: string, playerId: string) => ({
-    command: 'ALL_IN',
-    data: { gameId, playerId }
-  }),
+  fold: (gameId: string, playerId: string) => createFoldCommand(gameId, playerId),
+  
+  check: (gameId: string, playerId: string) => createCheckCommand(gameId, playerId),
+  
+  call: (gameId: string, playerId: string) => createCallCommand(gameId, playerId),
+  
+  raise: (gameId: string, playerId: string, amount: number) => 
+    createRaiseCommand(gameId, playerId, amount),
+  
+  allIn: (gameId: string, playerId: string) => createAllInCommand(gameId, playerId),
 };
+
+export type Commands = typeof commands;
+
+// Backward compatibility export
+export const WebSocketCommands = commands;

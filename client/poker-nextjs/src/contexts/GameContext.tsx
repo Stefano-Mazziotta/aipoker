@@ -5,10 +5,12 @@ import { useWebSocket } from './WebSocketContext';
 import { useAuth } from './AuthContext';
 import { GameStateDTO } from '@/lib/types/game';
 import {
-  WebSocketEvent,
-  GameStartedData,
-  PlayerActionData,
-} from '@/lib/types/events';
+  ServerEvent,
+  isGameStartedEvent,
+  isPlayerActionEvent,
+  isGameStateChangedEvent,
+} from '@/lib/types/server-events';
+import { WebSocketCommand } from '@/lib/types/commands';
 
 interface GameContextType {
   gameId: string | null;
@@ -27,38 +29,29 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const { playerId } = useAuth();
 
   useEffect(() => {
-    const unsubscribe = subscribe((event: WebSocketEvent) => {
-      switch (event.type) {
-        case 'GAME_STARTED': {
-          const data = event.data as GameStartedData;
-          console.log('Game started event received:', data);
-          setGameId(data.gameId);
-          // Request initial game state
-          if (data.gameId) {
-            console.log('Requesting game state for:', data.gameId);
-            sendCommand(commands.getGameState(data.gameId));
-          }
-          break;
+    const unsubscribe = subscribe((event: ServerEvent) => {
+      if (isGameStartedEvent(event)) {
+        console.log('Game started event received:', event);
+        setGameId(event.gameId);
+        // Request initial game state
+        if (event.gameId) {
+          console.log('Requesting game state for:', event.gameId);
+          sendCommand(commands.getGameState(event.gameId));
         }
-        case 'GAME_STATE': {
-          const data = event.data as GameStateDTO;
-          console.log('Game state received:', data);
-          setGameState(data);
-          break;
-        }
-        case 'PLAYER_ACTION': {
-          const data = event.data as PlayerActionData;
-          console.log('Player action:', data);
-          break;
-        }
-        case 'GAME_ENDED': {
-          // Handle game end
-          setTimeout(() => {
-            setGameId(null);
-            setGameState(null);
-          }, 5000); // Show results for 5 seconds
-          break;
-        }
+      } else if (event.eventType === 'GAME_STATE') {
+        // GAME_STATE is not a domain event, handle specially
+        const data = event as any;
+        console.log('Game state received:', data);
+        setGameState(data);
+      } else if (isPlayerActionEvent(event)) {
+        console.log('Player action:', event);
+        // Optionally update local game state based on action
+      } else if (event.eventType === 'GAME_ENDED' || event.eventType === 'WINNER_DETERMINED') {
+        // Handle game end
+        setTimeout(() => {
+          setGameId(null);
+          setGameState(null);
+        }, 5000); // Show results for 5 seconds
       }
     });
 
@@ -71,7 +64,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let command: string | object;
+    let command: WebSocketCommand<unknown>;
     switch (action) {
       case 'CHECK':
         command = commands.check(gameId, playerId);
