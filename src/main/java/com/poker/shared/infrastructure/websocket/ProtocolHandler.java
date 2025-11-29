@@ -66,13 +66,33 @@ public class ProtocolHandler {
 
         // Parse JSON request
         try {
+            LOGGER.info(() -> "Received command: " + command);
+            
             JsonObject jsonRequest = gson.fromJson(command, JsonObject.class);
             if (jsonRequest == null || !jsonRequest.has("command")) {
                 return WebSocketResponse.error("Invalid request format. Expected JSON with 'command' field");
             }
             
             String commandName = jsonRequest.get("command").getAsString();
-            JsonObject data = jsonRequest.has("data") ? jsonRequest.get("data").getAsJsonObject() : new JsonObject();
+            
+            // Safely extract data - handle both object and primitive cases
+            JsonObject data;
+            if (jsonRequest.has("data")) {
+                var dataElement = jsonRequest.get("data");
+                if (dataElement.isJsonObject()) {
+                    data = dataElement.getAsJsonObject();
+                } else if (dataElement.isJsonPrimitive()) {
+                    // If data is a primitive, log and return error
+                    LOGGER.warning(() -> "Data is primitive, not object: " + dataElement);
+                    return WebSocketResponse.error("Invalid data format. Expected JSON object, got: " + dataElement);
+                } else {
+                    data = new JsonObject();
+                }
+            } else {
+                data = new JsonObject();
+            }
+            
+            LOGGER.info(() -> String.format("Command: %s, Data: %s", commandName, data));
             
             WebSocketCommand cmd = WebSocketCommand.fromString(commandName);
 
