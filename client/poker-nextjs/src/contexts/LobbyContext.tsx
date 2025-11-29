@@ -5,12 +5,12 @@ import { useWebSocket } from './WebSocketContext';
 import { useAuth } from './AuthContext';
 import { PlayerInfo } from '@/lib/types/player';
 import {
-  WebSocketEvent,
-  LobbyCreatedData,
-  LobbyJoinedData,
-  PlayerJoinedLobbyData,
-  PlayerLeftLobbyData,
-} from '@/lib/types/events';
+  ServerEvent,
+  isLobbyCreatedEvent,
+  isLobbyJoinedEvent,
+  isPlayerJoinedLobbyEvent,
+  isPlayerLeftLobbyEvent,
+} from '@/lib/types/server-events';
 
 interface LobbyContextType {
   lobbyId: string | null;
@@ -35,81 +35,46 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
   const { playerId } = useAuth();
 
   useEffect(() => {
-    const unsubscribe = subscribe((event: WebSocketEvent) => {
-      console.log('LobbyContext received event:', event.type, event.data);
-      switch (event.type) {
-        case 'LOBBY_CREATED': {
-          const data = event.data as LobbyCreatedData;
-          setLobbyId(data.lobbyId);
-          // Map backend format to frontend format
-          const players = data.players.map((p: any) => ({
-            id: p.playerId || p.id,
-            name: p.playerName || p.name,
-            chips: p.chips || 0
-          }));
-          setLobbyPlayers(players);
-          setIsLobbyAdmin(true);
-          // Backend auto-subscribes to lobby
-          console.log('Lobby created, backend will auto-subscribe');
-          break;
-        }
-        case 'LOBBY_JOINED': {
-          const data = event.data as LobbyJoinedData;
-          setLobbyId(data.lobbyId);
-          // Map backend format to frontend format
-          const players = data.players.map((p: any) => ({
-            id: p.playerId || p.id,
-            name: p.playerName || p.name,
-            chips: p.chips || 0
-          }));
-          setLobbyPlayers(players);
-          setIsLobbyAdmin(false);
-          // Backend auto-subscribes to lobby
-          console.log('Lobby joined, backend will auto-subscribe');
-          break;
-        }
-        case 'PLAYER_JOINED_LOBBY': {
-          const data = event.data as PlayerJoinedLobbyData;
-          console.log('PLAYER_JOINED_LOBBY event received:', data);
-          setLobbyPlayers(prev => {
-            console.log('Current players:', prev);
-            // Check if player already exists
-            if (prev.some(p => p.id === data.playerId)) {
-              console.log('Player already in list, skipping');
-              return prev;
-            }
-            const newPlayer = {
-              id: data.playerId,
-              name: data.playerName,
-              chips: data.playerChips,
-            };
-            console.log('Adding new player:', newPlayer);
-            return [...prev, newPlayer];
-          });
-          break;
-        }
-        case 'PLAYER_LEFT_LOBBY': {
-          const data = event.data as PlayerLeftLobbyData;
-          setLobbyPlayers(prev => prev.filter(p => p.id !== data.playerId));
-          
-          // If we left, reset lobby state
-          if (data.playerId === playerId) {
-            setLobbyId(null);
-            setLobbyPlayers([]);
-            setIsLobbyAdmin(false);
+    const unsubscribe = subscribe((event: ServerEvent) => {
+      console.log('LobbyContext received event:', event.eventType, event);
+      
+      if (isLobbyCreatedEvent(event)) {
+        setLobbyId(event.lobbyId);
+        setLobbyPlayers(event.players);
+        setIsLobbyAdmin(true);
+        setMaxPlayers(event.maxPlayers);
+        console.log('Lobby created, backend will auto-subscribe');
+      } else if (isLobbyJoinedEvent(event)) {
+        setLobbyId(event.lobbyId);
+        setLobbyPlayers(event.players);
+        setIsLobbyAdmin(false);
+        console.log('Lobby joined, backend will auto-subscribe');
+      } else if (isPlayerJoinedLobbyEvent(event)) {
+        console.log('PLAYER_JOINED_LOBBY event received:', event);
+        setLobbyPlayers(prev => {
+          console.log('Current players:', prev);
+          // Check if player already exists
+          if (prev.some(p => p.id === event.playerId)) {
+            console.log('Player already in list, skipping');
+            return prev;
           }
-          break;
-        }
-        case 'GAME_STARTED': {
-          // Game started, we're no longer just in lobby
-          // Keep lobby data but transition to game
-          break;
-        }
-        case 'SUCCESS':
-        case 'INFO': {
-          // Log success/info messages
-          console.log('Server message:', event.data);
-          break;
+          const newPlayer = {
+            id: event.playerId,
+            name: event.playerName,
+            chips: event.playerChips,
+          };
+          console.log('Adding new player:', newPlayer);
+          return [...prev, newPlayer];
+        });
+        setMaxPlayers(event.maxPlayers);
+      } else if (isPlayerLeftLobbyEvent(event)) {
+        setLobbyPlayers(prev => prev.filter(p => p.id !== event.playerId));
+        
+        // If we left, reset lobby state
+        if (event.playerId === playerId) {
+          setLobbyId(null);
+          setLobbyPlayers([]);
+          setIsLobbyAdmin(false);
         }
       }
     });
@@ -122,7 +87,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
       console.error('Cannot create lobby: not registered');
       return;
     }
-    const command = commands.createLobby(lobbyName, maxPlayersCount, playerId);
+    const command = commands.createLobby(playerId, maxPlayersCount);
     sendCommand(command);
     setMaxPlayers(maxPlayersCount);
   }, [playerId, commands, sendCommand]);

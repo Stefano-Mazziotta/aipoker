@@ -38,15 +38,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           console.log('Requesting game state for:', event.gameId);
           sendCommand(commands.getGameState(event.gameId));
         }
-      } else if (event.eventType === 'GAME_STATE') {
-        // GAME_STATE is not a domain event, handle specially
-        const data = event as any;
-        console.log('Game state received:', data);
-        setGameState(data);
+      } else if ((event as any).eventType === 'GAME_STATE' || (event as any).gameId) {
+        // GAME_STATE is not a domain event in our types, but server sends it
+        console.log('Game state received:', event);
+        setGameState(event as any);
       } else if (isPlayerActionEvent(event)) {
         console.log('Player action:', event);
         // Optionally update local game state based on action
-      } else if (event.eventType === 'GAME_ENDED' || event.eventType === 'WINNER_DETERMINED') {
+      } else if (event.eventType === 'WINNER_DETERMINED') {
         // Handle game end
         setTimeout(() => {
           setGameId(null);
