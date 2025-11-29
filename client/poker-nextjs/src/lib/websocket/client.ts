@@ -58,10 +58,18 @@ export class WebSocketClient {
           // 1. Command responses: { type: "...", data: {...}, success: true/false, message: "..." }
           // 2. Domain events: { eventType: "...", data: {...}, timestamp: "...", eventId: "..." }
           const eventType = response.type || response.eventType;
+          
+          // Flatten response data into the event for easier access
+          // Only spread data if it's an object, not a string or primitive
+          const dataToSpread = response.data && typeof response.data === 'object' && !Array.isArray(response.data)
+            ? response.data
+            : {};
+          
           const message: ServerEvent = {
             eventType: eventType?.toUpperCase() || 'UNKNOWN',
             timestamp: response.timestamp || Date.now(),
-            ...response
+            ...response,
+            ...dataToSpread
           } as ServerEvent;
           
           // Log errors
