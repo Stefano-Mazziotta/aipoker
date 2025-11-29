@@ -101,11 +101,12 @@ public class ProtocolHandler {
     }
     
     private WebSocketResponse<?> handleRegister(JsonObject data) {
-        String name = data.get("name").getAsString();
-        int chips = data.get("chips").getAsInt();
+        String playerName = data.get("playerName").getAsString();
+        // Default chips to 1000 if not provided
+        int chips = data.has("chips") ? data.get("chips").getAsInt() : 1000;
         
         var response = registerPlayer.execute(
-            new RegisterPlayerUseCase.RegisterPlayerCommand(name, chips)
+            new RegisterPlayerUseCase.RegisterPlayerCommand(playerName, chips)
         );
         
         return WebSocketResponse.success("PLAYER_REGISTERED", response);
@@ -124,12 +125,13 @@ public class ProtocolHandler {
     }
 
     private WebSocketResponse<?> handleCreateLobby(JsonObject data) {
-        String name = data.get("name").getAsString();
+        String playerId = data.get("playerId").getAsString();
         int maxPlayers = data.get("maxPlayers").getAsInt();
-        String adminPlayerId = data.get("adminPlayerId").getAsString();
+        // Generate a default lobby name if not provided
+        String lobbyName = data.has("name") ? data.get("name").getAsString() : "Lobby-" + System.currentTimeMillis();
         
         var response = createLobby.execute(
-            new CreateLobbyUseCase.CreateLobbyCommand(name, maxPlayers, adminPlayerId)
+            new CreateLobbyUseCase.CreateLobbyCommand(lobbyName, maxPlayers, playerId)
         );
         
         return WebSocketResponse.success("LOBBY_CREATED", response);
