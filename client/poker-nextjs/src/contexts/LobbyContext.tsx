@@ -154,10 +154,14 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
       console.error('Cannot start game: need at least 2 players');
       return;
     }
+    if (!lobbyId) {
+      console.error('Cannot start game: no lobby ID');
+      return;
+    }
     const playerIds = lobbyPlayers.map(p => p.id);
-    const command = commands.startGame(playerIds, smallBlind, bigBlind);
+    const command = commands.startGame(lobbyId, playerIds, smallBlind, bigBlind);
     sendCommand(command);
-  }, [isLobbyAdmin, lobbyPlayers, commands, sendCommand]);
+  }, [isLobbyAdmin, lobbyPlayers, lobbyId, commands, sendCommand]);
 
   const isInLobby = lobbyId !== null;
 

@@ -124,6 +124,18 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
     }
 
     /**
+     * Get session for a specific player ID.
+     */
+    public Session getSessionByPlayerId(String playerId) {
+        for (Map.Entry<Session, String> entry : sessionToPlayer.entrySet()) {
+            if (entry.getValue().equals(playerId) && entry.getKey().isOpen()) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Convert domain event to JSON for WebSocket transmission.
      */
     private String toJson(DomainEvent event) {

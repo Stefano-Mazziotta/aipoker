@@ -1,10 +1,9 @@
 package com.poker.shared.infrastructure.websocket;
 
-import java.util.List;
 import java.util.logging.Logger;
 
-import com.poker.game.application.DealCardsUseCase;
-import com.poker.game.application.DetermineWinnerUseCase;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.poker.game.application.GetGameStateUseCase;
 import com.poker.game.application.GetGameStateUseCase.GameStateCommand;
 import com.poker.game.application.GetPlayerCardsUseCase;
@@ -18,20 +17,20 @@ import com.poker.lobby.application.LeaveLobbyUseCase;
 import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.model.PlayerAction;
+import com.poker.shared.infrastructure.websocket.dto.StartGameRequest;
 
 /**
  * Handles protocol commands and delegates to appropriate use cases.
- * Returns WebSocketResponse objects that will be serialized to JSON.
- * Command format: COMMAND [args...]
+ * Accepts JSON-based requests for type safety.
+ * Command format: { "command": "COMMAND_NAME", "data": {...} }
  */
 public class ProtocolHandler {
     private static final Logger LOGGER = Logger.getLogger(ProtocolHandler.class.getName());
+    private static final Gson gson = new Gson();
     
     private final RegisterPlayerUseCase registerPlayer;
     private final StartGameUseCase startGame;
     private final PlayerActionUseCase playerAction;
-    private final DealCardsUseCase dealCards;
-    private final DetermineWinnerUseCase determineWinner;
     private final CreateLobbyUseCase createLobby;
     private final JoinLobbyUseCase joinLobby;
     private final LeaveLobbyUseCase leaveLobby;
@@ -43,8 +42,6 @@ public class ProtocolHandler {
             RegisterPlayerUseCase registerPlayer,
             StartGameUseCase startGame,
             PlayerActionUseCase playerAction,
-            DealCardsUseCase dealCards,
-            DetermineWinnerUseCase determineWinner,
             CreateLobbyUseCase createLobby,
             JoinLobbyUseCase joinLobby,
             LeaveLobbyUseCase leaveLobby,
@@ -54,8 +51,6 @@ public class ProtocolHandler {
         this.registerPlayer = registerPlayer;
         this.startGame = startGame;
         this.playerAction = playerAction;
-        this.dealCards = dealCards;
-        this.determineWinner = determineWinner;
         this.createLobby = createLobby;
         this.joinLobby = joinLobby;
         this.leaveLobby = leaveLobby;
@@ -69,45 +64,45 @@ public class ProtocolHandler {
             return WebSocketResponse.error("Empty command");
         }
 
-        String[] parts = command.trim().split("\\s+");
-        WebSocketCommand cmd = WebSocketCommand.fromString(parts[0]);
-
+        // Parse JSON request
         try {
+            JsonObject jsonRequest = gson.fromJson(command, JsonObject.class);
+            if (jsonRequest == null || !jsonRequest.has("command")) {
+                return WebSocketResponse.error("Invalid request format. Expected JSON with 'command' field");
+            }
+            
+            String commandName = jsonRequest.get("command").getAsString();
+            JsonObject data = jsonRequest.has("data") ? jsonRequest.get("data").getAsJsonObject() : new JsonObject();
+            
+            WebSocketCommand cmd = WebSocketCommand.fromString(commandName);
+
             return switch (cmd) {
-                case REGISTER -> handleRegister(parts);
-                case START_GAME -> handleStartGame(parts);
-                case FOLD -> handleFold(parts);
-                case CHECK -> handleCheck(parts);
-                case CALL -> handleCall(parts);
-                case RAISE -> handleRaise(parts);
-                case ALL_IN -> handleAllIn(parts);
-                case DEAL_FLOP -> handleDealFlop(parts);
-                case DEAL_TURN -> handleDealTurn(parts);
-                case DEAL_RIVER -> handleDealRiver(parts);
-                case DETERMINE_WINNER -> handleDetermineWinner(parts);
-                case CREATE_LOBBY -> handleCreateLobby(parts);
-                case JOIN_LOBBY -> handleJoinLobby(parts);
-                case LEAVE_LOBBY -> handleLeaveLobby(parts);
-                case LEADERBOARD -> handleLeaderboard(parts);
-                case GET_MY_CARDS -> handleGetMyCards(parts);
-                case GET_GAME_STATE -> handleGetGameState(parts);
+                case REGISTER -> handleRegister(data);
+                case START_GAME -> handleStartGame(data);
+                case CREATE_LOBBY -> handleCreateLobby(data);
+                case JOIN_LOBBY -> handleJoinLobby(data);
+                case LEAVE_LOBBY -> handleLeaveLobby(data);
+                case FOLD -> handleFold(data);
+                case CHECK -> handleCheck(data);
+                case CALL -> handleCall(data);
+                case RAISE -> handleRaise(data);
+                case ALL_IN -> handleAllIn(data);
+                case GET_GAME_STATE -> handleGetGameState(data);
+                case GET_MY_CARDS -> handleGetMyCards(data);
+                case LEADERBOARD -> handleLeaderboard(data);
                 case HELP -> WebSocketResponse.info(getHelpText());
                 case QUIT -> WebSocketResponse.successMessage("Goodbye!");
-                default -> WebSocketResponse.error("Unknown command: " + parts[0]);
+                default -> WebSocketResponse.error("Unknown command: " + commandName);
             };
         } catch (Exception e) {
             LOGGER.warning(() -> String.format("Command error: %s", e.getMessage()));
             return WebSocketResponse.error(e.getMessage());
         }
     }
-
-    private WebSocketResponse<?> handleRegister(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: REGISTER <name> <chips>");
-        }
-        
-        String name = parts[1];
-        int chips = Integer.parseInt(parts[2]);
+    
+    private WebSocketResponse<?> handleRegister(JsonObject data) {
+        String name = data.get("name").getAsString();
+        int chips = data.get("chips").getAsInt();
         
         var response = registerPlayer.execute(
             new RegisterPlayerUseCase.RegisterPlayerCommand(name, chips)
@@ -116,63 +111,113 @@ public class ProtocolHandler {
         return WebSocketResponse.success("PLAYER_REGISTERED", response);
     }
 
-    private WebSocketResponse<?> handleStartGame(String[] parts) {
-        if (parts.length < 5) {
-            return WebSocketResponse.error("Usage: START_GAME <player1Id> <player2Id> ... <smallBlind> <bigBlind>");
-        }
-        
-        int numPlayers = parts.length - 3;
-        List<String> playerIds = List.of(parts).subList(1, numPlayers + 1);
-        int smallBlind = Integer.parseInt(parts[numPlayers + 1]);
-        int bigBlind = Integer.parseInt(parts[numPlayers + 2]);
+    private WebSocketResponse<?> handleStartGame(JsonObject data) {
+        StartGameRequest request = gson.fromJson(data, StartGameRequest.class);
         
         var response = startGame.execute(
-            new StartGameUseCase.StartGameCommand(playerIds, new Blinds(smallBlind, bigBlind))
+            new StartGameUseCase.StartGameCommand(request.getPlayerIds(), 
+                new Blinds(request.getSmallBlind(), request.getBigBlind()))
         );
         
-        return WebSocketResponse.success("GAME_STARTED", response);
+        // Add lobbyId to response for broadcasting
+        return WebSocketResponse.successWithLobby("GAME_STARTED", response, request.getLobbyId());
     }
 
-    private WebSocketResponse<?> handleFold(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: FOLD <gameId> <playerId>");
-        }
+    private WebSocketResponse<?> handleCreateLobby(JsonObject data) {
+        String name = data.get("name").getAsString();
+        int maxPlayers = data.get("maxPlayers").getAsInt();
+        String adminPlayerId = data.get("adminPlayerId").getAsString();
         
-        return executePlayerAction(parts[1], parts[2], PlayerAction.FOLD, 0);
+        var response = createLobby.execute(
+            new CreateLobbyUseCase.CreateLobbyCommand(name, maxPlayers, adminPlayerId)
+        );
+        
+        return WebSocketResponse.success("LOBBY_CREATED", response);
     }
 
-    private WebSocketResponse<?> handleCheck(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: CHECK <gameId> <playerId>");
-        }
+    private WebSocketResponse<?> handleJoinLobby(JsonObject data) {
+        String lobbyId = data.get("lobbyId").getAsString();
+        String playerId = data.get("playerId").getAsString();
         
-        return executePlayerAction(parts[1], parts[2], PlayerAction.CHECK, 0);
+        var response = joinLobby.execute(
+            new JoinLobbyUseCase.JoinLobbyCommand(lobbyId, playerId)
+        );
+        
+        return WebSocketResponse.success("LOBBY_JOINED", response);
     }
 
-    private WebSocketResponse<?> handleCall(String[] parts) {
-        if (parts.length < 4) {
-            return WebSocketResponse.error("Usage: CALL <gameId> <playerId> <amount>");
-        }
+    private WebSocketResponse<?> handleLeaveLobby(JsonObject data) {
+        String lobbyId = data.get("lobbyId").getAsString();
+        String playerId = data.get("playerId").getAsString();
         
-        int amount = Integer.parseInt(parts[3]);
-        return executePlayerAction(parts[1], parts[2], PlayerAction.CALL, amount);
+        leaveLobby.execute(
+            new LeaveLobbyUseCase.LeaveLobbyCommand(lobbyId, playerId)
+        );
+        
+        return WebSocketResponse.successMessage("Successfully left lobby");
     }
 
-    private WebSocketResponse<?> handleRaise(String[] parts) {
-        if (parts.length < 4) {
-            return WebSocketResponse.error("Usage: RAISE <gameId> <playerId> <amount>");
-        }
-        
-        int amount = Integer.parseInt(parts[3]);
-        return executePlayerAction(parts[1], parts[2], PlayerAction.RAISE, amount);
+    private WebSocketResponse<?> handleFold(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        return executePlayerAction(gameId, playerId, PlayerAction.FOLD, 0);
     }
 
-    private WebSocketResponse<?> handleAllIn(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: ALL_IN <gameId> <playerId>");
-        }
+    private WebSocketResponse<?> handleCheck(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        return executePlayerAction(gameId, playerId, PlayerAction.CHECK, 0);
+    }
+
+    private WebSocketResponse<?> handleCall(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        int amount = data.get("amount").getAsInt();
+        return executePlayerAction(gameId, playerId, PlayerAction.CALL, amount);
+    }
+
+    private WebSocketResponse<?> handleRaise(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        int amount = data.get("amount").getAsInt();
+        return executePlayerAction(gameId, playerId, PlayerAction.RAISE, amount);
+    }
+
+    private WebSocketResponse<?> handleAllIn(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        return executePlayerAction(gameId, playerId, PlayerAction.ALL_IN, 0);
+    }
+
+    private WebSocketResponse<?> handleGetGameState(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
         
-        return executePlayerAction(parts[1], parts[2], PlayerAction.ALL_IN, 0);
+        var response = getGameState.execute(
+            new GameStateCommand(gameId)
+        );
+        
+        return WebSocketResponse.success("GAME_STATE", response);
+    }
+
+    private WebSocketResponse<?> handleGetMyCards(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        
+        var response = getPlayerCards.execute(
+            new PlayerCardsCommand(gameId, playerId)
+        );
+        
+        return WebSocketResponse.success("PLAYER_CARDS", response);
+    }
+
+    private WebSocketResponse<?> handleLeaderboard(JsonObject data) {
+        int limit = data.has("limit") ? data.get("limit").getAsInt() : 10;
+        
+        var response = getLeaderboard.execute(
+            new GetLeaderboardUseCase.GetLeaderboardCommand(limit)
+        );
+        
+        return WebSocketResponse.success("LEADERBOARD", response);
     }
 
     private WebSocketResponse<?> executePlayerAction(String gameId, String playerId, PlayerAction action, int amount) {
@@ -183,150 +228,36 @@ public class ProtocolHandler {
         return WebSocketResponse.success("PLAYER_ACTION", response);
     }
 
-    private WebSocketResponse<?> handleDealFlop(String[] parts) {
-        if (parts.length < 2) {
-            return WebSocketResponse.error("Usage: DEAL_FLOP <gameId>");
-        }
-        
-        var response = dealCards.dealFlop(new DealCardsUseCase.DealCardsCommand(parts[1]));
-        return WebSocketResponse.success("FLOP_DEALT", response);
-    }
-
-    private WebSocketResponse<?> handleDealTurn(String[] parts) {
-        if (parts.length < 2) {
-            return WebSocketResponse.error("Usage: DEAL_TURN <gameId>");
-        }
-        
-        var response = dealCards.dealTurn(new DealCardsUseCase.DealCardsCommand(parts[1]));
-        return WebSocketResponse.success("TURN_DEALT", response);
-    }
-
-    private WebSocketResponse<?> handleDealRiver(String[] parts) {
-        if (parts.length < 2) {
-            return WebSocketResponse.error("Usage: DEAL_RIVER <gameId>");
-        }
-        
-        var response = dealCards.dealRiver(new DealCardsUseCase.DealCardsCommand(parts[1]));
-        return WebSocketResponse.success("RIVER_DEALT", response);
-    }
-
-    private WebSocketResponse<?> handleDetermineWinner(String[] parts) {
-        if (parts.length < 2) {
-            return WebSocketResponse.error("Usage: DETERMINE_WINNER <gameId>");
-        }
-        
-        var response = determineWinner.execute(
-            new DetermineWinnerUseCase.DetermineWinnerCommand(parts[1])
-        );
-        
-        return WebSocketResponse.success("WINNER_DETERMINED", response);
-    }
-
-    private WebSocketResponse<?> handleCreateLobby(String[] parts) {
-        if (parts.length < 4) {
-            return WebSocketResponse.error("Usage: CREATE_LOBBY <name> <maxPlayers> <adminPlayerId>");
-        }
-        
-        String name = parts[1];
-        int maxPlayers = Integer.parseInt(parts[2]);
-        String adminPlayerId = parts[3];
-        
-        var response = createLobby.execute(
-            new CreateLobbyUseCase.CreateLobbyCommand(name, maxPlayers, adminPlayerId)
-        );
-        
-        return WebSocketResponse.success("LOBBY_CREATED", response);
-    }
-
-    private WebSocketResponse<?> handleJoinLobby(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: JOIN_LOBBY <lobbyId> <playerId>");
-        }
-        
-        var response = joinLobby.execute(
-            new JoinLobbyUseCase.JoinLobbyCommand(parts[1], parts[2])
-        );
-        
-        return WebSocketResponse.success("LOBBY_JOINED", response);
-    }
-
-    private WebSocketResponse<?> handleLeaveLobby(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: LEAVE_LOBBY <lobbyId> <playerId>");
-        }
-        
-        leaveLobby.execute(
-            new LeaveLobbyUseCase.LeaveLobbyCommand(parts[1], parts[2])
-        );
-        
-        return WebSocketResponse.successMessage("Successfully left lobby");
-    }
-
-    private WebSocketResponse<?> handleLeaderboard(String[] parts) {
-        int limit = parts.length > 1 ? Integer.parseInt(parts[1]) : 10;
-        
-        var response = getLeaderboard.execute(
-            new GetLeaderboardUseCase.GetLeaderboardCommand(limit)
-        );
-        
-        return WebSocketResponse.success("LEADERBOARD", response);
-    }
-
-    private WebSocketResponse<?> handleGetMyCards(String[] parts) {
-        if (parts.length < 3) {
-            return WebSocketResponse.error("Usage: GET_MY_CARDS <gameId> <playerId>");
-        }
-        
-        var response = getPlayerCards.execute(
-            new PlayerCardsCommand(parts[1], parts[2])
-        );
-        
-        return WebSocketResponse.success("PLAYER_CARDS", response);
-    }
-
-    private WebSocketResponse<?> handleGetGameState(String[] parts) {
-        if (parts.length < 2) {
-            return WebSocketResponse.error("Usage: GET_GAME_STATE <gameId>");
-        }
-        
-        var response = getGameState.execute(
-            new GameStateCommand(parts[1])
-        );
-        
-        return WebSocketResponse.success("GAME_STATE", response);
-    }
-
     private String getHelpText() {
         return """
-            Available commands:
+            Available commands (JSON format):
+            
+            All commands should be sent as JSON: {"command": "COMMAND_NAME", "data": {...}}
             
             Player Management:
-              REGISTER <name> <chips>                      - Register a new player
-              LEADERBOARD [limit]                          - Show top players
+              REGISTER - data: {name, chips}
+              LEADERBOARD - data: {limit?}
             
             Lobby Management:
-              CREATE_LOBBY <name> <maxPlayers> <adminId>   - Create a new lobby
-              JOIN_LOBBY <lobbyId> <playerId>              - Join existing lobby
+              CREATE_LOBBY - data: {name, maxPlayers, adminPlayerId}
+              JOIN_LOBBY - data: {lobbyId, playerId}
+              LEAVE_LOBBY - data: {lobbyId, playerId}
             
             Game Management:
-              START_GAME <playerIds...> <sb> <bb>          - Start a new game (admin only)
-              GET_GAME_STATE <gameId>                      - View current game state
-              DEAL_FLOP <gameId>                           - Deal flop (after betting round)
-              DEAL_TURN <gameId>                           - Deal turn (after betting round)
-              DEAL_RIVER <gameId>                          - Deal river (after betting round)
-              DETERMINE_WINNER <gameId>                    - Determine winner
+              START_GAME - data: {lobbyId, playerIds[], smallBlind, bigBlind}
+              GET_GAME_STATE - data: {gameId}
             
             Player Actions:
-              GET_MY_CARDS <gameId> <playerId>             - View your hole cards
-              FOLD <gameId> <playerId>                     - Fold current hand
-              CHECK <gameId> <playerId>                    - Check
-              CALL <gameId> <playerId> <amount>            - Call bet
-              RAISE <gameId> <playerId> <amount>           - Raise bet
-              ALL_IN <gameId> <playerId>                   - Go all-in
+              GET_MY_CARDS - data: {gameId, playerId}
+              FOLD - data: {gameId, playerId}
+              CHECK - data: {gameId, playerId}
+              CALL - data: {gameId, playerId, amount}
+              RAISE - data: {gameId, playerId, amount}
+              ALL_IN - data: {gameId, playerId}
             
             Other:
-              HELP                                         - Show this help
-              QUIT                                         - Disconnect
+              HELP - Show this help
+              QUIT - Disconnect
             """;
     }
 }

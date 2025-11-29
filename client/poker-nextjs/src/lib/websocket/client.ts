@@ -96,10 +96,16 @@ export class WebSocketClient {
     }, delay);
   }
 
-  send(command: string): void {
+  send(command: string | object): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      // Wrap command in JSON format as expected by the backend
-      const message = JSON.stringify({ command });
+      let message: string;
+      if (typeof command === 'string') {
+        // Legacy string command - wrap in JSON format
+        message = JSON.stringify({ command });
+      } else {
+        // Already an object - stringify it
+        message = JSON.stringify(command);
+      }
       this.ws.send(message);
     } else {
       console.error('WebSocket is not connected. Cannot send command:', command);

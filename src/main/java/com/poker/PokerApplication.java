@@ -2,8 +2,6 @@ package com.poker;
 
 import java.util.List;
 
-import com.poker.game.application.DealCardsUseCase;
-import com.poker.game.application.DetermineWinnerUseCase;
 import com.poker.game.application.GetGameStateUseCase;
 import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
@@ -66,8 +64,6 @@ public class PokerApplication {
         // Game use cases (now with event publisher injected)
         StartGameUseCase startGame = new StartGameUseCase(gameRepository, playerRepository, eventPublisher);
         PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository, eventPublisher);
-        DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository, eventPublisher);
-        DetermineWinnerUseCase determineWinner = new DetermineWinnerUseCase(gameRepository, playerRepository, eventPublisher);
         GetPlayerCardsUseCase getPlayerCards = new GetPlayerCardsUseCase(gameRepository);
         GetGameStateUseCase getGameState = new GetGameStateUseCase(gameRepository);
         
@@ -77,8 +73,8 @@ public class PokerApplication {
         LeaveLobbyUseCase leaveLobby = new LeaveLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
         
         if (serverMode) {
-            startWebSocketServer(registerPlayer, startGame, playerAction, dealCards, 
-                            determineWinner, createLobby, joinLobby, leaveLobby, getLeaderboard,
+            startWebSocketServer(registerPlayer, startGame, playerAction, 
+                            createLobby, joinLobby, leaveLobby, getLeaderboard,
                             getPlayerCards, getGameState);
         } else {
             runDemo(registerPlayer, startGame, getLeaderboard, createLobby);
@@ -88,8 +84,6 @@ public class PokerApplication {
     private static void startWebSocketServer(RegisterPlayerUseCase registerPlayer,
                                          StartGameUseCase startGame,
                                          PlayerActionUseCase playerAction,
-                                         DealCardsUseCase dealCards,
-                                         DetermineWinnerUseCase determineWinner,
                                          CreateLobbyUseCase createLobby,
                                          JoinLobbyUseCase joinLobby,
                                          LeaveLobbyUseCase leaveLobby,
@@ -100,10 +94,10 @@ public class PokerApplication {
         System.out.println("Listening on ws://localhost:8081/ws/poker");
         System.out.println("Press Ctrl+C to stop\n");
         
-        // Create protocol handler with all use cases (no MessageFormatter needed - using JSON now)
+        // Create protocol handler with all use cases (using JSON protocol)
         ProtocolHandler protocolHandler = new ProtocolHandler(
-            registerPlayer, startGame, playerAction, dealCards,
-            determineWinner, createLobby, joinLobby, leaveLobby, getLeaderboard,
+            registerPlayer, startGame, playerAction,
+            createLobby, joinLobby, leaveLobby, getLeaderboard,
             getPlayerCards, getGameState
         );
         

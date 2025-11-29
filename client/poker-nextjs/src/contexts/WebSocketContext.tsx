@@ -8,7 +8,7 @@ import { WebSocketEvent } from '@/lib/types/events';
 interface WebSocketContextType {
   status: WebSocketStatus;
   isConnected: boolean;
-  sendCommand: (command: string) => void;
+  sendCommand: (command: string | object) => void;
   subscribe: (handler: (event: WebSocketEvent) => void) => () => void;
   commands: typeof WebSocketCommands;
 }
@@ -38,7 +38,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const sendCommand = useCallback((command: string) => {
+  const sendCommand = useCallback((command: string | object) => {
     wsClientRef.current?.send(command);
   }, []);
 

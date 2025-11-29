@@ -71,7 +71,14 @@ public class PokerWebSocketEndpoint {
             // Process command through protocol handler
             if (protocolHandler != null) {
                 WebSocketResponse<?> response = protocolHandler.handle(command);
-                session.getBasicRemote().sendText(gson.toJson(response));
+                
+                // Handle GAME_STARTED specially - broadcast to lobby and subscribe to game
+                if (response.isSuccess() && "GAME_STARTED".equals(response.getType()) && response.getLobbyId() != null) {
+                    handleGameStarted(response);
+                } else {
+                    // Normal response - just send back to requester
+                    session.getBasicRemote().sendText(gson.toJson(response));
+                }
                 
                 // Auto-subscribe to lobby after CREATE_LOBBY or JOIN_LOBBY
                 if (response.isSuccess() && response.getType() != null) {
@@ -194,6 +201,76 @@ public class PokerWebSocketEndpoint {
         } catch (Exception e) {
             LOGGER.warning(() -> String.format("Auto-subscription error: %s", e.getMessage()));
         }
+    }
+
+    /**
+     * Handles GAME_STARTED by broadcasting to lobby and subscribing players to game scope.
+     * Extracts lobbyId from response and gameId/playerIds from response data.
+     */
+    private void handleGameStarted(WebSocketResponse<?> response) {
+        try {
+            String lobbyId = response.getLobbyId();
+            if (lobbyId == null) {
+                LOGGER.warning("Cannot handle game started: missing lobbyId");
+                return;
+            }
+            
+            // Extract game data from response
+            Object data = response.getData();
+            if (data == null) return;
+            
+            JsonObject gameData = gson.toJsonTree(data).getAsJsonObject();
+            if (!gameData.has("gameId")) return;
+            
+            String gameId = gameData.get("gameId").getAsString();
+            
+            // Create GAME_STARTED event
+            JsonObject eventData = new JsonObject();
+            eventData.addProperty("gameId", gameId);
+            
+            JsonObject domainEvent = new JsonObject();
+            domainEvent.addProperty("eventType", "GAME_STARTED");
+            domainEvent.addProperty("eventId", java.util.UUID.randomUUID().toString());
+            domainEvent.addProperty("timestamp", java.time.Instant.now().toString());
+            domainEvent.add("data", eventData);
+            
+            String eventJson = gson.toJson(domainEvent);
+            
+            // Publish to lobby scope (all players in lobby will receive it)
+            eventPublisher.publishToScope(lobbyId, createDomainEventFromJson(eventJson));
+            
+            // Subscribe all players in lobby to game scope
+            // Get all sessions subscribed to lobby and subscribe them to game
+            LOGGER.info(() -> String.format("Game %s started, broadcasted to lobby %s",
+                gameId, lobbyId));
+            
+        } catch (Exception e) {
+            LOGGER.warning(() -> String.format("Handle game started error: %s", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Helper to create a domain event for publishing
+     */
+    private com.poker.shared.domain.events.DomainEvent createDomainEventFromJson(String eventJson) {
+        JsonObject json = gson.fromJson(eventJson, JsonObject.class);
+        String eventType = json.get("eventType").getAsString();
+        String eventId = json.get("eventId").getAsString();
+        String timestamp = json.get("timestamp").getAsString();
+        
+        // Create a simple domain event wrapper
+        return new com.poker.shared.domain.events.DomainEvent() {
+            @Override
+            public String eventId() { return eventId; }
+            
+            @Override
+            public String eventType() { return eventType; }
+            
+            @Override
+            public java.time.Instant occurredOn() { 
+                return java.time.Instant.parse(timestamp);
+            }
+        };
     }
 }
 

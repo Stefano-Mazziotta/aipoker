@@ -31,11 +31,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       switch (event.type) {
         case 'GAME_STARTED': {
           const data = event.data as GameStartedData;
+          console.log('Game started event received:', data);
           setGameId(data.gameId);
+          // Request initial game state
+          if (data.gameId) {
+            console.log('Requesting game state for:', data.gameId);
+            sendCommand(commands.getGameState(data.gameId));
+          }
           break;
         }
         case 'GAME_STATE': {
           const data = event.data as GameStateDTO;
+          console.log('Game state received:', data);
           setGameState(data);
           break;
         }
@@ -56,7 +63,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
 
     return unsubscribe;
-  }, [subscribe]);
+  }, [subscribe, sendCommand, commands]);
 
   const performAction = useCallback((action: string, amount?: number) => {
     if (!gameId || !playerId) {
@@ -64,7 +71,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let command: string;
+    let command: string | object;
     switch (action) {
       case 'CHECK':
         command = commands.check(gameId, playerId);
