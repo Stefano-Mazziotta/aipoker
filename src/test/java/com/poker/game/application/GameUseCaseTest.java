@@ -19,6 +19,7 @@ import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.model.GameState;
 import com.poker.game.domain.repository.GameRepository;
+import com.poker.lobby.domain.model.LobbyId;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
 import com.poker.player.domain.model.PlayerId;
@@ -54,6 +55,8 @@ class GameUseCaseTest {
 
     @Test
     void testCompleteGameFlow() {
+        LobbyId lobbyId = LobbyId.generate();
+
         // Create and save players
         Player alice = Player.create("Alice", 1000);
         Player bob = Player.create("Bob", 1000);
@@ -68,7 +71,8 @@ class GameUseCaseTest {
         // Start game - receives StartGameDTO
         var startCommand = new StartGameUseCase.StartGameCommand(
                 playerIds,
-                new Blinds(10, 20)
+                new Blinds(10, 20),
+                lobbyId
         );
         StartGameDTO startGameDTO = startGameUseCase.execute(startCommand);
 
@@ -97,6 +101,7 @@ class GameUseCaseTest {
 
     @Test
     void testPlayerFold() {
+        LobbyId lobbyId = LobbyId.generate();
         Player alice = Player.create("Alice", 1000);
         Player bob = Player.create("Bob", 1000);
         playerRepository.save(alice);
@@ -107,7 +112,8 @@ class GameUseCaseTest {
                         alice.getId().getValue().toString(),
                         bob.getId().getValue().toString()
                 ),
-                new Blinds(10, 20)
+                new Blinds(10, 20),
+                lobbyId
         );
         // Start game - receives StartGameDTO
         StartGameDTO startGameDTO = startGameUseCase.execute(startCommand);

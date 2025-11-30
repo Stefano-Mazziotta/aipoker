@@ -1,4 +1,4 @@
-package com.poker.shared.infrastructure.websocket.dto;
+package com.poker.shared.application.dto;
 
 import com.google.gson.JsonObject;
 

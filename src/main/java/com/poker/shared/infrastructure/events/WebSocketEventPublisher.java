@@ -63,19 +63,17 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
      */
     public void unsubscribe(String scopeId, Session session) {
         Set<Session> sessions = subscriptions.get(scopeId);
-        if (sessions != null) {
-            sessions.remove(session);
-            if (sessions.isEmpty()) {
-                subscriptions.remove(scopeId);
-            }
+
+        if (sessions == null) {
+            sessionToPlayer.remove(session);
+            return;
+        }        
+
+        sessions.remove(session);
+        if (sessions.isEmpty()) {
+            subscriptions.remove(scopeId);
         }
         sessionToPlayer.remove(session);
-    }
-
-    @Override
-    public void publish(DomainEvent event) {
-        // Global publish - not implemented yet, would need a different subscription mechanism
-        LOGGER.warning("Global event publishing not implemented");
     }
 
     @Override

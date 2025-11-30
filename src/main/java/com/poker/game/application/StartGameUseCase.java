@@ -8,6 +8,7 @@ import com.poker.game.domain.events.GameStateChangedEvent;
 import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.repository.GameRepository;
+import com.poker.lobby.domain.model.LobbyId;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerId;
 import com.poker.player.domain.repository.PlayerRepository;
@@ -72,5 +73,5 @@ public class StartGameUseCase {
         );
     }
 
-    public record StartGameCommand(List<String> playerIds, Blinds blinds) {}
+    public record StartGameCommand(List<String> playerIds, Blinds blinds, LobbyId lobbyId) {}
 }

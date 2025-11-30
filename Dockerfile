@@ -18,4 +18,4 @@ RUN mkdir -p /app/data
 EXPOSE 8081
 
 # Run the JAR in server mode
-CMD ["java", "-jar", "target/poker-server.jar", "--server"]
+CMD ["java", "-jar", "target/poker-server.jar"]

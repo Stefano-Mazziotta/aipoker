@@ -17,6 +17,7 @@ import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.game.infrastructure.persistence.SQLiteGameRepository;
+import com.poker.lobby.domain.model.LobbyId;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.model.PlayerAction;
@@ -75,10 +76,12 @@ public class FullGameIntegrationTest {
         assertEquals(1000, alice.chips());
 
         // 2. Start game
+        LobbyId lobbyId = LobbyId.generate();
         var game = startGame.execute(
                 new StartGameUseCase.StartGameCommand(
                         List.of(alice.id(), bob.id(), charlie.id()),
-                        new Blinds(10, 20)
+                        new Blinds(10, 20),
+                        lobbyId
                 )
         );
 
@@ -203,10 +206,12 @@ public class FullGameIntegrationTest {
         );
 
         // Start game
+        LobbyId lobbyId = LobbyId.generate();
         var game = startGame.execute(
                 new StartGameUseCase.StartGameCommand(
                         List.of(p1.id(), p2.id()),
-                        new Blinds(5, 10)
+                        new Blinds(5, 10),
+                        lobbyId
                 )
         );
 
@@ -241,10 +246,12 @@ public class FullGameIntegrationTest {
         );
 
         // Start game
+        LobbyId lobbyId = LobbyId.generate();
         var game = startGame.execute(
                 new StartGameUseCase.StartGameCommand(
                         List.of(rich.id(), poor.id()),
-                        new Blinds(5, 10)
+                        new Blinds(5, 10),
+                        lobbyId
                 )
         );
 

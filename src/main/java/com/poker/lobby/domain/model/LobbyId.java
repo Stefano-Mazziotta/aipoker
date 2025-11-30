@@ -16,9 +16,13 @@ public class LobbyId {
         return new LobbyId(UUID.randomUUID().toString());
     }
 
+    public static LobbyId from(String value) {
+        return new LobbyId(value);
+    }
+
     public String getValue() {
         return value;
-    }
+    }    
 
     @Override
     public boolean equals(Object o) {

@@ -7,11 +7,6 @@ package com.poker.shared.domain.events;
 public class NoOpEventPublisher implements DomainEventPublisher {
     
     @Override
-    public void publish(DomainEvent event) {
-        // No-op for tests
-    }
-    
-    @Override
     public void publishToScope(String scopeId, DomainEvent event) {
         // No-op for tests
     }

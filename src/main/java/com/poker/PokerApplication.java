@@ -1,12 +1,9 @@
 package com.poker;
 
-import java.util.List;
-
 import com.poker.game.application.GetGameStateUseCase;
 import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
-import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.repository.GameRepository;
 import com.poker.game.infrastructure.persistence.SQLiteGameRepository;
 import com.poker.lobby.application.CreateLobbyUseCase;
@@ -18,6 +15,7 @@ import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
+import com.poker.shared.application.dto.PokerUseCasesDTO;
 import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
@@ -26,23 +24,19 @@ import com.poker.shared.infrastructure.websocket.ProtocolHandler;
 import com.poker.shared.infrastructure.websocket.WebSocketServer;
 
 /**
- * Main application entry point.
- * Demonstrates the hexagonal architecture with manual dependency injection.
+ * Main application entry point. Start WebSocket server.
+ * Demonstrates 
+ * - Hexagonal Architecture 
+ * - Scream Architecture
+ * - Domain Driven Design
+ * - Event Driven Design
+ * - SOLID Principles
  * 
- * Usage:
- *   --demo    : Run demo mode (default)
- *   --server  : Start WebSocket server on port 8081
  */
 public class PokerApplication {
     
     public static void main(String[] args) {
-        System.out.println("=================================");
-        System.out.println("Texas Hold'em Poker Server");
-        System.out.println("Hexagonal Architecture");
-        System.out.println("=================================\n");
-        
-        // Parse command line arguments
-        boolean serverMode = args.length > 0 && args[0].equals("--server");
+        System.out.println("Texas Hold'em Poker Server - Taller de programación 3 - 2025");        
 
         // Initialize infrastructure
         System.out.println("Initializing database...");
@@ -72,34 +66,28 @@ public class PokerApplication {
         JoinLobbyUseCase joinLobby = new JoinLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
         LeaveLobbyUseCase leaveLobby = new LeaveLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
         
-        if (serverMode) {
-            startWebSocketServer(registerPlayer, startGame, playerAction, 
-                            createLobby, joinLobby, leaveLobby, getLeaderboard,
-                            getPlayerCards, getGameState);
-        } else {
-            runDemo(registerPlayer, startGame, getLeaderboard, createLobby);
-        }
+        PokerUseCasesDTO dto = new PokerUseCasesDTO(
+            registerPlayer, 
+            startGame,
+            playerAction,
+            createLobby,
+            joinLobby,
+            leaveLobby,
+            getLeaderboard,
+            getPlayerCards,
+            getGameState
+        );
+
+        startWebSocketServer(dto);
     }
     
-    private static void startWebSocketServer(RegisterPlayerUseCase registerPlayer,
-                                         StartGameUseCase startGame,
-                                         PlayerActionUseCase playerAction,
-                                         CreateLobbyUseCase createLobby,
-                                         JoinLobbyUseCase joinLobby,
-                                         LeaveLobbyUseCase leaveLobby,
-                                         GetLeaderboardUseCase getLeaderboard,
-                                         GetPlayerCardsUseCase getPlayerCards,
-                                         GetGameStateUseCase getGameState) {
+    private static void startWebSocketServer(PokerUseCasesDTO dto) {
         System.out.println("Starting WebSocket Server...");
         System.out.println("Listening on ws://localhost:8081/ws/poker");
         System.out.println("Press Ctrl+C to stop\n");
         
         // Create protocol handler with all use cases (using JSON protocol)
-        ProtocolHandler protocolHandler = new ProtocolHandler(
-            registerPlayer, startGame, playerAction,
-            createLobby, joinLobby, leaveLobby, getLeaderboard,
-            getPlayerCards, getGameState
-        );
+        ProtocolHandler protocolHandler = new ProtocolHandler(dto);
         
         // Configure WebSocket endpoint with handler
         PokerWebSocketEndpoint.setProtocolHandler(protocolHandler);
@@ -122,89 +110,6 @@ public class PokerApplication {
             
         } catch (RuntimeException e) {
             System.err.println("✗ Server runtime error: " + e.getMessage());
-        }
-    }
-    
-    private static void runDemo(RegisterPlayerUseCase registerPlayer,
-                               StartGameUseCase startGame,
-                               GetLeaderboardUseCase getLeaderboard,
-                               CreateLobbyUseCase createLobby) {
-        System.out.println("Running Demo Mode...\n");
-        try {
-            // Demo: Register players
-            System.out.println("Registering players...");
-            var response1 = registerPlayer.execute(
-                new RegisterPlayerUseCase.RegisterPlayerCommand("Alice", 1000)
-            );
-            System.out.println("✓ Player registered: " + response1.name() + 
-                             " (ID: " + response1.id() + ", Chips: " + response1.chips() + ")");
-
-            var response2 = registerPlayer.execute(
-                new RegisterPlayerUseCase.RegisterPlayerCommand("Bob", 1000)
-            );
-            System.out.println("✓ Player registered: " + response2.name() + 
-                             " (ID: " + response2.id() + ", Chips: " + response2.chips() + ")");
-
-            var response3 = registerPlayer.execute(
-                new RegisterPlayerUseCase.RegisterPlayerCommand("Charlie", 1000)
-            );
-            System.out.println("✓ Player registered: " + response3.name() + 
-                             " (ID: " + response3.id() + ", Chips: " + response3.chips() + ")");
-
-            // Demo: Create lobby
-            System.out.println("\nCreating lobby...");
-            var lobbyResponse = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("High Stakes Table", 6, response1.id())
-            );
-            System.out.println("✓ Lobby created: " + lobbyResponse.name() + 
-                             " (" + lobbyResponse.currentPlayers() + "/" + lobbyResponse.maxPlayers() + " players)");
-            System.out.println("  Admin: " + lobbyResponse.adminPlayerId());
-
-            // Demo: Start game
-            System.out.println("\nStarting game...");
-            var gameResponse = startGame.execute(
-                new StartGameUseCase.StartGameCommand(
-                    List.of(response1.id(), response2.id(), response3.id()),
-                    new Blinds(10, 20)
-                )
-            );
-            System.out.println("✓ Game started: " + gameResponse.gameId());
-            System.out.println("  State: " + gameResponse.state());
-            System.out.println("  Players: " + String.join(", ", gameResponse.players()));
-            System.out.println("  Pot: " + gameResponse.pot());
-
-            // Demo: Leaderboard
-            System.out.println("\nLeaderboard...");
-            var leaderboard = getLeaderboard.execute(
-                new GetLeaderboardUseCase.GetLeaderboardCommand(10)
-            );
-            System.out.println("✓ Top players:");
-            leaderboard.rankings().forEach(ranking -> 
-                System.out.println("  " + ranking.name() + ": " + ranking.chips() + " chips")
-            );
-
-            System.out.println("\n=================================");
-            System.out.println("✓ Migration Complete!");
-            System.out.println("=================================");
-            System.out.println("\nArchitecture Summary:");
-            System.out.println("• Hexagonal Architecture: Domain isolated from infrastructure");
-            System.out.println("• DDD Patterns: Value Objects, Aggregates, Repositories");
-            System.out.println("• Screaming Architecture: Feature-first organization");
-            System.out.println("• Hand Evaluation: 100% reused from existing code");
-            System.out.println("\nWhat's Working:");
-            System.out.println("✅ Player registration and persistence");
-            System.out.println("✅ Game creation and state management");
-            System.out.println("✅ Lobby system");
-            System.out.println("✅ Leaderboard/Rankings");
-            System.out.println("✅ Complete betting logic");
-            System.out.println("✅ Hand evaluation (9 poker hands)");
-            System.out.println("✅ Socket Server (use --server to start)");
-            System.out.println("✅ Comprehensive testing suite");
-            System.out.println("\nTo start socket server:");
-            System.out.println("  java -jar poker-server.jar --server");
-
-        } catch (RuntimeException e) {
-            System.err.println("✗ Error: " + e.getMessage());
         }
     }
 }

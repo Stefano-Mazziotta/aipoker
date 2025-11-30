@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.poker.shared.domain.events.DomainEvent;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
 
 import jakarta.websocket.OnClose;
@@ -213,7 +214,7 @@ public class PokerWebSocketEndpoint {
     /**
      * Helper to create a domain event for publishing
      */
-    private com.poker.shared.domain.events.DomainEvent createDomainEventFromJson(String eventJson) {
+    private DomainEvent createDomainEventFromJson(String eventJson) {
         JsonObject json = gson.fromJson(eventJson, JsonObject.class);
         String eventType = json.get("eventType").getAsString();
         String eventId = json.get("eventId").getAsString();
