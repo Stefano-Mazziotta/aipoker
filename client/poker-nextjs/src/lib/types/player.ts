@@ -1,7 +1,7 @@
 // Player DTOs matching Java backend
 export interface PlayerDTO {
-  playerId: string;
-  playerName: string;
+  id: string;
+  name: string;
   chips: number;
 }
 
@@ -16,10 +16,4 @@ export interface PlayerStateDTO {
   isSmallBlind?: boolean;
   isBigBlind?: boolean;
   cards?: string[];
-}
-
-export interface PlayerInfo {
-  id: string;
-  name: string;
-  chips: number;
 }

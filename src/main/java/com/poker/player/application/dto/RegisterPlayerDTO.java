@@ -5,11 +5,11 @@ package com.poker.player.application.dto;
  * Used to return player data after registration.
  */
 public record RegisterPlayerDTO(
-    String playerId,
-    String playerName,
+    String id,
+    String name,
     int chips
 ) {
-    public static RegisterPlayerDTO fromDomain(String playerId, String playerName, int chips) {
-        return new RegisterPlayerDTO(playerId, playerName, chips);
+    public static RegisterPlayerDTO fromDomain(String id, String name, int chips) {
+        return new RegisterPlayerDTO(id, name, chips);
     }
 }

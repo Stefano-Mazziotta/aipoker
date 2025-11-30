@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { WebSocketClient, WebSocketStatus } from '@/lib/websocket/client';
 import { commands } from '@/lib/websocket/commands';
-import { ServerEvent } from '@/lib/types/server-events';
+import { ServerEvent } from '@/lib/types/events';
 import { WebSocketCommand } from '@/lib/types/commands';
 
 interface WebSocketContextType {

@@ -70,16 +70,16 @@ public class FullGameIntegrationTest {
                 new RegisterPlayerUseCase.RegisterPlayerCommand("Charlie" + timestamp, 1000)
         );
 
-        assertNotNull(alice.playerId());
-        assertNotNull(bob.playerId());
-        assertNotNull(charlie.playerId());
+        assertNotNull(alice.id());
+        assertNotNull(bob.id());
+        assertNotNull(charlie.id());
         assertEquals(1000, alice.chips());
 
         // 2. Start game
         LobbyId lobbyId = LobbyId.generate();
         var game = startGame.execute(
                 new StartGameUseCase.StartGameCommand(
-                        List.of(alice.playerId(), bob.playerId(), charlie.playerId()),
+                        List.of(alice.id(), bob.id(), charlie.id()),
                         new Blinds(10, 20),
                         lobbyId
                 )
@@ -209,7 +209,7 @@ public class FullGameIntegrationTest {
         LobbyId lobbyId = LobbyId.generate();
         var game = startGame.execute(
                 new StartGameUseCase.StartGameCommand(
-                        List.of(p1.playerId(), p2.playerId()),
+                        List.of(p1.id(), p2.id()),
                         new Blinds(5, 10),
                         lobbyId
                 )
@@ -249,7 +249,7 @@ public class FullGameIntegrationTest {
         LobbyId lobbyId = LobbyId.generate();
         var game = startGame.execute(
                 new StartGameUseCase.StartGameCommand(
-                        List.of(rich.playerId(), poor.playerId()),
+                        List.of(rich.id(), poor.id()),
                         new Blinds(5, 10),
                         lobbyId
                 )
@@ -259,7 +259,7 @@ public class FullGameIntegrationTest {
         var allIn = playerAction.execute(
                 new PlayerActionUseCase.PlayerActionCommand(
                         game.gameId(),
-                        poor.playerId(),
+                        poor.id(),
                         PlayerAction.ALL_IN,
                         0
                 )

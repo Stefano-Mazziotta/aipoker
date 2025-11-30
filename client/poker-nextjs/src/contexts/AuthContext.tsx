@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './WebSocketContext';
-import { ServerEvent, isPlayerRegisteredEvent } from '@/lib/types/server-events';
+import { ServerEvent, EventGuards } from '@/lib/types/events';
 import { AUTH_EVENTS } from '@/lib/constants/event-types';
 
 interface AuthContextType {
@@ -43,15 +43,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log('AuthContext received event:', event.eventType, event);
+
+      const {id, name} = event.data;
       
-      if (isPlayerRegisteredEvent(event)) {
-        setPlayerId(event.playerId);
-        setPlayerName(event.playerName);
-        setPlayerChips(event.chips);
-        localStorage.setItem('playerId', event.playerId);
-        localStorage.setItem('playerName', event.playerName);
-        localStorage.setItem('playerChips', event.chips.toString());
-        console.log('Player registered:', event.playerName);
+      if (EventGuards.isPlayerRegistered(event)) {
+        setPlayerId(id);
+        setPlayerName(name);
+        setPlayerChips(event.data.chips);
+        localStorage.setItem('playerId', id);
+        localStorage.setItem('playerName', name);
+        localStorage.setItem('playerChips', event.data.chips.toString());
+        console.log('Player registered:', name);
       }
     });
 

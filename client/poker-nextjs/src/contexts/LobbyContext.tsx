@@ -3,19 +3,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './WebSocketContext';
 import { useAuth } from './AuthContext';
-import { PlayerInfo } from '@/lib/types/player';
+import { PlayerDTO } from '@/lib/types/player';
 import {
   ServerEvent,
-  isLobbyCreatedEvent,
-  isLobbyJoinedEvent,
-  isPlayerJoinedLobbyEvent,
-  isPlayerLeftLobbyEvent,
-} from '@/lib/types/server-events';
+  EventGuards
+} from '@/lib/types/events';
 import { ALL_LOBBY_EVENT_TYPES } from '@/lib/constants/event-types';
 
 interface LobbyContextType {
   lobbyId: string | null;
-  lobbyPlayers: PlayerInfo[];
+  lobbyPlayers: PlayerDTO[];
   isInLobby: boolean;
   isLobbyAdmin: boolean;
   maxPlayers: number;
@@ -29,7 +26,7 @@ const LobbyContext = createContext<LobbyContextType | null>(null);
 
 export function LobbyProvider({ children }: { children: React.ReactNode }) {
   const [lobbyId, setLobbyId] = useState<string | null>(null);
-  const [lobbyPlayers, setLobbyPlayers] = useState<PlayerInfo[]>([]);
+  const [lobbyPlayers, setLobbyPlayers] = useState<PlayerDTO[]>([]);
   const [isLobbyAdmin, setIsLobbyAdmin] = useState(false);
   const [maxPlayers, setMaxPlayers] = useState(9);
   const { subscribe, sendCommand, commands } = useWebSocket();
@@ -44,55 +41,58 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
       
       console.log('LobbyContext received event:', event.eventType, event);
       
-      if (isLobbyCreatedEvent(event)) {
-        setLobbyId(event.lobbyId);
-        // Map PlayerDTO to PlayerInfo
-        const mappedPlayers = event.players.map(p => ({
-          id: p.playerId,
-          name: p.playerName,
-          chips: p.chips
+      if (EventGuards.isLobbyCreated(event)) {
+        const { lobbyId, players, maxPlayers } = event.data;
+
+        const mappedPlayers: PlayerDTO[] = players.map(p => ({
+          id: p.id,
+          name: p.name,
+          chips: p.chips,
         }));
+
+        setLobbyId(lobbyId);
         setLobbyPlayers(mappedPlayers);
         setIsLobbyAdmin(true);
-        setMaxPlayers(event.maxPlayers);
-        console.log('Lobby created, players:', mappedPlayers);
-      } else if (isLobbyJoinedEvent(event)) {
-        setLobbyId(event.lobbyId);
-        // Map PlayerDTO to PlayerInfo
-        const mappedPlayers = event.players.map(p => ({
-          id: p.playerId,
-          name: p.playerName,
-          chips: p.chips
-        }));
-        setLobbyPlayers(mappedPlayers);
-        setIsLobbyAdmin(false);
-        console.log('Lobby joined, players:', mappedPlayers);
-      } else if (isPlayerJoinedLobbyEvent(event)) {
-        console.log('PLAYER_JOINED_LOBBY event received:', event);
+        setMaxPlayers(maxPlayers);
+
+        console.log('Lobby created - you are the admin', { lobbyId, players: mappedPlayers.length });
+      }
+
+      // PLAYER_JOINED_LOBBY – broadcast when any player (including yourself) joins
+      if (EventGuards.isPlayerJoinedLobby(event)) {
+        const { player, maxPlayers } = event.data;
+
+        console.log('Player joined lobby:', player)
+
         setLobbyPlayers(prev => {
-          console.log('Current players:', prev);
-          // Check if player already exists
-          if (prev.some(p => p.id === event.playerId)) {
-            console.log('Player already in list, skipping');
+          const alreadyExists = prev.some(p => p.id === playerId);
+
+          if (alreadyExists) {
+            console.log('Player already in list – skipping duplicate');
             return prev;
-          }
-          const newPlayer = {
-            id: event.playerId,
-            name: event.playerName,
-            chips: event.playerChips,
           };
-          console.log('Adding new player:', newPlayer);
-          return [...prev, newPlayer];
+
+          return [...prev, player];
         });
-        setMaxPlayers(event.maxPlayers);
-      } else if (isPlayerLeftLobbyEvent(event)) {
-        setLobbyPlayers(prev => prev.filter(p => p.id !== event.playerId));
-        
-        // If we left, reset lobby state
-        if (event.playerId === playerId) {
+
+        setMaxPlayers(maxPlayers);
+      }
+
+      // PLAYER_LEFT_LOBBY – someone left the lobby
+      if (EventGuards.isPlayerLeftLobby(event)) {
+        const { playerId, playerName } = event.data;
+
+        console.log('Player left lobby:', { playerId, playerName });
+
+        setLobbyPlayers(prev => prev.filter(p => p.id !== playerId));
+
+        // If YOU are the one who left
+        if (playerId === playerId) {
+          console.log('You have left the lobby - resetting state');
           setLobbyId(null);
           setLobbyPlayers([]);
           setIsLobbyAdmin(false);
+          setMaxPlayers(0);
         }
       }
     });

@@ -4,6 +4,8 @@ import java.util.logging.Logger;
 
 import org.glassfish.tyrus.server.Server;
 
+import jakarta.websocket.DeploymentException;
+
 /**
  * WebSocket server for real-time poker game communication.
  * Replaces the old TCP socket server with WebSocket for better browser compatibility.
@@ -45,9 +47,9 @@ public class WebSocketServer {
             LOGGER.info(() -> String.format("WebSocket server started on ws://%s:%d/ws/poker", host, port));
             LOGGER.info("Ready to accept WebSocket connections");
             
-        } catch (Exception e) {
-            LOGGER.severe(() -> String.format("Failed to start WebSocket server: %s", e.getMessage()));
-            throw new RuntimeException("Could not start WebSocket server", e);
+        } catch (DeploymentException exception) {
+            LOGGER.severe(() -> String.format("Failed to start WebSocket server: %s", exception.getMessage()));
+            throw new RuntimeException("Could not start WebSocket server", exception);
         }
     }
 

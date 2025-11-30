@@ -1,6 +1,6 @@
 'use client';
 
-import { ServerEvent } from '../types/server-events';
+import { ServerEvent } from '../types/events';
 import { WebSocketCommand } from '../types/commands';
 
 export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
@@ -59,17 +59,10 @@ export class WebSocketClient {
           // 2. Domain events: { eventType: "...", data: {...}, timestamp: "...", eventId: "..." }
           const eventType = response.type || response.eventType;
           
-          // Flatten response data into the event for easier access
-          // Only spread data if it's an object, not a string or primitive
-          const dataToSpread = response.data && typeof response.data === 'object' && !Array.isArray(response.data)
-            ? response.data
-            : {};
-          
           const message: ServerEvent = {
             eventType: eventType?.toUpperCase() || 'UNKNOWN',
             timestamp: response.timestamp || Date.now(),
             ...response,
-            ...dataToSpread
           } as ServerEvent;
           
           // Log errors
