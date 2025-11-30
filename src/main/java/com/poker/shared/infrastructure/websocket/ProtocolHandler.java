@@ -16,6 +16,7 @@ import com.poker.lobby.application.LeaveLobbyUseCase.LeaveLobbyCommand;
 import com.poker.lobby.domain.model.LobbyId;
 import com.poker.player.application.GetLeaderboardUseCase.GetLeaderboardCommand;
 import com.poker.player.application.RegisterPlayerUseCase.RegisterPlayerCommand;
+import com.poker.player.application.dto.RegisterPlayerDTO;
 import com.poker.player.domain.model.PlayerAction;
 import com.poker.shared.application.dto.PokerUseCasesDTO;
 import com.poker.shared.application.dto.StartGameRequest;
@@ -91,14 +92,14 @@ public class ProtocolHandler {
         }
     }
     
-    private WebSocketResponse<?> handleRegister(JsonObject data) {
+    private WebSocketResponse<RegisterPlayerDTO> handleRegister(JsonObject data) {
         String playerName = data.get("playerName").getAsString();
         int chips = data.has("chips") ? data.get("chips").getAsInt() : 1000;
         
         LOGGER.info(() -> String.format("Registering player: %s with chips: %d", playerName, chips));
         
         RegisterPlayerCommand cmd = new RegisterPlayerCommand(playerName, chips);
-        var response = pokerUseCases.getRegisterPlayer().execute(cmd);
+        RegisterPlayerDTO response = pokerUseCases.getRegisterPlayer().execute(cmd);
         
         return WebSocketResponse.success("PLAYER_REGISTERED", response);
     }

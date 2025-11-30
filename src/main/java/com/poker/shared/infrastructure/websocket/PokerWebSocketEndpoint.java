@@ -1,5 +1,6 @@
 package com.poker.shared.infrastructure.websocket;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
@@ -66,7 +67,7 @@ public class PokerWebSocketEndpoint {
             // Handle special broadcasting and subscription cases
             handleResponseWithSideEffects(message, response, session);
             
-        } catch (com.google.gson.JsonSyntaxException | java.io.IOException e) {
+        } catch (JsonSyntaxException | IOException e) {
             LOGGER.warning(() -> String.format("Error processing message: %s", e.getMessage()));
             try {
                 WebSocketResponse<Void> error = WebSocketResponse.error(e.getMessage());
@@ -75,6 +76,18 @@ public class PokerWebSocketEndpoint {
                 LOGGER.severe(() -> String.format("Failed to send error response: %s", ex.getMessage()));
             }
         }
+    }
+
+    @OnClose
+    public void onClose(Session session) {
+        LOGGER.info(() -> String.format("WebSocket connection closed: %s", session.getId()));
+        eventPublisher.cleanupSession(session);
+    }
+
+    @OnError
+    public void onError(Session session, Throwable throwable) {
+        LOGGER.severe(() -> String.format("WebSocket error for session %s: %s", 
+            session.getId(), throwable.getMessage()));
     }
 
     /**
@@ -154,17 +167,7 @@ public class PokerWebSocketEndpoint {
         }
     }
 
-    @OnClose
-    public void onClose(Session session) {
-        LOGGER.info(() -> String.format("WebSocket connection closed: %s", session.getId()));
-        eventPublisher.cleanupSession(session);
-    }
-
-    @OnError
-    public void onError(Session session, Throwable throwable) {
-        LOGGER.severe(() -> String.format("WebSocket error for session %s: %s", 
-            session.getId(), throwable.getMessage()));
-    }
+    
 
     /**
      * Infrastructure logic: Broadcast game started event to all lobby participants.
@@ -222,7 +225,7 @@ public class PokerWebSocketEndpoint {
         String timestamp = json.get("timestamp").getAsString();
         
         // Create a simple domain event wrapper
-        return new com.poker.shared.domain.events.DomainEvent() {
+        return new DomainEvent() {
             @Override
             public String eventId() { return eventId; }
             

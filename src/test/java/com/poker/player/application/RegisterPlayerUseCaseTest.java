@@ -44,12 +44,12 @@ class RegisterPlayerUseCaseTest {
         RegisterPlayerDTO dto = useCase.execute(command);
 
         // Assert on DTO fields - test works with DTOs, not domain entities
-        assertNotNull(dto.id());
-        assertEquals("Alice", dto.name());
+        assertNotNull(dto.playerId());
+        assertEquals("Alice", dto.playerName());
         assertEquals(1000, dto.chips());
 
         // Verify persistence by querying repository (domain layer check)
-        Optional<Player> saved = repository.findById(PlayerId.from(dto.id()));
+        Optional<Player> saved = repository.findById(PlayerId.from(dto.playerId()));
         assertTrue(saved.isPresent());
         assertEquals("Alice", saved.get().getName());
     }
