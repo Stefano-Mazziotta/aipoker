@@ -6,12 +6,8 @@ import { useAuth } from './AuthContext';
 import { GameStateDTO } from '@/lib/types/game';
 import {
   ServerEvent,
-  isGameStartedEvent,
-  isPlayerActionEvent,
-  isGameStateChangedEvent,
-  isCardsDealtEvent,
-  isWinnerDeterminedEvent,
-} from '@/lib/types/server-events';
+  EventGuards
+} from '@/lib/types/events';
 import { WebSocketCommand } from '@/lib/types/commands';
 import { ALL_GAME_EVENT_TYPES } from '@/lib/constants/event-types';
 
@@ -33,36 +29,57 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = subscribe((event: ServerEvent) => {
-      // Only handle game-related events
+      // Early return if it's not a game-related event
       if (!ALL_GAME_EVENT_TYPES.includes(event.eventType as any)) {
         return;
       }
-      
-      if (isGameStartedEvent(event)) {
+
+      // GAME_STARTED – game has officially begun
+      if (EventGuards.isGameStartedEvent(event)) {
+        const {gameId} = event.data;
         console.log('Game started event received:', event);
-        setGameId(event.gameId);
-        // Request initial game state
-        if (event.gameId) {
-          console.log('Requesting game state for:', event.gameId);
-          sendCommand(commands.getGameState(event.gameId));
+
+        setGameId(gameId);
+
+        if (gameId) {
+          console.log('Requesting initial game state for gameId:', gameId);
+          sendCommand(commands.getGameState(gameId));
         }
-      } else if (isGameStateChangedEvent(event)) {
-        // Handle game state changes
+      }
+
+      // GAME_STATE_CHANGED – full or partial state update from server
+      if (EventGuards.isGameStateChangedEvent(event)) {
         console.log('Game state changed:', event);
-        setGameState(event as any);
-      } else if (isPlayerActionEvent(event)) {
-        console.log('Player action:', event);
-        // Optionally update local game state based on action
-      } else if (isCardsDealtEvent(event)) {
+        // const dto:GameStateDTO ={
+        //   gameId: event.data.gameId,
+        //   currentPlayerId: event.data.currentPlayerId,
+        //   currentPlayerName: event.data.currentPlayerName,
+        //   pot: event.data.pot,
+        // } 
+        setGameState(event.data as any); // todo: fix it
+      }
+
+      // PLAYER_ACTION – someone folded, raised, etc.
+      if (EventGuards.isPlayerActionEvent(event)) {
+        console.log('Player action received:', event);
+        // You can optimistically update UI here if desired
+      }
+
+      // CARDS_DEALT – new community or hole cards
+      if (EventGuards.isCardsDealtEvent(event)) {
         console.log('Cards dealt:', event);
-        // Optionally update local game state with community cards
-      } else if (isWinnerDeterminedEvent(event)) {
+        // Optionally merge into current game state
+      }
+
+      // WINNER_DETERMINED – hand is over, show results
+      if (EventGuards.isWinnerDeterminedEvent(event)) {
         console.log('Winner determined:', event);
-        // Handle game end
+
         setTimeout(() => {
+          console.log('Clearing game state after winner screen');
           setGameId(null);
           setGameState(null);
-        }, 5000); // Show results for 5 seconds
+        }, 5000);
       }
     });
 

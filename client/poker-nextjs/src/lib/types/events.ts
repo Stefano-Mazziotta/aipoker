@@ -175,6 +175,16 @@ export const EventGuards = {
     e.eventType === LOBBY_EVENTS.PLAYER_JOINED_LOBBY,
   isPlayerLeftLobby: (e: ServerEvent): e is PlayerLeftLobbyEvent =>
     e.eventType === LOBBY_EVENTS.PLAYER_LEFT_LOBBY,
+  isGameStartedEvent: (e: ServerEvent): e is GameStartedEvent =>
+    e.eventType === GAME_EVENTS.GAME_STARTED,
+  isGameStateChangedEvent: (e: ServerEvent): e is GameStateChangedEvent =>
+    e.eventType === GAME_EVENTS.GAME_STATE_CHANGED,
+  isPlayerActionEvent: (e: ServerEvent): e is PlayerActionEvent =>
+    e.eventType === GAME_EVENTS.PLAYER_ACTION,
+  isCardsDealtEvent: (e: ServerEvent): e is CardsDealtEvent =>
+    e.eventType === GAME_EVENTS.CARDS_DEALT,
+  isWinnerDeterminedEvent: (e: ServerEvent): e is WinnerDeterminedEvent =>
+    e.eventType === GAME_EVENTS.WINNER_DETERMINED,
 };
 
 /* ==========================================================================
