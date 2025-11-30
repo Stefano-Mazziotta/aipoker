@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.poker.game.application.GetGameStateUseCase.GameStateCommand;
 import com.poker.game.application.PlayerActionUseCase.PlayerActionCommand;
 import com.poker.game.application.StartGameUseCase.StartGameCommand;
@@ -84,9 +85,9 @@ public class ProtocolHandler {
                 case QUIT -> WebSocketResponse.successMessage("Goodbye!");
                 default -> WebSocketResponse.error("Unknown command: " + commandName);
             };
-        } catch (Exception e) {
-            LOGGER.warning(() -> String.format("Command error: %s", e.getMessage()));
-            return WebSocketResponse.error(e.getMessage());
+        } catch (JsonSyntaxException exception) {
+            LOGGER.warning(() -> String.format("Command error: %s", exception.getMessage()));
+            return WebSocketResponse.error(exception.getMessage());
         }
     }
     

@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.poker.shared.domain.events.DomainEvent;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
 
@@ -148,8 +149,8 @@ public class PokerWebSocketEndpoint {
             eventPublisher.subscribe(lobbyId, session, playerId);
             LOGGER.info(() -> String.format("Subscribed player %s to lobby %s", playerId, lobbyId));
             
-        } catch (Exception e) {
-            LOGGER.warning(() -> String.format("Subscription error: %s", e.getMessage()));
+        } catch (JsonSyntaxException exception) {
+            LOGGER.warning(() -> String.format("Subscription error: %s", exception.getMessage()));
         }
     }
 
