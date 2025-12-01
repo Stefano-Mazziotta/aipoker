@@ -7,8 +7,8 @@ import com.poker.game.application.StartGameUseCase;
 import com.poker.lobby.application.CreateLobbyUseCase;
 import com.poker.lobby.application.JoinLobbyUseCase;
 import com.poker.lobby.application.LeaveLobbyUseCase;
-import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
+import com.poker.ranking.application.GetLeaderboardUseCase;
 
 final public class PokerUseCasesDTO {
     final private RegisterPlayerUseCase registerPlayer;

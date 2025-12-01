@@ -1,4 +1,4 @@
-package com.poker.player.application.dto;
+package com.poker.ranking.application.dto;
 
 /**
  * Data Transfer Object for Leaderboard entry.
@@ -11,8 +11,14 @@ public record LeaderboardEntryDTO(
     int gamesPlayed,
     int gamesWon
 ) {
-    public static LeaderboardEntryDTO fromDomain(int rank, String playerName, int chips,
-                                                 int gamesPlayed, int gamesWon) {
+    public static LeaderboardEntryDTO fromDomain(
+        int rank, 
+        String playerName, 
+        int chips,
+        int gamesPlayed, 
+        int gamesWon
+    ) 
+    {
         return new LeaderboardEntryDTO(rank, playerName, chips, gamesPlayed, gamesWon);
     }
 }

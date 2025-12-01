@@ -1,25 +1,31 @@
 package com.poker.shared.infrastructure.websocket;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import com.poker.game.application.GetGameStateUseCase.GameStateCommand;
 import com.poker.game.application.PlayerActionUseCase.PlayerActionCommand;
 import com.poker.game.application.StartGameUseCase.StartGameCommand;
+import com.poker.game.application.dto.PlayerActionDTO;
+import com.poker.game.application.dto.StartGameDTO;
 import com.poker.game.domain.model.Blinds;
 import com.poker.lobby.application.CreateLobbyUseCase.CreateLobbyCommand;
 import com.poker.lobby.application.JoinLobbyUseCase.JoinLobbyCommand;
 import com.poker.lobby.application.LeaveLobbyUseCase.LeaveLobbyCommand;
+import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.lobby.domain.model.LobbyId;
-import com.poker.player.application.GetLeaderboardUseCase.GetLeaderboardCommand;
 import com.poker.player.application.RegisterPlayerUseCase.RegisterPlayerCommand;
 import com.poker.player.application.dto.RegisterPlayerDTO;
 import com.poker.player.domain.model.PlayerAction;
+import com.poker.ranking.application.GetLeaderboardUseCase.GetLeaderboardCommand;
+import com.poker.ranking.application.dto.LeaderboardDTO;
 import com.poker.shared.application.dto.PokerUseCasesDTO;
 import com.poker.shared.application.dto.StartGameRequest;
+import com.poker.shared.domain.enums.EventTypeEnum;
 
 /**
  * Handles protocol commands and delegates to appropriate use cases.
@@ -29,6 +35,8 @@ import com.poker.shared.application.dto.StartGameRequest;
 public class ProtocolHandler {
     private static final Logger LOGGER = Logger.getLogger(ProtocolHandler.class.getName());
     private static final Gson gson = new Gson();
+    private final LocalDateTime now = LocalDateTime.now();
+    
     private final PokerUseCasesDTO pokerUseCases;
 
     public ProtocolHandler(PokerUseCasesDTO pokerUseCases) {
@@ -36,60 +44,72 @@ public class ProtocolHandler {
     }
 
     public WebSocketResponse<?> handle(String command) {
-        if (command == null || command.trim().isEmpty()) {
-            return WebSocketResponse.error("Empty command");
+        if (isBlank(command)) {
+            return errorResponse("Empty command");
         }
 
-        // Parse JSON request
+        LOGGER.info(String.format("Parsing message: %s", command));
+
+        JsonObject jsonRequest;
         try {
-            LOGGER.info(() -> "Parsing message: " + command);
-            
-            JsonObject jsonRequest = gson.fromJson(command, JsonObject.class);
-            if (jsonRequest == null || !jsonRequest.has("command")) {
-                return WebSocketResponse.error("Invalid request format. Expected JSON with 'command' field");
-            }
-            
-            String commandName = jsonRequest.get("command").getAsString();
-            LOGGER.info(() -> "Processing command: " + commandName);
-            
-            // Extract data field - must be a JSON object
-            JsonObject data;
-            if (jsonRequest.has("data")) {
-                var dataElement = jsonRequest.get("data");
-                if (!dataElement.isJsonObject()) {
-                    LOGGER.warning(() -> "Invalid data type for command " + commandName + ": " + dataElement);
-                    return WebSocketResponse.error("Invalid data format. Expected JSON object.");
-                }
-                data = dataElement.getAsJsonObject();
-            } else {
-                data = new JsonObject();
-            }
-            
-            LOGGER.info(() -> String.format("Command: %s, Data: %s", commandName, data));
-            
-            WebSocketCommand cmd = WebSocketCommand.fromString(commandName);
-
-            return switch (cmd) {
-                case REGISTER -> handleRegister(data);
-                case START_GAME -> handleStartGame(data);
-                case CREATE_LOBBY -> handleCreateLobby(data);
-                case JOIN_LOBBY -> handleJoinLobby(data);
-                case LEAVE_LOBBY -> handleLeaveLobby(data);
-                case FOLD -> handleFold(data);
-                case CHECK -> handleCheck(data);
-                case CALL -> handleCall(data);
-                case RAISE -> handleRaise(data);
-                case ALL_IN -> handleAllIn(data);
-                case GET_GAME_STATE -> handleGetGameState(data);
-                // case GET_MY_CARDS -> handleGetMyCards(data);
-                case LEADERBOARD -> handleLeaderboard(data);
-                case QUIT -> WebSocketResponse.successMessage("Goodbye!");
-                default -> WebSocketResponse.error("Unknown command: " + commandName);
-            };
-        } catch (JsonSyntaxException exception) {
-            LOGGER.warning(() -> String.format("Command error: %s", exception.getMessage()));
-            return WebSocketResponse.error(exception.getMessage());
+            jsonRequest = gson.fromJson(command, JsonObject.class);
+        } catch (JsonSyntaxException e) {
+            LOGGER.warning(String.format("Invalid JSON format: %s", e.getMessage()));
+            return errorResponse("Invalid JSON format: " + e.getMessage());
         }
+
+        // Validate basic structure
+        if (jsonRequest == null || !jsonRequest.has("command")) {
+            return errorResponse("Invalid request format. Expected JSON with 'command' field");
+        }
+
+        String commandName = jsonRequest.get("command").getAsString();
+        LOGGER.info(String.format("Processing command: %s", commandName));
+
+        JsonObject data = extractDataObject(jsonRequest, commandName);
+        if (data == null) {
+            return errorResponse("Invalid data format. Expected JSON object.");
+        }
+
+        LOGGER.info(String.format("Command: %s, Data: %s", commandName, data));
+
+        return routeCommand(commandName, data);
+    }
+
+    private boolean isBlank(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    private JsonObject extractDataObject(JsonObject request, String commandName) {
+        if (!request.has("data")) {
+            return new JsonObject(); // empty object as default
+        }
+
+        JsonElement dataElement = request.get("data");
+        if (!dataElement.isJsonObject()) {
+            LOGGER.warning(String.format("Invalid data type for command %s: %s", commandName, dataElement));
+            return null;
+        }
+        return dataElement.getAsJsonObject();
+    }
+
+    private WebSocketResponse<?> routeCommand(String commandName, JsonObject data) {
+        WebSocketCommand cmd = WebSocketCommand.fromString(commandName);
+
+        return switch (cmd) {
+            case REGISTER       -> handleRegister(data);
+            case START_GAME     -> handleStartGame(data);
+            case CREATE_LOBBY   -> handleCreateLobby(data);
+            case JOIN_LOBBY     -> handleJoinLobby(data);
+            case LEAVE_LOBBY    -> handleLeaveLobby(data);
+            case FOLD           -> handleFold(data);
+            case CHECK          -> handleCheck(data);
+            case CALL           -> handleCall(data);
+            case RAISE          -> handleRaise(data);
+            case ALL_IN         -> handleAllIn(data);
+            case LEADERBOARD    -> handleLeaderboard(data);
+            default             -> errorResponse("Unknown command: " + commandName);
+        };
     }
     
     private WebSocketResponse<RegisterPlayerDTO> handleRegister(JsonObject data) {
@@ -99,12 +119,20 @@ public class ProtocolHandler {
         LOGGER.info(() -> String.format("Registering player: %s with chips: %d", playerName, chips));
         
         RegisterPlayerCommand cmd = new RegisterPlayerCommand(playerName, chips);
-        RegisterPlayerDTO response = pokerUseCases.getRegisterPlayer().execute(cmd);
+        RegisterPlayerDTO dto = pokerUseCases.getRegisterPlayer().execute(cmd);
         
-        return WebSocketResponse.success("PLAYER_REGISTERED", response);
+        WebSocketResponse<RegisterPlayerDTO> response = new WebSocketResponse<>(
+            EventTypeEnum.PLAYER_REGISTERED, 
+            "Player registered successfully",
+            true, 
+            now,     
+            dto
+        );
+        
+        return response;
     }
 
-    private WebSocketResponse<?> handleStartGame(JsonObject data) {
+    private WebSocketResponse<StartGameDTO> handleStartGame(JsonObject data) {
         StartGameRequest request = gson.fromJson(data, StartGameRequest.class);
         
         Blinds blinds = new Blinds(request.getSmallBlind(), request.getBigBlind());
@@ -112,13 +140,21 @@ public class ProtocolHandler {
         List<String> playerIds = request.getPlayerIds();
 
         StartGameCommand command = new StartGameCommand(playerIds, blinds, lobbyId);
-        var response = pokerUseCases.getStartGame().execute(command);
+        StartGameDTO dto = pokerUseCases.getStartGame().execute(command);
         
+        WebSocketResponse<StartGameDTO> response = new WebSocketResponse<>(
+            EventTypeEnum.GAME_STARTED,
+            "Game started successfully",
+            true,
+            now,
+            dto
+        );
+
         // Add lobbyId to response for broadcasting
-        return WebSocketResponse.successWithLobby("GAME_STARTED", response, request.getLobbyId());
+        return response;
     }
 
-    private WebSocketResponse<?> handleCreateLobby(JsonObject data) {
+    private WebSocketResponse<LobbyDTO> handleCreateLobby(JsonObject data) {
         String playerId = data.get("playerId").getAsString();
         int maxPlayers = data.get("maxPlayers").getAsInt();
 
@@ -127,86 +163,166 @@ public class ProtocolHandler {
             : "Lobby-" + System.currentTimeMillis();
 
         CreateLobbyCommand command = new CreateLobbyCommand(lobbyName, maxPlayers, playerId);
-        var response = pokerUseCases.getCreateLobby().execute(command);
+        LobbyDTO dto = pokerUseCases.getCreateLobby().execute(command);
         
-        return WebSocketResponse.success("LOBBY_CREATED", response);
+        WebSocketResponse<LobbyDTO> response = new WebSocketResponse<>(
+            EventTypeEnum.LOBBY_CREATED,
+            "Lobby created successfully",
+            true,
+            now,
+            dto
+        );
+
+        return response;
     }
 
-    private WebSocketResponse<?> handleJoinLobby(JsonObject data) {
+    private WebSocketResponse<LobbyDTO> handleJoinLobby(JsonObject data) {
         String lobbyId = data.get("lobbyId").getAsString();
         String playerId = data.get("playerId").getAsString();
 
         JoinLobbyCommand command = new JoinLobbyCommand(lobbyId, playerId);
-        var response = pokerUseCases.getJoinLobby().execute(command);
+        LobbyDTO dto = pokerUseCases.getJoinLobby().execute(command);
         
-        return WebSocketResponse.success("LOBBY_JOINED", response);
+        WebSocketResponse<LobbyDTO> response = new WebSocketResponse<>(
+            EventTypeEnum.PLAYER_JOINED,
+            "Player joined lobby successfully",
+            true,
+            now,
+            dto
+        );
+
+        return response;
     }
 
-    private WebSocketResponse<?> handleLeaveLobby(JsonObject data) {
+    private WebSocketResponse<Void> handleLeaveLobby(JsonObject data) {
         String lobbyId = data.get("lobbyId").getAsString();
         String playerId = data.get("playerId").getAsString();
         
         LeaveLobbyCommand command = new LeaveLobbyCommand(lobbyId, playerId);
         pokerUseCases.getLeaveLobby().execute(command);
         
-        return WebSocketResponse.successMessage("Successfully left lobby");
+        WebSocketResponse<Void> response = new WebSocketResponse<>(
+            EventTypeEnum.PLAYER_LEFT,
+            "Player left lobby successfully",
+            true,
+            now,
+            null
+        );
+
+        return response;
     }
 
-    private WebSocketResponse<?> handleFold(JsonObject data) {
+    private WebSocketResponse<PlayerActionDTO> handleFold(JsonObject data) {
         String gameId = data.get("gameId").getAsString();
         String playerId = data.get("playerId").getAsString();
-        return executePlayerAction(gameId, playerId, PlayerAction.FOLD, 0);
+
+        return executePlayerAction(
+            gameId,
+            playerId, 
+            PlayerAction.FOLD, 
+            0, 
+            EventTypeEnum.PLAYER_FOLD, 
+            "Player folded successfully"
+        );
     }
 
-    private WebSocketResponse<?> handleCheck(JsonObject data) {
+    private WebSocketResponse<PlayerActionDTO> handleCheck(JsonObject data) {
         String gameId = data.get("gameId").getAsString();
         String playerId = data.get("playerId").getAsString();
-        return executePlayerAction(gameId, playerId, PlayerAction.CHECK, 0);
-    }
-
-    private WebSocketResponse<?> handleCall(JsonObject data) {
-        String gameId = data.get("gameId").getAsString();
-        String playerId = data.get("playerId").getAsString();
-        int amount = data.get("amount").getAsInt();
-        return executePlayerAction(gameId, playerId, PlayerAction.CALL, amount);
-    }
-
-    private WebSocketResponse<?> handleRaise(JsonObject data) {
-        String gameId = data.get("gameId").getAsString();
-        String playerId = data.get("playerId").getAsString();
-        int amount = data.get("amount").getAsInt();
-        return executePlayerAction(gameId, playerId, PlayerAction.RAISE, amount);
-    }
-
-    private WebSocketResponse<?> handleAllIn(JsonObject data) {
-        String gameId = data.get("gameId").getAsString();
-        String playerId = data.get("playerId").getAsString();
-        return executePlayerAction(gameId, playerId, PlayerAction.ALL_IN, 0);
-    }
-
-    private WebSocketResponse<?> handleGetGameState(JsonObject data) {
-        String gameId = data.get("gameId").getAsString();
-        GameStateCommand command = new GameStateCommand(gameId);
-        var response = pokerUseCases.getGetGameState().execute(command);
         
-        return WebSocketResponse.success("GAME_STATE", response);
+        return executePlayerAction(
+            gameId, 
+            playerId, 
+            PlayerAction.CHECK, 
+            0,
+            EventTypeEnum.PLAYER_CHECK,
+            "Player checked successfully"
+        );
     }
 
-    private WebSocketResponse<?> handleLeaderboard(JsonObject data) {
+    private WebSocketResponse<PlayerActionDTO> handleCall(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        int amount = data.get("amount").getAsInt();
+        
+        return executePlayerAction(
+            gameId,
+            playerId,
+            PlayerAction.CALL,
+            amount,
+            EventTypeEnum.PLAYER_CALL,
+            "Player called successfully"
+        );
+    }
+
+    private WebSocketResponse<PlayerActionDTO> handleRaise(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        int amount = data.get("amount").getAsInt();
+        
+        return executePlayerAction(
+            gameId,
+            playerId,
+            PlayerAction.RAISE,
+            amount,
+            EventTypeEnum.PLAYER_RAISE,
+            "Player raised successfully"
+        );
+    }
+
+    private WebSocketResponse<PlayerActionDTO> handleAllIn(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        String playerId = data.get("playerId").getAsString();
+        
+        return executePlayerAction(
+            gameId, 
+            playerId, 
+            PlayerAction.ALL_IN, 
+            0,
+            EventTypeEnum.PLAYER_ALL_IN,
+            "Player went all-in successfully"
+        );
+    }
+
+    private WebSocketResponse<LeaderboardDTO> handleLeaderboard(JsonObject data) {
         int limit = data.has("limit") ? data.get("limit").getAsInt() : 10;
 
         GetLeaderboardCommand command = new GetLeaderboardCommand(limit);
-        var response = pokerUseCases.getGetLeaderboard().execute(command);
+        LeaderboardDTO dto = pokerUseCases.getGetLeaderboard().execute(command);
         
-        return WebSocketResponse.success("LEADERBOARD", response);
+        WebSocketResponse<LeaderboardDTO> response = new WebSocketResponse<>(
+            EventTypeEnum.LEADERBOARD_RETRIEVED,
+            "Leaderboard retrieved successfully",
+            true,
+            now,
+            dto
+        );
+        return response;
     }
 
-    private WebSocketResponse<?> executePlayerAction(String gameId, String playerId, PlayerAction action, int amount) {
+    private WebSocketResponse<PlayerActionDTO> executePlayerAction(String gameId, String playerId, PlayerAction action, int amount, EventTypeEnum eventType, String message) {
         PlayerActionCommand command = new PlayerActionCommand(gameId, playerId, action, amount);
+        PlayerActionDTO dto = pokerUseCases.getPlayerAction().execute(command);
         
-        var response = pokerUseCases.getPlayerAction().execute(command);
+        WebSocketResponse<PlayerActionDTO> response = new WebSocketResponse<>(
+            eventType, 
+            message,
+            true, 
+            now, 
+            dto
+        );
         
-        return WebSocketResponse.success("PLAYER_ACTION", response);
+        return response;
+    }
+
+    private WebSocketResponse<Void> errorResponse(String message) {
+        return new WebSocketResponse<>(
+            EventTypeEnum.ERROR, 
+            message, 
+            false, 
+            now, 
+            null
+        );
     }
 
     // private WebSocketResponse<?> handleGetMyCards(JsonObject data) {

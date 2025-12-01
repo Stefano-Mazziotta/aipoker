@@ -1,9 +1,11 @@
-package com.poker.player.application;
+package com.poker.ranking.application;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.poker.player.domain.model.Player;
 import com.poker.player.domain.repository.PlayerRepository;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.poker.ranking.application.dto.LeaderboardDTO;
 
 /**
  * Use case for retrieving the leaderboard.
@@ -15,7 +17,7 @@ public class GetLeaderboardUseCase {
         this.playerRepository = playerRepository;
     }
 
-    public LeaderboardResponse execute(GetLeaderboardCommand command) {
+    public LeaderboardDTO execute(GetLeaderboardCommand command) {
         List<Player> topPlayers = playerRepository.findTopByChips(command.limit());
         
         List<PlayerRanking> rankings = topPlayers.stream()
@@ -25,7 +27,7 @@ public class GetLeaderboardUseCase {
             ))
             .collect(Collectors.toList());
         
-        return new LeaderboardResponse(rankings);
+        return new LeaderboardDTO(rankings);
     }
 
     public record GetLeaderboardCommand(int limit) {
@@ -37,6 +39,4 @@ public class GetLeaderboardUseCase {
     }
     
     public record PlayerRanking(String name, int chips) {}
-    
-    public record LeaderboardResponse(List<PlayerRanking> rankings) {}
 }

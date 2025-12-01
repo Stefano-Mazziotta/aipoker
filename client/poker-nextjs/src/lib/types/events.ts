@@ -1,6 +1,6 @@
 // src/types/events.ts
 import { PlayerDTO } from './player';
-import { GameAction } from './game';
+
 import {
   AUTH_EVENTS,
   LOBBY_EVENTS,
@@ -18,7 +18,7 @@ export interface DomainEvent<T> {
   code?: string;
   message: string;
   data: T;
-  occurredOn: string;
+  timestamp: string;
 }
 
 /* ==========================================================================
