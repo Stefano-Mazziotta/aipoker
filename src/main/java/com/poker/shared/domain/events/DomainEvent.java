@@ -9,19 +9,19 @@ import java.util.UUID;
  */
 public abstract class DomainEvent {
     private final String eventId;
-    private final Instant occurredOn;
+    private final Instant timestamp;
 
     protected DomainEvent() {
         this.eventId = UUID.randomUUID().toString();
-        this.occurredOn = Instant.now();
+        this.timestamp = Instant.now();
     }
 
     public String eventId() {
         return eventId;
     }
 
-    public Instant occurredOn() {
-        return occurredOn;
+    public Instant timestamp() {
+        return timestamp;
     }
 
     /**
