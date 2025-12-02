@@ -31,6 +31,7 @@ export interface GetLeaderboardData {
 
 export interface CreateLobbyData {
   playerId: string;
+  lobbyName:string;
   maxPlayers: number;
 }
 
@@ -116,10 +117,10 @@ export function createGetLeaderboardCommand(limit?: number): WebSocketCommand<Ge
   };
 }
 
-export function createCreateLobbyCommand(playerId: string, maxPlayers: number): WebSocketCommand<CreateLobbyData> {
+export function createCreateLobbyCommand(playerId: string, lobbyName:string, maxPlayers: number): WebSocketCommand<CreateLobbyData> {
   return {
     command: CommandType.CREATE_LOBBY,
-    data: { playerId, maxPlayers }
+    data: { playerId, lobbyName, maxPlayers }
   };
 }
 

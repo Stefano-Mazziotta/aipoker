@@ -26,13 +26,13 @@ export const commands = {
   getLeaderboard: (limit?: number) => createGetLeaderboardCommand(limit),
   
   // Lobby commands
-  createLobby: (playerId: string, maxPlayers: number) => 
-    createCreateLobbyCommand(playerId, maxPlayers),
+  createLobby: (playerId: string, lobbyName:string, maxPlayers: number) => 
+    createCreateLobbyCommand(playerId, lobbyName, maxPlayers),
   
   joinLobby: (lobbyId: string, playerId: string) => 
     createJoinLobbyCommand(lobbyId, playerId),
   
-  leaveLobby: (lobbyId: string, playerId: string) => 
+  leaveLobby: (lobbyId: string, playerId: string,) => 
     createLeaveLobbyCommand(lobbyId, playerId),
   
   startGame: (lobbyId: string, playerIds: string[], smallBlind: number, bigBlind: number) =>
