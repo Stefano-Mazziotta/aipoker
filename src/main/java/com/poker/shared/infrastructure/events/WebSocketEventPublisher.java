@@ -1,7 +1,6 @@
 package com.poker.shared.infrastructure.events;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,10 +8,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.poker.shared.domain.events.DomainEvent;
 import com.poker.shared.domain.events.DomainEventPublisher;
+import com.poker.shared.infrastructure.json.GsonFactory;
 
 import jakarta.websocket.Session;
 
@@ -25,10 +25,7 @@ import jakarta.websocket.Session;
  */
 public class WebSocketEventPublisher implements DomainEventPublisher {
     private static final Logger LOGGER = Logger.getLogger(WebSocketEventPublisher.class.getName());
-    private static final Gson gson = new GsonBuilder()
-        .registerTypeAdapter(Instant.class, (com.google.gson.JsonSerializer<Instant>) (src, typeOfSrc, context) -> 
-            new com.google.gson.JsonPrimitive(src.toString()))
-        .create();
+    private static final Gson gson = GsonFactory.getInstance();
     private static WebSocketEventPublisher instance;
     
     // Map of scopeId (gameId/lobbyId) -> Set of subscribed WebSocket sessions
@@ -89,20 +86,29 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
         int successCount = 0;
         
         for (Session session : sessions) {
-            if (session.isOpen()) {
-                try {
-                    session.getBasicRemote().sendText(json);
-                    successCount++;
-                } catch (IOException e) {
-                    LOGGER.warning(() -> String.format("Failed to send event to session %s: %s", 
-                        session.getId(), e.getMessage()));
-                }
+
+            if (!session.isOpen()) {
+                continue;
+            }
+
+            try {
+                session.getBasicRemote().sendText(json);
+                successCount++;
+            } catch (IOException e) {
+                LOGGER.warning(() -> String.format("Failed to send event to session %s: %s", 
+                    session.getId(), e.getMessage()));
             }
         }
         
         final int sent = successCount;
-        LOGGER.info(() -> String.format("Published %s event to %d/%d subscribers of scope %s", 
-            event.eventType(), sent, sessions.size(), scopeId));
+        
+        LOGGER.info(() -> 
+            String.format("Published %s event to %d/%d subscribers of scope %s", 
+            event.eventType(), 
+            sent,
+            sessions.size(),
+            scopeId)
+        );
     }
 
     /**
@@ -134,19 +140,35 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
     }
 
     /**
-     * Convert domain event to JSON for WebSocket transmission.
-     */
-    private String toJson(DomainEvent event) {
+ * Convert domain event to JSON for WebSocket transmission.
+ */
+private String toJson(DomainEvent event) {
+    try {
         JsonObject json = new JsonObject();
         json.addProperty("eventId", event.eventId());
         json.addProperty("eventType", event.eventType());
-        json.addProperty("timestamp", event.occurredOn().toString());
+        json.addProperty("timestamp", event.timestamp().toString());
         
-        // Add event-specific data
-        String eventData = gson.toJson(event);
-        JsonObject data = gson.fromJson(eventData, JsonObject.class);
+        // Serialize the complete event and extract non-base fields
+        JsonObject fullEvent = gson.toJsonTree(event).getAsJsonObject();
+        
+        // Create data object with only event-specific fields
+        JsonObject data = new JsonObject();
+        fullEvent.entrySet().stream()
+            .filter(entry -> !isBaseField(entry.getKey()))
+            .forEach(entry -> data.add(entry.getKey(), entry.getValue()));
+        
         json.add("data", data);
         
         return gson.toJson(json);
+    } catch (JsonSyntaxException e) {
+        throw new IllegalStateException("Failed to serialize event: " + event.eventId(), e);
+    }
+}
+
+    private boolean isBaseField(String fieldName) {
+        return "eventId".equals(fieldName) 
+            || "eventType".equals(fieldName) 
+            || "timestamp".equals(fieldName);
     }
 }
