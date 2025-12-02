@@ -1,6 +1,6 @@
 package com.poker.shared.infrastructure.websocket;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -27,6 +27,7 @@ import com.poker.shared.application.dto.PokerUseCasesDTO;
 import com.poker.shared.application.dto.StartGameRequest;
 import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
+import com.poker.shared.infrastructure.json.GsonFactory;
 
 import jakarta.websocket.Session;
 
@@ -37,8 +38,8 @@ import jakarta.websocket.Session;
  */
 public class ProtocolHandler {
     private static final Logger LOGGER = Logger.getLogger(ProtocolHandler.class.getName());
-    private static final Gson gson = new Gson();
-    private final String now = LocalDateTime.now().toString();
+    private static final Gson gson = GsonFactory.getInstance();
+    private final Instant now = Instant.now();
     
     private final PokerUseCasesDTO pokerUseCases;
     private final WebSocketEventPublisher eventPublisher;
@@ -102,7 +103,7 @@ public class ProtocolHandler {
         WebSocketCommand cmd = WebSocketCommand.fromString(commandName);
 
         return switch (cmd) {
-            case REGISTER       -> handleRegister(data, session);
+            case REGISTER       -> handleRegister(data);
             case START_GAME     -> handleStartGame(data);
             case CREATE_LOBBY   -> handleCreateLobby(data, session);
             case JOIN_LOBBY     -> handleJoinLobby(data, session);
@@ -117,7 +118,7 @@ public class ProtocolHandler {
         };
     }
     
-    private WebSocketResponse<RegisterPlayerDTO> handleRegister(JsonObject data, Session session) {
+    private WebSocketResponse<RegisterPlayerDTO> handleRegister(JsonObject data) {
         String playerName = data.get("playerName").getAsString();
         int chips = data.has("chips") ? data.get("chips").getAsInt() : 1000;
         
@@ -160,12 +161,10 @@ public class ProtocolHandler {
     }
 
     private WebSocketResponse<LobbyDTO> handleCreateLobby(JsonObject data, Session session) {
-        String playerId = data.get("playerId").getAsString();
-        int maxPlayers = data.get("maxPlayers").getAsInt();
 
-        String lobbyName = data.has("name") 
-            ? data.get("name").getAsString() 
-            : "Lobby-" + System.currentTimeMillis();
+        String lobbyName = data.get("lobbyName").getAsString();
+        int maxPlayers = data.get("maxPlayers").getAsInt();
+        String playerId = data.get("playerId").getAsString();
 
         CreateLobbyCommand command = new CreateLobbyCommand(lobbyName, maxPlayers, playerId);
         LobbyDTO dto = pokerUseCases.getCreateLobby().execute(command);
@@ -197,7 +196,7 @@ public class ProtocolHandler {
         LOGGER.info(() -> String.format("Subscribed player %s to lobby %s", playerId, dto.lobbyId()));
         
         WebSocketResponse<LobbyDTO> response = new WebSocketResponse<>(
-            EventTypeEnum.PLAYER_JOINED,
+            EventTypeEnum.PLAYER_JOINED_LOBBY,
             "Player joined lobby successfully",
             true,
             now,
@@ -215,7 +214,7 @@ public class ProtocolHandler {
         pokerUseCases.getLeaveLobby().execute(command);
         
         WebSocketResponse<Void> response = new WebSocketResponse<>(
-            EventTypeEnum.PLAYER_LEFT,
+            EventTypeEnum.PLAYER_LEFT_LOBBY,
             "Player left lobby successfully",
             true,
             now,

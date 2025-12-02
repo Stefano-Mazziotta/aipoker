@@ -1,13 +1,14 @@
 package com.poker.shared.infrastructure.websocket;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
+import com.poker.shared.infrastructure.json.GsonFactory;
 
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnError;
@@ -23,7 +24,7 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/poker")
 public class PokerWebSocketEndpoint {
     private static final Logger LOGGER = Logger.getLogger(PokerWebSocketEndpoint.class.getName());
-    private static final Gson gson = new GsonBuilder().create();
+    private static final Gson gson = GsonFactory.getInstance();
     
     // These will be injected/configured
     private static ProtocolHandler protocolHandler;
@@ -39,7 +40,7 @@ public class PokerWebSocketEndpoint {
         
         try {
             String msg = "Welcome to the Texas Hold'em Poker Server!";
-            String timestamp = java.time.LocalDateTime.now().toString();
+            Instant timestamp = Instant.now();
             WebSocketResponse<Void> response = new WebSocketResponse<>(
                 EventTypeEnum.WELCOME,
                 msg,
