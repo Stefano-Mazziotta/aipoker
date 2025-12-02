@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.poker.lobby.application.dto.LobbyDTO;
+import com.poker.lobby.application.dto.PlayerDTO;
 import com.poker.lobby.domain.events.PlayerJoinedLobbyEvent;
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
@@ -45,7 +46,6 @@ public class JoinLobbyUseCase {
         lobbyRepository.save(lobby);
 
         // Publish domain event to notify all lobby subscribers
-        // Note: Infrastructure layer (WebSocketEventPublisher) will handle session subscription
         PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(
             lobby.getId().getValue(),
             playerId.getValue().toString(),
@@ -56,13 +56,8 @@ public class JoinLobbyUseCase {
         );
         eventPublisher.publishToScope(lobby.getId().getValue(), event);
 
-        // Reload lobby to get fresh data (ensures consistency)
-        lobby = lobbyRepository.findById(lobby.getId())
-            .orElseThrow(() -> new IllegalStateException("Lobby not found after save"));
-
-        // Build player list - now it's simple! Lobby already has players
-        List<LobbyDTO.PlayerInLobbyDTO> players = lobby.getPlayers().stream()
-            .map(p -> new LobbyDTO.PlayerInLobbyDTO(
+        List<PlayerDTO> players = lobby.getPlayers().stream()
+            .map(p -> new PlayerDTO(
                 p.getId().getValue().toString(),
                 p.getName(),
                 p.getChips().getAmount()

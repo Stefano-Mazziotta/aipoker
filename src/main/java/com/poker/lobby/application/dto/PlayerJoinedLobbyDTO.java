@@ -11,10 +11,19 @@ public record PlayerJoinedLobbyDTO(
     int currentPlayerCount,
     int maxPlayers
 ) {
-    public static PlayerJoinedLobbyDTO fromEvent(String lobbyId, String playerId, 
-                                                 String playerName, int currentPlayerCount, 
-                                                 int maxPlayers) {
-        return new PlayerJoinedLobbyDTO(lobbyId, playerId, playerName, 
-                                       currentPlayerCount, maxPlayers);
+    public static PlayerJoinedLobbyDTO fromEvent(
+        String lobbyId,
+        String playerId,
+        String playerName,
+        int currentPlayerCount,
+        int maxPlayers
+    ) {
+        return new PlayerJoinedLobbyDTO(
+            lobbyId,
+            playerId,
+            playerName,
+            currentPlayerCount,
+            maxPlayers
+        );
     }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.poker.lobby.application.dto.LobbyDTO;
+import com.poker.lobby.application.dto.PlayerDTO;
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.player.domain.model.Player;
@@ -33,19 +34,12 @@ public class CreateLobbyUseCase {
         Player adminPlayer = playerRepository.findById(adminId)
             .orElseThrow(() -> new IllegalArgumentException("Admin player not found"));
 
-        // Create lobby with admin
         Lobby lobby = Lobby.create(command.name(), command.maxPlayers(), adminPlayer);
         
-        // Save to repository
         lobbyRepository.save(lobby);
 
-        // Reload lobby to get fresh data (ensures consistency)
-        lobby = lobbyRepository.findById(lobby.getId())
-            .orElseThrow(() -> new IllegalStateException("Lobby not found after save"));
-
-        // Build player list - now it's simple! Lobby already has players
-        List<LobbyDTO.PlayerInLobbyDTO> players = lobby.getPlayers().stream()
-            .map(p -> new LobbyDTO.PlayerInLobbyDTO(
+        List<PlayerDTO> players = lobby.getPlayers().stream()
+            .map(p -> new PlayerDTO(
                 p.getId().getValue().toString(),
                 p.getName(),
                 p.getChips().getAmount()

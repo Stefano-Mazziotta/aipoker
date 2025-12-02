@@ -13,13 +13,25 @@ public record LobbyDTO(
     int maxPlayers,
     boolean isOpen,
     String adminPlayerId,
-    List<PlayerInLobbyDTO> players
+    List<PlayerDTO> players
 ) {
-    public static LobbyDTO fromDomain(String lobbyId, String name, int currentPlayers, 
-                                     int maxPlayers, boolean isOpen, String adminPlayerId,
-                                     List<PlayerInLobbyDTO> players) {
-        return new LobbyDTO(lobbyId, name, currentPlayers, maxPlayers, isOpen, adminPlayerId, players);
+    public static LobbyDTO fromDomain(
+        String lobbyId,
+        String name,
+        int currentPlayers,
+        int maxPlayers,
+        boolean isOpen, 
+        String adminPlayerId,
+        List<PlayerDTO> players
+    ) {
+        return new LobbyDTO(
+            lobbyId,
+            name, 
+            currentPlayers, 
+            maxPlayers, 
+            isOpen, 
+            adminPlayerId, 
+            players
+        );
     }
-    
-    public record PlayerInLobbyDTO(String playerId, String playerName, int chips) {}
 }
