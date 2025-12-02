@@ -44,18 +44,12 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
       if (EventGuards.isLobbyCreated(event)) {
         const { lobbyId, players, maxPlayers } = event.data;
 
-        const mappedPlayers: PlayerDTO[] = players.map(p => ({
-          id: p.id,
-          name: p.name,
-          chips: p.chips,
-        }));
-
         setLobbyId(lobbyId);
-        setLobbyPlayers(mappedPlayers);
+        setLobbyPlayers(players);
         setIsLobbyAdmin(true);
         setMaxPlayers(maxPlayers);
 
-        console.log('Lobby created - you are the admin', { lobbyId, players: mappedPlayers.length });
+        console.log('Lobby created - you are the admin', { lobbyId, players: players.length });
       }
 
       // PLAYER_JOINED_LOBBY – broadcast when any player (including yourself) joins
@@ -65,7 +59,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
         console.log('Player joined lobby:', player)
 
         setLobbyPlayers(prev => {
-          const alreadyExists = prev.some(p => p.id === playerId);
+          const alreadyExists = prev.some(p => p.playerId === playerId);
 
           if (alreadyExists) {
             console.log('Player already in list – skipping duplicate');
@@ -84,7 +78,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
 
         console.log('Player left lobby:', { playerId, playerName });
 
-        setLobbyPlayers(prev => prev.filter(p => p.id !== playerId));
+        setLobbyPlayers(prev => prev.filter(p => p.playerId !== playerId));
 
         // If YOU are the one who left
         if (playerId === playerId) {
@@ -105,7 +99,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
       console.error('Cannot create lobby: not registered');
       return;
     }
-    const command = commands.createLobby(playerId, maxPlayersCount);
+    const command = commands.createLobby(playerId, lobbyName, maxPlayersCount);
     sendCommand(command);
     setMaxPlayers(maxPlayersCount);
   }, [playerId, commands, sendCommand]);
@@ -141,7 +135,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
       console.error('Cannot start game: no lobby ID');
       return;
     }
-    const playerIds = lobbyPlayers.map(p => p.id);
+    const playerIds = lobbyPlayers.map(p => p.playerId);
     const command = commands.startGame(lobbyId, playerIds, smallBlind, bigBlind);
     sendCommand(command);
   }, [isLobbyAdmin, lobbyPlayers, lobbyId, commands, sendCommand]);

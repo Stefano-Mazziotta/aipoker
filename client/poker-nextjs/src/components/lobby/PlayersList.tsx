@@ -17,9 +17,9 @@ export default function PlayersList() {
       <div className="space-y-2">
         {lobbyPlayers.map((player, index) => (
           <div
-            key={player.id}
+            key={player.playerId}
             className={`flex items-center justify-between p-3 rounded-lg ${
-              player.id === playerId
+              player.playerId === playerId
                 ? 'bg-yellow-500/20 border-2 border-yellow-500'
                 : 'bg-black/30 border border-white/20'
             }`}
@@ -30,8 +30,8 @@ export default function PlayersList() {
               </span>
               <div>
                 <p className="font-bold text-white">
-                  {player.name}
-                  {player.id === playerId && (
+                  {player.playerName}
+                  {player.playerId === playerId && (
                     <span className="ml-2 text-yellow-500 text-sm">(You)</span>
                   )}
                 </p>
