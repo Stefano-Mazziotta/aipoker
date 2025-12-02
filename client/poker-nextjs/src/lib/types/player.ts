@@ -1,7 +1,7 @@
 // Player DTOs matching Java backend
 export interface PlayerDTO {
-  id: string;
-  name: string;
+  playerId: string;
+  playerName: string;
   chips: number;
 }
 

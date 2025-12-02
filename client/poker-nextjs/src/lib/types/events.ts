@@ -186,20 +186,3 @@ export const EventGuards = {
   isWinnerDeterminedEvent: (e: ServerEvent): e is WinnerDeterminedEvent =>
     e.eventType === GAME_EVENTS.WINNER_DETERMINED,
 };
-
-/* ==========================================================================
-   Client → Server messages (if you still need them in the same file)
-   ========================================================================== */
-
-export type ClientEventType =
-  | 'REGISTER'
-  | 'CREATE_LOBBY'
-  | 'JOIN_LOBBY'
-  | 'LEAVE_LOBBY'
-  | 'START_GAME'
-  | 'PLAYER_ACTION';
-
-export interface ClientMessage<T = unknown> {
-  type: ClientEventType;
-  payload?: T;
-}
