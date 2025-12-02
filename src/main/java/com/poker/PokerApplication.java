@@ -11,10 +11,10 @@ import com.poker.lobby.application.JoinLobbyUseCase;
 import com.poker.lobby.application.LeaveLobbyUseCase;
 import com.poker.lobby.domain.repository.LobbyRepository;
 import com.poker.lobby.infrastructure.persistence.SQLiteLobbyRepository;
-import com.poker.player.application.GetLeaderboardUseCase;
 import com.poker.player.application.RegisterPlayerUseCase;
 import com.poker.player.domain.repository.PlayerRepository;
 import com.poker.player.infrastructure.persistence.SQLitePlayerRepository;
+import com.poker.ranking.application.GetLeaderboardUseCase;
 import com.poker.shared.application.dto.PokerUseCasesDTO;
 import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.infrastructure.database.DatabaseInitializer;
@@ -78,16 +78,17 @@ public class PokerApplication {
             getGameState
         );
 
-        startWebSocketServer(dto);
+        startWebSocketServer(dto, eventPublisher);
     }
     
-    private static void startWebSocketServer(PokerUseCasesDTO dto) {
+    private static void startWebSocketServer(PokerUseCasesDTO dto, DomainEventPublisher eventPublisher) {
         System.out.println("Starting WebSocket Server...");
         System.out.println("Listening on ws://localhost:8081/ws/poker");
         System.out.println("Press Ctrl+C to stop\n");
         
         // Create protocol handler with all use cases (using JSON protocol)
-        ProtocolHandler protocolHandler = new ProtocolHandler(dto);
+        ProtocolHandler protocolHandler = new ProtocolHandler(dto, 
+            (WebSocketEventPublisher) eventPublisher);
         
         // Configure WebSocket endpoint with handler
         PokerWebSocketEndpoint.setProtocolHandler(protocolHandler);

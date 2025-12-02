@@ -236,7 +236,7 @@ public class FullGameIntegrationTest {
 
     @Test
     void testAllIn() {
-        // Register players with different chip amounts and unique names
+        // Register players with different chip counts
         String timestamp = String.valueOf(System.currentTimeMillis());
         var rich = registerPlayer.execute(
                 new RegisterPlayerUseCase.RegisterPlayerCommand("RichPlayer" + timestamp, 2000)

@@ -11,9 +11,11 @@
 [![Tests](https://img.shields.io/badge/Tests-57%20Passing-success.svg)]()
 
 ---
+https://jakarta.ee/learn/docs/jakartaee-tutorial/current/web/websocket/websocket.html
+https://www.arquitecturajava.com/java-websockets/
+https://github.com/TooTallNate/Java-WebSocket
 
 ## ⚡ Quick Start
-
 ```bash
 # Backend (Java WebSocket Server)
 mvn clean package                          # Build

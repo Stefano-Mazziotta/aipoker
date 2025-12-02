@@ -4,8 +4,8 @@ package com.poker.shared.domain.enums;
  * Enum representing all possible event types in the poker system.
  */
 public enum EventTypeEnum {
-
-    ERROR("ERROR"),
+    
+    WELCOME("WELCOME"),
     
     // Player events
     PLAYER_REGISTERED("PLAYER_REGISTERED"),
@@ -36,7 +36,9 @@ public enum EventTypeEnum {
     CHAT_MESSAGE_SENT("CHAT_MESSAGE_SENT"),
 
     // Ranking
-    LEADERBOARD_RETRIEVED("LEADERBOARD_RETRIEVED");
+    LEADERBOARD_RETRIEVED("LEADERBOARD_RETRIEVED"),
+
+    ERROR("ERROR");
 
     private final String value;
 
@@ -45,6 +47,27 @@ public enum EventTypeEnum {
     }
 
     public String getValue() {
+        return value;
+    }
+
+    public static EventTypeEnum fromString(String eventStr) {
+        if (eventStr == null || eventStr.trim().isEmpty()) {
+            return ERROR;
+        }
+        
+        String upperEvent = eventStr.trim().toUpperCase();
+        
+        for (EventTypeEnum event : EventTypeEnum.values()) {
+            if (event.value.equals(upperEvent)) {
+                return event;
+            }
+        }
+        
+        return ERROR;
+    }
+    
+    @Override
+    public String toString() {
         return value;
     }
 }

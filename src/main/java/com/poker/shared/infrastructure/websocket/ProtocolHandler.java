@@ -26,6 +26,9 @@ import com.poker.ranking.application.dto.LeaderboardDTO;
 import com.poker.shared.application.dto.PokerUseCasesDTO;
 import com.poker.shared.application.dto.StartGameRequest;
 import com.poker.shared.domain.enums.EventTypeEnum;
+import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
+
+import jakarta.websocket.Session;
 
 /**
  * Handles protocol commands and delegates to appropriate use cases.
@@ -35,17 +38,19 @@ import com.poker.shared.domain.enums.EventTypeEnum;
 public class ProtocolHandler {
     private static final Logger LOGGER = Logger.getLogger(ProtocolHandler.class.getName());
     private static final Gson gson = new Gson();
-    private final LocalDateTime now = LocalDateTime.now();
+    private final String now = LocalDateTime.now().toString();
     
     private final PokerUseCasesDTO pokerUseCases;
+    private final WebSocketEventPublisher eventPublisher;
 
-    public ProtocolHandler(PokerUseCasesDTO pokerUseCases) {
+    public ProtocolHandler(PokerUseCasesDTO pokerUseCases, WebSocketEventPublisher eventPublisher) {
         this.pokerUseCases = pokerUseCases;
+        this.eventPublisher = eventPublisher;
     }
 
-    public WebSocketResponse<?> handle(String command) {
+    public WebSocketResponse<?> handle(String command, Session session) {
         if (isBlank(command)) {
-            return errorResponse("Empty command");
+            return WebSocketHelper.errorResponse("Empty command");
         }
 
         LOGGER.info(String.format("Parsing message: %s", command));
@@ -55,12 +60,12 @@ public class ProtocolHandler {
             jsonRequest = gson.fromJson(command, JsonObject.class);
         } catch (JsonSyntaxException e) {
             LOGGER.warning(String.format("Invalid JSON format: %s", e.getMessage()));
-            return errorResponse("Invalid JSON format: " + e.getMessage());
+            return WebSocketHelper.errorResponse("Invalid JSON format: " + e.getMessage());
         }
 
         // Validate basic structure
         if (jsonRequest == null || !jsonRequest.has("command")) {
-            return errorResponse("Invalid request format. Expected JSON with 'command' field");
+            return WebSocketHelper.errorResponse("Invalid request format. Expected JSON with 'command' field");
         }
 
         String commandName = jsonRequest.get("command").getAsString();
@@ -68,12 +73,12 @@ public class ProtocolHandler {
 
         JsonObject data = extractDataObject(jsonRequest, commandName);
         if (data == null) {
-            return errorResponse("Invalid data format. Expected JSON object.");
+            return WebSocketHelper.errorResponse("Invalid data format. Expected JSON object.");
         }
 
         LOGGER.info(String.format("Command: %s, Data: %s", commandName, data));
 
-        return routeCommand(commandName, data);
+        return routeCommand(commandName, data, session);
     }
 
     private boolean isBlank(String str) {
@@ -93,14 +98,14 @@ public class ProtocolHandler {
         return dataElement.getAsJsonObject();
     }
 
-    private WebSocketResponse<?> routeCommand(String commandName, JsonObject data) {
+    private WebSocketResponse<?> routeCommand(String commandName, JsonObject data, Session session) {
         WebSocketCommand cmd = WebSocketCommand.fromString(commandName);
 
         return switch (cmd) {
-            case REGISTER       -> handleRegister(data);
+            case REGISTER       -> handleRegister(data, session);
             case START_GAME     -> handleStartGame(data);
-            case CREATE_LOBBY   -> handleCreateLobby(data);
-            case JOIN_LOBBY     -> handleJoinLobby(data);
+            case CREATE_LOBBY   -> handleCreateLobby(data, session);
+            case JOIN_LOBBY     -> handleJoinLobby(data, session);
             case LEAVE_LOBBY    -> handleLeaveLobby(data);
             case FOLD           -> handleFold(data);
             case CHECK          -> handleCheck(data);
@@ -108,11 +113,11 @@ public class ProtocolHandler {
             case RAISE          -> handleRaise(data);
             case ALL_IN         -> handleAllIn(data);
             case LEADERBOARD    -> handleLeaderboard(data);
-            default             -> errorResponse("Unknown command: " + commandName);
+            default             -> WebSocketHelper.errorResponse("Unknown command: ");
         };
     }
     
-    private WebSocketResponse<RegisterPlayerDTO> handleRegister(JsonObject data) {
+    private WebSocketResponse<RegisterPlayerDTO> handleRegister(JsonObject data, Session session) {
         String playerName = data.get("playerName").getAsString();
         int chips = data.has("chips") ? data.get("chips").getAsInt() : 1000;
         
@@ -154,7 +159,7 @@ public class ProtocolHandler {
         return response;
     }
 
-    private WebSocketResponse<LobbyDTO> handleCreateLobby(JsonObject data) {
+    private WebSocketResponse<LobbyDTO> handleCreateLobby(JsonObject data, Session session) {
         String playerId = data.get("playerId").getAsString();
         int maxPlayers = data.get("maxPlayers").getAsInt();
 
@@ -164,6 +169,10 @@ public class ProtocolHandler {
 
         CreateLobbyCommand command = new CreateLobbyCommand(lobbyName, maxPlayers, playerId);
         LobbyDTO dto = pokerUseCases.getCreateLobby().execute(command);
+        
+        // Infrastructure responsibility: Subscribe admin to lobby
+        eventPublisher.subscribe(dto.lobbyId(), session, playerId);
+        LOGGER.info(() -> String.format("Subscribed admin player %s to lobby %s", playerId, dto.lobbyId()));
         
         WebSocketResponse<LobbyDTO> response = new WebSocketResponse<>(
             EventTypeEnum.LOBBY_CREATED,
@@ -176,12 +185,16 @@ public class ProtocolHandler {
         return response;
     }
 
-    private WebSocketResponse<LobbyDTO> handleJoinLobby(JsonObject data) {
+    private WebSocketResponse<LobbyDTO> handleJoinLobby(JsonObject data, Session session) {
         String lobbyId = data.get("lobbyId").getAsString();
         String playerId = data.get("playerId").getAsString();
 
         JoinLobbyCommand command = new JoinLobbyCommand(lobbyId, playerId);
         LobbyDTO dto = pokerUseCases.getJoinLobby().execute(command);
+        
+        // Infrastructure responsibility: Subscribe player to lobby
+        eventPublisher.subscribe(dto.lobbyId(), session, playerId);
+        LOGGER.info(() -> String.format("Subscribed player %s to lobby %s", playerId, dto.lobbyId()));
         
         WebSocketResponse<LobbyDTO> response = new WebSocketResponse<>(
             EventTypeEnum.PLAYER_JOINED,
@@ -313,16 +326,6 @@ public class ProtocolHandler {
         );
         
         return response;
-    }
-
-    private WebSocketResponse<Void> errorResponse(String message) {
-        return new WebSocketResponse<>(
-            EventTypeEnum.ERROR, 
-            message, 
-            false, 
-            now, 
-            null
-        );
     }
 
     // private WebSocketResponse<?> handleGetMyCards(JsonObject data) {

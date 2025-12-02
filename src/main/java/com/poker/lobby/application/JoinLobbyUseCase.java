@@ -44,7 +44,8 @@ public class JoinLobbyUseCase {
         // Save updated lobby
         lobbyRepository.save(lobby);
 
-        // Publish event to notify all lobby subscribers
+        // Publish domain event to notify all lobby subscribers
+        // Note: Infrastructure layer (WebSocketEventPublisher) will handle session subscription
         PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(
             lobby.getId().getValue(),
             playerId.getValue().toString(),
