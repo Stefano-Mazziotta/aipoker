@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './WebSocketContext';
 import { useAuth } from './AuthContext';
+import { useToast } from './ToastContext';
 import { GameStateDTO } from '@/lib/types/game';
 import {
   ServerEvent,
@@ -11,12 +12,20 @@ import {
 import { WebSocketCommand } from '@/lib/types/commands';
 import { ALL_GAME_EVENT_TYPES } from '@/lib/constants/event-types';
 
+interface WinnerData {
+  winnerName: string;
+  handRank: string;
+  amountWon: number;
+}
+
 interface GameContextType {
   gameId: string | null;
   gameState: GameStateDTO | null;
   isInGame: boolean;
   isPlayerTurn: boolean;
   performAction: (action: string, amount?: number) => void;
+  winner: WinnerData | null;
+  clearWinner: () => void;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -24,8 +33,16 @@ const GameContext = createContext<GameContextType | null>(null);
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameId, setGameId] = useState<string | null>(null);
   const [gameState, setGameState] = useState<GameStateDTO | null>(null);
+  const [winner, setWinner] = useState<WinnerData | null>(null);
   const { subscribe, sendCommand, commands } = useWebSocket();
   const { playerId } = useAuth();
+  const { showToast } = useToast();
+
+  const clearWinner = useCallback(() => {
+    setWinner(null);
+    setGameId(null);
+    setGameState(null);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribe((event: ServerEvent) => {
@@ -36,15 +53,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       // GAME_STARTED – game has officially begun
       if (EventGuards.isGameStartedEvent(event)) {
-        const {gameId} = event.data;
+        const { gameId, players, pot, currentBet, currentPlayerId, currentPlayerName, gameState } = event.data;
         console.log('Game started event received:', event);
 
         setGameId(gameId);
-
-        if (gameId) {
-          console.log('Requesting initial game state for gameId:', gameId);
-          sendCommand(commands.getGameState(gameId));
-        }
+        
+        // Initialize game state from GAME_STARTED event with complete data
+        const initialState: GameStateDTO = {
+          gameId: gameId,
+          currentPlayerId: currentPlayerId || '',
+          pot: pot,
+          currentBet: currentBet,
+          round: (gameState || 'PRE_FLOP').toLowerCase().replace('_', '-') as any,
+          communityCards: [],
+          players: players.map(player => ({
+            id: player.playerId,
+            name: player.playerName,
+            chips: player.chips,
+            currentBet: player.currentBet,
+            hasActed: false,
+            isFolded: player.isFolded,
+            isAllIn: player.isAllIn,
+            cards: []
+          }))
+        };
+        console.log('Initializing game state from GAME_STARTED:', initialState);
+        setGameState(initialState);
       }
 
       // GAME_STATE_CHANGED – full or partial state update from server
@@ -62,23 +96,55 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // PLAYER_ACTION – someone folded, raised, etc.
       if (EventGuards.isPlayerActionEvent(event)) {
         console.log('Player action received:', event);
-        // You can optimistically update UI here if desired
+        // Update game state optimistically
+        if (gameState) {
+          setGameState({
+            ...gameState,
+            pot: event.data.newPot,
+          } as any);
+        }
+      }
+
+      // ROUND_COMPLETED – betting round finished, next phase starting
+      if (EventGuards.isRoundCompletedEvent(event)) {
+        console.log('Round completed:', event.data.completedPhase, '→', event.data.nextPhase);
+        
+        // Show toast notification for round transition
+        showToast(
+          `${event.data.completedPhase.replace('_', ' ')} complete! Moving to ${event.data.nextPhase.replace('_', ' ')}...`,
+          'success',
+          2000
+        );
       }
 
       // CARDS_DEALT – new community or hole cards
       if (EventGuards.isCardsDealtEvent(event)) {
-        console.log('Cards dealt:', event);
-        // Optionally merge into current game state
+        console.log('Cards dealt:', event.data.phase, event.data.newCards);
+        // Update game state with new community cards
+        if (gameState) {
+          setGameState({
+            ...gameState,
+            communityCards: event.data.allCommunityCards,
+            phase: event.data.phase,
+          } as any);
+        }
       }
 
       // WINNER_DETERMINED – hand is over, show results
       if (EventGuards.isWinnerDeterminedEvent(event)) {
         console.log('Winner determined:', event);
 
+        // Set winner data for modal display
+        setWinner({
+          winnerName: event.data.winnerName,
+          handRank: event.data.handRank || 'Best Hand',
+          amountWon: event.data.amountWon,
+        });
+
+        // Auto-clear after 5 seconds (modal handles its own display)
         setTimeout(() => {
           console.log('Clearing game state after winner screen');
-          setGameId(null);
-          setGameState(null);
+          clearWinner();
         }, 5000);
       }
     });
@@ -132,6 +198,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         isInGame,
         isPlayerTurn,
         performAction,
+        winner,
+        clearWinner,
       }}
     >
       {children}
