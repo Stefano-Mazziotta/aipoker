@@ -55,7 +55,7 @@ public class LobbyUseCaseTest {
         
         // Create lobby - receives LobbyDTO
         LobbyDTO lobbyDTO = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("Test Lobby" + timestamp, 6, admin.id())
+                new CreateLobbyUseCase.CreateLobbyCommand("Test Lobby" + timestamp, 6, admin.playerId())
         );
 
         // Assert on DTO fields - tests work with DTOs, not domain entities
@@ -64,7 +64,7 @@ public class LobbyUseCaseTest {
         assertEquals(6, lobbyDTO.maxPlayers());
         assertEquals(1, lobbyDTO.currentPlayers()); // Admin auto-joins
         assertTrue(lobbyDTO.isOpen());
-        assertEquals(admin.id(), lobbyDTO.adminPlayerId());
+        assertEquals(admin.playerId(), lobbyDTO.adminPlayerId());
 
         System.out.println("✓ Create lobby test passed!");
     }
@@ -80,7 +80,7 @@ public class LobbyUseCaseTest {
         
         // Create lobby - receives LobbyDTO
         LobbyDTO lobbyDTO = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("Join Test" + timestamp, 4, admin.id())
+                new CreateLobbyUseCase.CreateLobbyCommand("Join Test" + timestamp, 4, admin.playerId())
         );
 
         // Register player - receives RegisterPlayerDTO
@@ -90,7 +90,7 @@ public class LobbyUseCaseTest {
 
         // Join lobby - receives LobbyDTO
         LobbyDTO joinedLobbyDTO = joinLobby.execute(
-                new JoinLobbyUseCase.JoinLobbyCommand(lobbyDTO.lobbyId(), player.id())
+                new JoinLobbyUseCase.JoinLobbyCommand(lobbyDTO.lobbyId(), player.playerId())
         );
 
         // Assert on DTO fields
@@ -112,7 +112,7 @@ public class LobbyUseCaseTest {
         
         // Create small lobby (2 players max) - receives LobbyDTO
         LobbyDTO lobbyDTO = createLobby.execute(
-                new CreateLobbyUseCase.CreateLobbyCommand("Full Test" + timestamp, 2, admin.id())
+                new CreateLobbyUseCase.CreateLobbyCommand("Full Test" + timestamp, 2, admin.playerId())
         );
 
         // Register 2 more players with unique names - receives RegisterPlayerDTO
@@ -124,11 +124,11 @@ public class LobbyUseCaseTest {
         );
 
         // Join with 1 player (admin already in) - receives LobbyDTO
-        joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobbyDTO.lobbyId(), p2.id()));
+        joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobbyDTO.lobbyId(), p2.playerId()));
 
         // Now lobby is full (admin + p2), this should throw exception
         Exception exception = assertThrows(IllegalStateException.class, () -> {
-            joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobbyDTO.lobbyId(), p3.id()));
+            joinLobby.execute(new JoinLobbyUseCase.JoinLobbyCommand(lobbyDTO.lobbyId(), p3.playerId()));
         });
         assertNotNull(exception);
     }

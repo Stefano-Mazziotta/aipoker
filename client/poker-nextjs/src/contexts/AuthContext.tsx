@@ -44,16 +44,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('AuthContext received event:', event.eventType, event);
 
-      const {playerId, playerName} = event.data;
+      const {playerId, playerName, chips} = event.data;
       
       if (EventGuards.isPlayerRegistered(event)) {
         setPlayerId(playerId);
         setPlayerName(playerName);
-        setPlayerChips(event.data.chips);
+        setPlayerChips(chips);
         localStorage.setItem('playerId', playerId);
         localStorage.setItem('playerName', playerName);
-        localStorage.setItem('playerChips', event.data.chips.toString());
-        console.log('Player registered:', name);
+        localStorage.setItem('playerChips', chips.toString());
+        console.log('Player registered:', playerName);
       }
     });
 

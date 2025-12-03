@@ -2,6 +2,7 @@ services:
   poker-server:
     build: .
     container_name: multiplayer-poker-texas-holdem-server
+    user: "1000:1000"
     ports:
       - "${SERVER_PORT:-8081}:8081"
     volumes:
