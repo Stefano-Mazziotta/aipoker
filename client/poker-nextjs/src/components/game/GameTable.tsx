@@ -4,16 +4,20 @@ import { useGame } from '@/contexts/GameContext';
 import PlayerSeat from './PlayerSeat';
 import CommunityCards from './CommunityCards';
 import ActionButtons from './ActionButtons';
+import { PhaseIndicator } from './PhaseIndicator';
+import { WinnerModal } from './WinnerModal';
 
 export default function GameTable() {
-  const { gameState, isInGame } = useGame();
+  const { gameState, isInGame, winner, clearWinner } = useGame();
 
-  if (!isInGame || !gameState) {
+  if (!gameState) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white text-xl">Waiting for game to start...</p>
+          <p className="text-white text-xl">
+            {isInGame ? 'Loading game state...' : 'Waiting for game to start...'}
+          </p>
         </div>
       </div>
     );
@@ -26,11 +30,25 @@ export default function GameTable() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+      {/* Winner Modal */}
+      {winner && (
+        <WinnerModal
+          winnerName={winner.winnerName}
+          handRank={winner.handRank}
+          amountWon={winner.amountWon}
+          onClose={clearWinner}
+        />
+      )}
+
       {/* Game info header */}
       <div className="mb-6 text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-yellow-500 mb-2">
           ♠️ Texas Hold&apos;em ♥️
         </h1>
+        
+        {/* Phase Indicator */}
+        <PhaseIndicator currentPhase={gameState.round} />
+        
         <div className="flex gap-6 justify-center text-white">
           <div className="bg-black/60 px-4 py-2 rounded-lg">
             <span className="text-gray-400">Pot:</span>

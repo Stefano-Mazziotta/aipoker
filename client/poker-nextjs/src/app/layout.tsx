@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LobbyProvider } from "@/contexts/LobbyContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 import { GameProvider } from "@/contexts/GameContext";
 import "./globals.css";
 
@@ -21,9 +22,11 @@ export default function RootLayout({
         <WebSocketProvider>
           <AuthProvider>
             <LobbyProvider>
-              <GameProvider>
-                {children}
-              </GameProvider>
+              <ToastProvider>
+                <GameProvider>
+                  {children}
+                </GameProvider>
+              </ToastProvider>
             </LobbyProvider>
           </AuthProvider>
         </WebSocketProvider>
