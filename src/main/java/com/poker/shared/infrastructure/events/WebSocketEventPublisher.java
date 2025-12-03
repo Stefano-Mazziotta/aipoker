@@ -8,8 +8,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import com.poker.shared.domain.events.DomainEvent;
 import com.poker.shared.domain.events.DomainEventPublisher;
 import com.poker.shared.infrastructure.json.GsonFactory;
@@ -82,7 +80,7 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
             return;
         }
 
-        String json = toJson(event);
+        String json = gson.toJson(event);
         int successCount = 0;
         
         for (Session session : sessions) {
@@ -137,38 +135,5 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
             }
         }
         return null;
-    }
-
-    /**
- * Convert domain event to JSON for WebSocket transmission.
- */
-private String toJson(DomainEvent event) {
-    try {
-        JsonObject json = new JsonObject();
-        json.addProperty("eventId", event.eventId());
-        json.addProperty("eventType", event.eventType());
-        json.addProperty("timestamp", event.timestamp().toString());
-        
-        // Serialize the complete event and extract non-base fields
-        JsonObject fullEvent = gson.toJsonTree(event).getAsJsonObject();
-        
-        // Create data object with only event-specific fields
-        JsonObject data = new JsonObject();
-        fullEvent.entrySet().stream()
-            .filter(entry -> !isBaseField(entry.getKey()))
-            .forEach(entry -> data.add(entry.getKey(), entry.getValue()));
-        
-        json.add("data", data);
-        
-        return gson.toJson(json);
-    } catch (JsonSyntaxException e) {
-        throw new IllegalStateException("Failed to serialize event: " + event.eventId(), e);
-    }
-}
-
-    private boolean isBaseField(String fieldName) {
-        return "eventId".equals(fieldName) 
-            || "eventType".equals(fieldName) 
-            || "timestamp".equals(fieldName);
     }
 }
