@@ -60,7 +60,7 @@ public class LobbyUseCaseTest {
 
         // Assert on DTO fields - tests work with DTOs, not domain entities
         assertNotNull(lobbyDTO.lobbyId());
-        assertEquals("Test Lobby" + timestamp, lobbyDTO.name());
+        assertEquals("Test Lobby" + timestamp, lobbyDTO.lobbyName());
         assertEquals(6, lobbyDTO.maxPlayers());
         assertEquals(1, lobbyDTO.currentPlayers()); // Admin auto-joins
         assertTrue(lobbyDTO.isOpen());

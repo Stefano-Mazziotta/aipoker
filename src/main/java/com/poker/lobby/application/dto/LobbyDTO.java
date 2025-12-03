@@ -8,7 +8,7 @@ import java.util.List;
  */
 public record LobbyDTO(
     String lobbyId,
-    String name,
+    String lobbyName,
     int currentPlayers,
     int maxPlayers,
     boolean isOpen,
@@ -17,7 +17,7 @@ public record LobbyDTO(
 ) {
     public static LobbyDTO fromDomain(
         String lobbyId,
-        String name,
+        String lobbyName,
         int currentPlayers,
         int maxPlayers,
         boolean isOpen, 
@@ -26,7 +26,7 @@ public record LobbyDTO(
     ) {
         return new LobbyDTO(
             lobbyId,
-            name, 
+            lobbyName, 
             currentPlayers, 
             maxPlayers, 
             isOpen, 
