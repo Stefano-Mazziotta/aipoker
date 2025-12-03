@@ -15,7 +15,7 @@ import {
 export interface DomainEvent<T> {
   eventId: string;
   eventType: string;
-  code?: string;
+  success?: boolean;
   message: string;
   data: T;
   timestamp: string;
