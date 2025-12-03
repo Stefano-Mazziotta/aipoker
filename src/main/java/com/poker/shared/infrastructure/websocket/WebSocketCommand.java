@@ -16,6 +16,9 @@ public enum WebSocketCommand {
     
     // Game commands
     START_GAME("START_GAME"),
+    DEAL_FLOP("DEAL_FLOP"),
+    DEAL_TURN("DEAL_TURN"),
+    DEAL_RIVER("DEAL_RIVER"),
     
     // Player action commands
     FOLD("FOLD"),

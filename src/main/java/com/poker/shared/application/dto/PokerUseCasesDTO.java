@@ -1,6 +1,6 @@
 package com.poker.shared.application.dto;
 
-import com.poker.game.application.GetGameStateUseCase;
+import com.poker.game.application.DealCardsUseCase;
 import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
@@ -14,33 +14,33 @@ final public class PokerUseCasesDTO {
     final private RegisterPlayerUseCase registerPlayer;
     final private StartGameUseCase startGame;
     final private PlayerActionUseCase playerAction;
+    final private DealCardsUseCase dealCards;
     final private CreateLobbyUseCase createLobby;
     final private JoinLobbyUseCase joinLobby;
     final private LeaveLobbyUseCase leaveLobby;
     final private GetLeaderboardUseCase getLeaderboard;
     final private GetPlayerCardsUseCase getPlayerCards;
-    final private GetGameStateUseCase getGameState;
 
     public PokerUseCasesDTO(
         RegisterPlayerUseCase registerPlayer,
         StartGameUseCase startGame,
         PlayerActionUseCase playerAction,
+        DealCardsUseCase dealCards,
         CreateLobbyUseCase createLobby,
         JoinLobbyUseCase joinLobby,
         LeaveLobbyUseCase leaveLobby,
         GetLeaderboardUseCase getLeaderboard,
-        GetPlayerCardsUseCase getPlayerCards,
-        GetGameStateUseCase getGameState
+        GetPlayerCardsUseCase getPlayerCards
     ) {
         this.registerPlayer = registerPlayer;
         this.startGame = startGame;
         this.playerAction = playerAction;
+        this.dealCards = dealCards;
         this.createLobby = createLobby;
         this.joinLobby = joinLobby;
         this.leaveLobby = leaveLobby;
         this.getLeaderboard = getLeaderboard;
         this.getPlayerCards = getPlayerCards;
-        this.getGameState = getGameState;
     }
 
     public RegisterPlayerUseCase getRegisterPlayer() {
@@ -75,7 +75,7 @@ final public class PokerUseCasesDTO {
         return getPlayerCards;
     }
 
-    public GetGameStateUseCase getGetGameState() {
-        return getGameState;
+    public DealCardsUseCase getDealCards() {
+        return dealCards;
     }
 }

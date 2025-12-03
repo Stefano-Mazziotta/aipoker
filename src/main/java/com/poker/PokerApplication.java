@@ -1,6 +1,6 @@
 package com.poker;
 
-import com.poker.game.application.GetGameStateUseCase;
+import com.poker.game.application.DealCardsUseCase;
 import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
@@ -59,7 +59,7 @@ public class PokerApplication {
         StartGameUseCase startGame = new StartGameUseCase(gameRepository, playerRepository, eventPublisher);
         PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository, eventPublisher);
         GetPlayerCardsUseCase getPlayerCards = new GetPlayerCardsUseCase(gameRepository);
-        GetGameStateUseCase getGameState = new GetGameStateUseCase(gameRepository);
+        DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository, eventPublisher);
         
         // Lobby use cases
         CreateLobbyUseCase createLobby = new CreateLobbyUseCase(lobbyRepository, playerRepository);
@@ -70,12 +70,12 @@ public class PokerApplication {
             registerPlayer, 
             startGame,
             playerAction,
+            dealCards,
             createLobby,
             joinLobby,
             leaveLobby,
             getLeaderboard,
-            getPlayerCards,
-            getGameState
+            getPlayerCards
         );
 
         startWebSocketServer(dto, eventPublisher);

@@ -12,6 +12,7 @@ import com.poker.game.application.PlayerActionUseCase.PlayerActionCommand;
 import com.poker.game.application.StartGameUseCase.StartGameCommand;
 import com.poker.game.application.dto.PlayerActionDTO;
 import com.poker.game.application.dto.StartGameDTO;
+import com.poker.game.application.dto.StartGameRequest;
 import com.poker.game.domain.model.Blinds;
 import com.poker.lobby.application.CreateLobbyUseCase.CreateLobbyCommand;
 import com.poker.lobby.application.JoinLobbyUseCase.JoinLobbyCommand;
@@ -24,7 +25,6 @@ import com.poker.player.domain.model.PlayerAction;
 import com.poker.ranking.application.GetLeaderboardUseCase.GetLeaderboardCommand;
 import com.poker.ranking.application.dto.LeaderboardDTO;
 import com.poker.shared.application.dto.PokerUseCasesDTO;
-import com.poker.shared.application.dto.StartGameRequest;
 import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.infrastructure.events.WebSocketEventPublisher;
 import com.poker.shared.infrastructure.json.GsonFactory;
@@ -105,6 +105,9 @@ public class ProtocolHandler {
         return switch (cmd) {
             case REGISTER       -> handleRegister(data);
             case START_GAME     -> handleStartGame(data);
+            case DEAL_FLOP      -> handleDealFlop(data);
+            case DEAL_TURN      -> handleDealTurn(data);
+            case DEAL_RIVER     -> handleDealRiver(data);
             case CREATE_LOBBY   -> handleCreateLobby(data, session);
             case JOIN_LOBBY     -> handleJoinLobby(data, session);
             case LEAVE_LOBBY    -> handleLeaveLobby(data);
@@ -156,7 +159,16 @@ public class ProtocolHandler {
             dto
         );
 
-        // Add lobbyId to response for broadcasting
+        // Infrastructure responsibility: Subscribe all lobby players to the game scope
+        String gameId = dto.gameId();
+        for (String playerId : playerIds) {
+            Session playerSession = eventPublisher.getSessionByPlayerId(playerId);
+            if (playerSession != null && playerSession.isOpen()) {
+                eventPublisher.subscribe(gameId, playerSession, playerId);
+                LOGGER.info(() -> String.format("Subscribed player %s to game %s", playerId, gameId));
+            }
+        }
+
         return response;
     }
 
@@ -326,6 +338,58 @@ public class ProtocolHandler {
         
         return response;
     }
+
+    private WebSocketResponse<?> handleDealFlop(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        
+        var dto = pokerUseCases.getDealCards().dealFlop(
+            new com.poker.game.application.DealCardsUseCase.DealCardsCommand(gameId)
+        );
+        
+        return new WebSocketResponse<>(
+            EventTypeEnum.DEALT_CARDS,
+            "Flop dealt successfully",
+            true,
+            now,
+            dto
+        );
+    }
+
+    private WebSocketResponse<?> handleDealTurn(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        
+        var dto = pokerUseCases.getDealCards().dealTurn(
+            new com.poker.game.application.DealCardsUseCase.DealCardsCommand(gameId)
+        );
+        
+        return new WebSocketResponse<>(
+            EventTypeEnum.DEALT_CARDS,
+            "Turn dealt successfully",
+            true,
+            now,
+            dto
+        );
+    }
+
+    private WebSocketResponse<?> handleDealRiver(JsonObject data) {
+        String gameId = data.get("gameId").getAsString();
+        
+        var dto = pokerUseCases.getDealCards().dealRiver(
+            new com.poker.game.application.DealCardsUseCase.DealCardsCommand(gameId)
+        );
+        
+        return new WebSocketResponse<>(
+            EventTypeEnum.DEALT_CARDS,
+            "River dealt successfully",
+            true,
+            now,
+            dto
+        );
+    }
+
+    // GET_GAME_STATE removed - state flows through events only (EDA)
+    // Use cases publish domain events (GAME_STATE_CHANGED, PLAYER_ACTION, etc.)
+    // Clients subscribe and receive state updates via event stream
 
     // private WebSocketResponse<?> handleGetMyCards(JsonObject data) {
     //     String gameId = data.get("gameId").getAsString();
