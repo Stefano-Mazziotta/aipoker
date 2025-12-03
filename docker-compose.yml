@@ -1,7 +1,7 @@
 services:
   poker-server:
     build: .
-    container_name: aipoker-server
+    container_name: multiplayer-poker-texas-holdem-server
     ports:
       - "${SERVER_PORT:-8081}:8081"
     volumes:

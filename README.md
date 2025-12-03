@@ -167,7 +167,7 @@ See [client/poker-nextjs/README.md](./client/poker-nextjs/README.md)
 ## 📁 Project Structure
 
 ```
-aipoker/
+multiplayer-poker-texas-holdem/
 ├── src/main/java/com/poker/
 │   ├── game/                          # Game Bounded Context
 │   │   ├── domain/
@@ -222,8 +222,8 @@ aipoker/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Stefano-Mazziotta/aipoker.git
-   cd aipoker
+   git clone https://github.com/Stefano-Mazziotta/multiplayer-poker-texas-holdem.git
+   cd multiplayer-poker-texas-holdem
    ```
 
 2. **Build the project**
@@ -238,7 +238,7 @@ aipoker/
 
    Or run the compiled JAR:
    ```bash
-   java -jar target/aipoker-server-1.0.0.jar
+   java -jar target/multiplayer-texas-holdem-server-1.0.0.jar
    ```
 
 4. **Verify the server is running**
