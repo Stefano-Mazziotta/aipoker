@@ -82,12 +82,26 @@ export interface PlayerLeftLobbyEvent extends DomainEvent<PlayerLeftLobbyDTO> {
 }
 
 /** GAME */
+interface GamePlayerData {
+  playerId: string;
+  playerName: string;
+  chips: number;
+  currentBet: number;
+  isFolded: boolean;
+  isAllIn: boolean;
+}
+
 interface GameStartedDTO {
   gameId: string;
   lobbyId: string;
-  players: PlayerDTO[];
+  players: GamePlayerData[];
   smallBlind: number;
   bigBlind: number;
+  pot: number;
+  currentBet: number;
+  currentPlayerId: string;
+  currentPlayerName: string;
+  gameState: string;
 }
 export interface GameStartedEvent extends DomainEvent<GameStartedDTO> {
   eventType: typeof GAME_EVENTS.GAME_STARTED;
@@ -116,6 +130,17 @@ export interface PlayerActionEvent extends DomainEvent<PlayerActionDTO> {
   eventType: typeof GAME_EVENTS.PLAYER_ACTION;
   
 }
+
+interface RoundCompletedDTO {
+  gameId: string;
+  completedPhase: string;
+  nextPhase: string;
+}
+
+export interface RoundCompletedEvent extends DomainEvent<RoundCompletedDTO> {
+  eventType: typeof GAME_EVENTS.ROUND_COMPLETED;
+}
+
 interface CardsDealtDTO {
   gameId: string;
   phase: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER';
@@ -152,6 +177,7 @@ export type ServerEvent =
   | GameStartedEvent
   | GameStateChangedEvent
   | PlayerActionEvent
+  | RoundCompletedEvent
   | CardsDealtEvent
   | WinnerDeterminedEvent;
 
@@ -186,6 +212,8 @@ export const EventGuards = {
     e.eventType === GAME_EVENTS.GAME_STATE_CHANGED,
   isPlayerActionEvent: (e: ServerEvent): e is PlayerActionEvent =>
     e.eventType === GAME_EVENTS.PLAYER_ACTION,
+  isRoundCompletedEvent: (e: ServerEvent): e is RoundCompletedEvent =>
+    e.eventType === GAME_EVENTS.ROUND_COMPLETED,
   isCardsDealtEvent: (e: ServerEvent): e is CardsDealtEvent =>
     e.eventType === GAME_EVENTS.CARDS_DEALT,
   isWinnerDeterminedEvent: (e: ServerEvent): e is WinnerDeterminedEvent =>
