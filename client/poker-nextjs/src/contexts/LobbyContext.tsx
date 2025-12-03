@@ -74,14 +74,15 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
 
       // PLAYER_LEFT_LOBBY – someone left the lobby
       if (EventGuards.isPlayerLeftLobby(event)) {
-        const { playerId, playerName } = event.data;
+        const { players, playerId: leftPlayerId, adminPlayerId  } = event.data;
 
-        console.log('Player left lobby:', { playerId, playerName });
+        console.log('Player left lobby:', {leftPlayerId});
 
-        setLobbyPlayers(prev => prev.filter(p => p.playerId !== playerId));
+        setLobbyPlayers(players);
+        setIsLobbyAdmin(playerId === adminPlayerId);
 
         // If YOU are the one who left
-        if (playerId === playerId) {
+        if (playerId === leftPlayerId) {
           console.log('You have left the lobby - resetting state');
           setLobbyId(null);
           setLobbyPlayers([]);

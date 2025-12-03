@@ -71,10 +71,12 @@ export interface PlayerJoinedLobbyEvent extends DomainEvent<PlayerJoinedLobbyDTO
 interface PlayerLeftLobbyDTO {
   lobbyId: string;
   playerId: string;
-  playerName: string;
   currentPlayerCount: number;
   maxPlayers: number;
+  adminPlayerId: string;
+  players: PlayerDTO[];
 }
+
 export interface PlayerLeftLobbyEvent extends DomainEvent<PlayerLeftLobbyDTO> {
   eventType: typeof LOBBY_EVENTS.PLAYER_LEFT_LOBBY;
 }

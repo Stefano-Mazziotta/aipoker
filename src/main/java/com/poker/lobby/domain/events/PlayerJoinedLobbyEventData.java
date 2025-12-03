@@ -54,31 +54,4 @@ public class PlayerJoinedLobbyEventData {
     public List<PlayerData> getPlayers() {
         return players;
     }
-
-    /**
-     * Nested data class for player information.
-     */
-    public static class PlayerData {
-        private final String playerId;
-        private final String playerName;
-        private final int chips;
-
-        public PlayerData(String playerId, String playerName, int chips) {
-            this.playerId = playerId;
-            this.playerName = playerName;
-            this.chips = chips;
-        }
-
-        public String getPlayerId() {
-            return playerId;
-        }
-
-        public String getPlayerName() {
-            return playerName;
-        }
-
-        public int getChips() {
-            return chips;
-        }
-    }
 }

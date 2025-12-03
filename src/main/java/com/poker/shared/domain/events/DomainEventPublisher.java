@@ -9,4 +9,9 @@ public interface DomainEventPublisher {
      * Publish an event to specific scope (e.g., a particular game or lobby).
      */
     void publishToScope(String scopeId, DomainEvent event);
+    
+    /**
+     * Unsubscribe a player from a specific scope (e.g., when leaving a game or lobby).
+     */
+    void unsubscribeFromScope(String scopeId, String playerId);
 }

@@ -70,6 +70,17 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
         }
         sessionToPlayer.remove(session);
     }
+    
+    @Override
+    public void unsubscribeFromScope(String scopeId, String playerId) {
+        Session session = getSessionByPlayerId(playerId);
+        if (session != null) {
+            unsubscribe(scopeId, session);
+            LOGGER.info(() -> String.format("Player %s unsubscribed from scope %s", playerId, scopeId));
+        } else {
+            LOGGER.warning(() -> String.format("Attempted to unsubscribe player %s from scope %s, but no active session found", playerId, scopeId));
+        }
+    }
 
     @Override
     public void publishToScope(String scopeId, DomainEvent event) {

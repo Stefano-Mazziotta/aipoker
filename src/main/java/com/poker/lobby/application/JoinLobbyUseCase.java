@@ -5,8 +5,8 @@ import java.util.stream.Collectors;
 
 import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.lobby.application.dto.PlayerDTO;
+import com.poker.lobby.domain.events.PlayerData;
 import com.poker.lobby.domain.events.PlayerJoinedLobbyEvent;
-import com.poker.lobby.domain.events.PlayerJoinedLobbyEventData;
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
 import com.poker.lobby.domain.repository.LobbyRepository;
@@ -66,8 +66,8 @@ public class JoinLobbyUseCase {
         );
 
         // Publish domain event to notify all lobby subscribers
-        List<PlayerJoinedLobbyEventData.PlayerData> eventPlayers = lobby.getPlayers().stream()
-            .map(p -> new PlayerJoinedLobbyEventData.PlayerData(
+        List<PlayerData> eventPlayers = lobby.getPlayers().stream()
+            .map(p -> new PlayerData(
                 p.getId().getValue().toString(),
                 p.getName(),
                 p.getChips().getAmount()

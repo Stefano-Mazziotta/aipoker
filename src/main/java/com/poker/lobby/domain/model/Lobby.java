@@ -19,7 +19,7 @@ public class Lobby {
     private final String name;
     private final List<Player> players;
     private final int maxPlayers;
-    private final PlayerId adminPlayerId;
+    private PlayerId adminPlayerId;
     private boolean started;
 
     public Lobby(LobbyId id, String name, int maxPlayers, PlayerId adminPlayerId) {
@@ -52,6 +52,11 @@ public class Lobby {
 
     public void removePlayer(PlayerId playerId) {
         players.removeIf(p -> p.getId().equals(playerId));
+        
+        // If admin left and there are still players, assign new admin
+        if (adminPlayerId.equals(playerId) && !players.isEmpty()) {
+            adminPlayerId = players.get(0).getId();
+        }
     }
 
     public boolean containsPlayer(PlayerId playerId) {

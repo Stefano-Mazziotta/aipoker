@@ -11,12 +11,25 @@ import com.poker.shared.domain.events.DomainEvent;
 public class PlayerJoinedLobbyEvent extends DomainEvent {
     private final PlayerJoinedLobbyEventData data;
 
-    public PlayerJoinedLobbyEvent(String lobbyId, String lobbyName, int currentPlayers,
-                                  int maxPlayers, boolean isOpen, String adminPlayerId,
-                                  List<PlayerJoinedLobbyEventData.PlayerData> players) {
+    public PlayerJoinedLobbyEvent(
+        String lobbyId, 
+        String lobbyName, 
+        int currentPlayers, 
+        int maxPlayers, 
+        boolean isOpen, 
+        String adminPlayerId,
+        List<PlayerData> players
+    ) {
         super(EventTypeEnum.PLAYER_JOINED_LOBBY);
-        this.data = new PlayerJoinedLobbyEventData(lobbyId, lobbyName, currentPlayers,
-                                                    maxPlayers, isOpen, adminPlayerId, players);
+        this.data = new PlayerJoinedLobbyEventData(
+            lobbyId,
+            lobbyName, 
+            currentPlayers,
+            maxPlayers, 
+            isOpen, 
+            adminPlayerId, 
+            players
+        );
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.poker.lobby.domain.events;
 
+import java.util.List;
+
 /**
  * Data class for PlayerLeftLobbyEvent.
  * Contains information about a player leaving a lobby.
@@ -7,17 +9,19 @@ package com.poker.lobby.domain.events;
 public class PlayerLeftLobbyEventData {
     private final String lobbyId;
     private final String playerId;
-    private final String playerName;
     private final int currentPlayerCount;
+    private final String adminPlayerId;
     private final int maxPlayers;
+    private final List<PlayerData> players;
 
-    public PlayerLeftLobbyEventData(String lobbyId, String playerId, String playerName,
-                                    int currentPlayerCount, int maxPlayers) {
+    public PlayerLeftLobbyEventData(String lobbyId, String playerId, int currentPlayerCount,
+                                    String adminPlayerId, int maxPlayers, List<PlayerData> players) {
         this.lobbyId = lobbyId;
         this.playerId = playerId;
-        this.playerName = playerName;
         this.currentPlayerCount = currentPlayerCount;
+        this.adminPlayerId = adminPlayerId;
         this.maxPlayers = maxPlayers;
+        this.players = players;
     }
 
     public String getLobbyId() {
@@ -28,15 +32,19 @@ public class PlayerLeftLobbyEventData {
         return playerId;
     }
 
-    public String getPlayerName() {
-        return playerName;
-    }
-
     public int getCurrentPlayerCount() {
         return currentPlayerCount;
     }
 
+    public String getAdminPlayerId() {
+        return adminPlayerId;
+    }
+
     public int getMaxPlayers() {
         return maxPlayers;
+    }
+
+    public List<PlayerData> getPlayers() {
+        return players;
     }
 }

@@ -64,7 +64,7 @@ public class PokerApplication {
         // Lobby use cases
         CreateLobbyUseCase createLobby = new CreateLobbyUseCase(lobbyRepository, playerRepository);
         JoinLobbyUseCase joinLobby = new JoinLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
-        LeaveLobbyUseCase leaveLobby = new LeaveLobbyUseCase(lobbyRepository, playerRepository, eventPublisher);
+        LeaveLobbyUseCase leaveLobby = new LeaveLobbyUseCase(lobbyRepository, eventPublisher);
         
         PokerUseCasesDTO dto = new PokerUseCasesDTO(
             registerPlayer, 
