@@ -76,7 +76,7 @@ export default function Home() {
 
       {/* Footer */}
       <div className="mt-auto pt-8 text-center text-gray-400 text-sm">
-        <p>Built with Next.js 14+ • TypeScript • Tailwind CSS • WebSockets</p>
+        <p>Stefano Mazziotta - Programming workshop - 2025</p>
       </div>
     </div>
   );
