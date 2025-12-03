@@ -13,10 +13,12 @@ public abstract class DomainEvent {
     
     private final String eventId;
     private final Instant timestamp;
+    private final EventTypeEnum eventType;
 
     protected DomainEvent() {
         this.eventId = UUID.randomUUID().toString();
         this.timestamp = Instant.now();
+        this.eventType = eventType();
     }
 
     public String eventId() {
@@ -27,6 +29,9 @@ public abstract class DomainEvent {
         return timestamp;
     }
 
-    public abstract EventTypeEnum eventType();
+    public EventTypeEnum eventType() {
+        return eventType;
+    }
+
     public abstract Object getData();
 }

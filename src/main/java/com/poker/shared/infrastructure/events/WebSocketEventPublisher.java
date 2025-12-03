@@ -81,6 +81,7 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
         }
 
         String json = gson.toJson(event);
+        
         int successCount = 0;
         
         for (Session session : sessions) {
