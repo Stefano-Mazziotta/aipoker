@@ -386,21 +386,4 @@ public class ProtocolHandler {
             dto
         );
     }
-
-    // GET_GAME_STATE removed - state flows through events only (EDA)
-    // Use cases publish domain events (GAME_STATE_CHANGED, PLAYER_ACTION, etc.)
-    // Clients subscribe and receive state updates via event stream
-
-    // private WebSocketResponse<?> handleGetMyCards(JsonObject data) {
-    //     String gameId = data.get("gameId").getAsString();
-    //     String playerId = data.get("playerId").getAsString();
-        
-    //     PlayerCardsCommand command = new PlayerCardsCommand(gameId, playerId);
-
-    //     // var response = pokerUseCases..execute(command);
-    //     var response = "";
-
-    //     return WebSocketResponse.success("PLAYER_CARDS", response);
-    // }
-
 }
