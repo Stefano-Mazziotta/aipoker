@@ -90,14 +90,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         console.log('Game state changed:', event);
         
         // Merge partial state update with existing game state
-        if (gameState) {
-          setGameState({
-            ...gameState,
+        setGameState(prevState => {
+          if (!prevState) return prevState;
+          
+          return {
+            ...prevState,
             currentPlayerId: event.data.currentPlayerId,
             pot: event.data.pot,
             round: event.data.newState.toLowerCase().replace('_', '-') as any,
-          });
-        }
+          };
+        });
       }
 
       // PLAYER_ACTION – someone folded, raised, etc.
@@ -111,12 +113,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
         
         // Update game state for other players' actions
-        if (gameState) {
-          setGameState({
-            ...gameState,
+        setGameState(prevState => {
+          if (!prevState) return prevState;
+          
+          return {
+            ...prevState,
             pot: event.data.newPot,
-          } as any);
-        }
+            currentBet: event.data.currentBet,
+          } as any;
+        });
       }
 
       // ROUND_COMPLETED – betting round finished, next phase starting
@@ -135,13 +140,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (EventGuards.isCardsDealtEvent(event)) {
         console.log('Cards dealt:', event.data.phase, event.data.newCards);
         // Update game state with new community cards
-        if (gameState) {
-          setGameState({
-            ...gameState,
+        setGameState(prevState => {
+          if (!prevState) return prevState;
+          
+          return {
+            ...prevState,
             communityCards: event.data.allCommunityCards,
             phase: event.data.phase,
-          } as any);
-        }
+          } as any;
+        });
       }
 
       // WINNER_DETERMINED – hand is over, show results
