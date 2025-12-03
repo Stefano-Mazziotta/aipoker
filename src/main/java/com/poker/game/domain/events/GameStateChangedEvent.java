@@ -7,11 +7,7 @@ import com.poker.shared.domain.events.DomainEvent;
  * Domain event fired when the game state changes (phase transitions, turn changes, etc).
  */
 public class GameStateChangedEvent extends DomainEvent {
-    private final String gameId;
-    private final String newState;
-    private final String currentPlayerId;
-    private final String currentPlayerName;
-    private final int pot;
+    private final GameStateChangedEventData data;
 
     public GameStateChangedEvent(
         String gameId,
@@ -21,11 +17,7 @@ public class GameStateChangedEvent extends DomainEvent {
         int pot
     ) {
         super();
-        this.gameId = gameId;
-        this.newState = newState;
-        this.currentPlayerId = currentPlayerId;
-        this.currentPlayerName = currentPlayerName;
-        this.pot = pot;
+        this.data = new GameStateChangedEventData(gameId, newState, currentPlayerId, currentPlayerName, pot);
     }
 
     @Override
@@ -34,13 +26,7 @@ public class GameStateChangedEvent extends DomainEvent {
     }
 
     @Override
-    public Object getData() {
-        return this;
+    public GameStateChangedEventData getData() {
+        return data;
     }
-
-    public String gameId() { return gameId; }
-    public String newState() { return newState; }
-    public String currentPlayerId() { return currentPlayerId; }
-    public String currentPlayerName() { return currentPlayerName; }
-    public int pot() { return pot; }
 }

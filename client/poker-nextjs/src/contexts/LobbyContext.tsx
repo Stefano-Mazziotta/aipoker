@@ -62,7 +62,7 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
           const alreadyExists = prev.some(p => p.playerId === playerId);
 
           if (alreadyExists) {
-            console.log('Player already in list – skipping duplicate');
+            console.log('Player already in list - skipping duplicate');
             return prev;
           };
 

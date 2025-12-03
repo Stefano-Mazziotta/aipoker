@@ -7,11 +7,7 @@ import com.poker.shared.domain.events.DomainEvent;
  * Domain event fired when a player leaves a lobby.
  */
 public class PlayerLeftLobbyEvent extends DomainEvent {
-    private final String lobbyId;
-    private final String playerId;
-    private final String playerName;
-    private final int currentPlayerCount;
-    private final int maxPlayers;
+    private final PlayerLeftLobbyEventData data;
 
     public PlayerLeftLobbyEvent(
         String lobbyId, 
@@ -21,11 +17,7 @@ public class PlayerLeftLobbyEvent extends DomainEvent {
         int maxPlayers
     ) {
         super();
-        this.lobbyId = lobbyId;
-        this.playerId = playerId;
-        this.playerName = playerName;
-        this.currentPlayerCount = currentPlayerCount;
-        this.maxPlayers = maxPlayers;
+        this.data = new PlayerLeftLobbyEventData(lobbyId, playerId, playerName, currentPlayerCount, maxPlayers);
     }
 
     @Override
@@ -34,13 +26,7 @@ public class PlayerLeftLobbyEvent extends DomainEvent {
     }
 
     @Override
-    public Object getData() {
-        return this;
+    public PlayerLeftLobbyEventData getData() {
+        return data;
     }
-
-    public String lobbyId() { return lobbyId; }
-    public String playerId() { return playerId; }
-    public String playerName() { return playerName; }
-    public int currentPlayerCount() { return currentPlayerCount; }
-    public int maxPlayers() { return maxPlayers; }
 }

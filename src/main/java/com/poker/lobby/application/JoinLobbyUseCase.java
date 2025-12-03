@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import com.poker.lobby.application.dto.LobbyDTO;
 import com.poker.lobby.application.dto.PlayerDTO;
 import com.poker.lobby.domain.events.PlayerJoinedLobbyEvent;
+import com.poker.lobby.domain.events.PlayerJoinedLobbyEventData;
 import com.poker.lobby.domain.model.Lobby;
 import com.poker.lobby.domain.model.LobbyId;
 import com.poker.lobby.domain.repository.LobbyRepository;
@@ -45,8 +46,9 @@ public class JoinLobbyUseCase {
         // Save updated lobby
         lobbyRepository.save(lobby);
 
+        // Convert players to DTOs for response
         List<PlayerDTO> players = lobby.getPlayers().stream()
-            .map(p -> new PlayerDTO(
+            .map(p -> PlayerDTO.fromDomain(
                 p.getId().getValue().toString(),
                 p.getName(),
                 p.getChips().getAmount()
@@ -64,7 +66,23 @@ public class JoinLobbyUseCase {
         );
 
         // Publish domain event to notify all lobby subscribers
-        PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(dto);
+        List<PlayerJoinedLobbyEventData.PlayerData> eventPlayers = lobby.getPlayers().stream()
+            .map(p -> new PlayerJoinedLobbyEventData.PlayerData(
+                p.getId().getValue().toString(),
+                p.getName(),
+                p.getChips().getAmount()
+            ))
+            .collect(Collectors.toList());
+        
+        PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(
+            lobby.getId().getValue(),
+            lobby.getName(),
+            lobby.getPlayers().size(),
+            lobby.getMaxPlayers(),
+            lobby.isOpen(),
+            lobby.getAdminPlayerId().getValue().toString(),
+            eventPlayers
+        );
         eventPublisher.publishToScope(lobby.getId().getValue(), event);
 
         return dto;

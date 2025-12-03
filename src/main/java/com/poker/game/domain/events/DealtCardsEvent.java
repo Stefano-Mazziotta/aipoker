@@ -9,17 +9,11 @@ import com.poker.shared.domain.events.DomainEvent;
  * Domain event fired when community cards are dealt (FLOP, TURN, RIVER).
  */
 public class DealtCardsEvent extends DomainEvent {
-    private final String gameId;
-    private final String phase;
-    private final List<String> newCards;
-    private final List<String> allCommunityCards;
+    private final DealtCardsEventData data;
 
     public DealtCardsEvent(String gameId, String phase, List<String> newCards, List<String> allCommunityCards) {
         super();
-        this.gameId = gameId;
-        this.phase = phase;
-        this.newCards = List.copyOf(newCards);
-        this.allCommunityCards = List.copyOf(allCommunityCards);
+        this.data = new DealtCardsEventData(gameId, phase, newCards, allCommunityCards);
     }
 
     @Override
@@ -28,12 +22,7 @@ public class DealtCardsEvent extends DomainEvent {
     }
 
     @Override
-    public Object getData() {
-        return this;
+    public DealtCardsEventData getData() {
+        return data;
     }
-
-    public String gameId() { return gameId; }
-    public String phase() { return phase; }
-    public List<String> newCards() { return newCards; }
-    public List<String> allCommunityCards() { return allCommunityCards; }
 }

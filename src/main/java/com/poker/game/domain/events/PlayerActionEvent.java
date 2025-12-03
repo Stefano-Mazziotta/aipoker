@@ -7,13 +7,7 @@ import com.poker.shared.domain.events.DomainEvent;
  * Domain event fired when a player performs an action (FOLD, CHECK, CALL, RAISE, ALL_IN).
  */
 public class PlayerActionEvent extends DomainEvent {
-    private final String gameId;
-    private final String playerId;
-    private final String playerName;
-    private final String action;
-    private final int amount;
-    private final int newPot;
-    private final int currentBet;
+    private final PlayerActionEventData data;
 
     public PlayerActionEvent(
         String gameId, 
@@ -25,13 +19,7 @@ public class PlayerActionEvent extends DomainEvent {
         int currentBet
     ) {
         super();
-        this.gameId = gameId;
-        this.playerId = playerId;
-        this.playerName = playerName;
-        this.action = action;
-        this.amount = amount;
-        this.newPot = newPot;
-        this.currentBet = currentBet;
+        this.data = new PlayerActionEventData(gameId, playerId, playerName, action, amount, newPot, currentBet);
     }
 
     @Override
@@ -40,15 +28,7 @@ public class PlayerActionEvent extends DomainEvent {
     }
 
     @Override
-    public Object getData() {
-        return this;
+    public PlayerActionEventData getData() {
+        return data;
     }
-
-    public String gameId() { return gameId; }
-    public String playerId() { return playerId; }
-    public String playerName() { return playerName; }
-    public String action() { return action; }
-    public int amount() { return amount; }
-    public int newPot() { return newPot; }
-    public int currentBet() { return currentBet; }
 }

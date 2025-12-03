@@ -7,11 +7,7 @@ import com.poker.shared.domain.events.DomainEvent;
  * Domain event fired when game ends and winner is determined.
  */
 public class WinnerDeterminedEvent extends DomainEvent {
-    private final String gameId;
-    private final String winnerId;
-    private final String winnerName;
-    private final String handRank;
-    private final int amountWon;
+    private final WinnerDeterminedEventData data;
 
     public WinnerDeterminedEvent(
         String gameId, 
@@ -21,11 +17,7 @@ public class WinnerDeterminedEvent extends DomainEvent {
         int amountWon
     ) {
         super();
-        this.gameId = gameId;
-        this.winnerId = winnerId;
-        this.winnerName = winnerName;
-        this.handRank = handRank;
-        this.amountWon = amountWon;
+        this.data = new WinnerDeterminedEventData(gameId, winnerId, winnerName, handRank, amountWon);
     }
 
     @Override
@@ -34,13 +26,7 @@ public class WinnerDeterminedEvent extends DomainEvent {
     }
 
     @Override
-    public Object getData() {
-        return this;
+    public WinnerDeterminedEventData getData() {
+        return data;
     }
-
-    public String gameId() { return gameId; }
-    public String winnerId() { return winnerId; }
-    public String winnerName() { return winnerName; }
-    public String handRank() { return handRank; }
-    public int amountWon() { return amountWon; }
 }

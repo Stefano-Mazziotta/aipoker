@@ -1,6 +1,7 @@
 package com.poker.lobby.domain.events;
 
-import com.poker.lobby.application.dto.LobbyDTO;
+import java.util.List;
+
 import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.domain.events.DomainEvent;
 
@@ -8,11 +9,14 @@ import com.poker.shared.domain.events.DomainEvent;
  * Domain event fired when a player joins a lobby.
  */
 public class PlayerJoinedLobbyEvent extends DomainEvent {
-    LobbyDTO dto;
+    private final PlayerJoinedLobbyEventData data;
 
-    public PlayerJoinedLobbyEvent(LobbyDTO dto) {
+    public PlayerJoinedLobbyEvent(String lobbyId, String lobbyName, int currentPlayers,
+                                  int maxPlayers, boolean isOpen, String adminPlayerId,
+                                  List<PlayerJoinedLobbyEventData.PlayerData> players) {
         super();
-        this.dto = dto;
+        this.data = new PlayerJoinedLobbyEventData(lobbyId, lobbyName, currentPlayers,
+                                                    maxPlayers, isOpen, adminPlayerId, players);
     }
 
     @Override
@@ -21,7 +25,7 @@ public class PlayerJoinedLobbyEvent extends DomainEvent {
     }
 
     @Override
-    public LobbyDTO getData() {
-        return dto;
+    public PlayerJoinedLobbyEventData getData() {
+        return data;
     }
 }
