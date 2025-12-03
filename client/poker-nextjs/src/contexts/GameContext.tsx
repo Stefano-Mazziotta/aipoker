@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useWebSocket } from './WebSocketContext';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { GameStateDTO } from '@/lib/types/game';
+import { GameStateDTO, parseCard } from '@/lib/types/game';
 import {
   ServerEvent,
   EventGuards
@@ -102,12 +102,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setGameState(prevState => {
           if (!prevState) return prevState;
           
-          return {
+          const updatedState = {
             ...prevState,
             currentPlayerId: event.data.currentPlayerId,
             pot: event.data.pot,
             round: event.data.newState.toLowerCase().replace('_', '-') as any,
           };
+
+          // Update community cards if provided
+          if (event.data.communityCards) {
+            updatedState.communityCards = event.data.communityCards.map(card => parseCard(card));
+          }
+
+          // Update current bet if provided
+          if (event.data.currentBet !== undefined) {
+            updatedState.currentBet = event.data.currentBet;
+          }
+
+          return updatedState;
         });
       }
 

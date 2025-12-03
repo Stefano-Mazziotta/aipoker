@@ -2,7 +2,9 @@
 
 import { PlayerStateDTO } from '@/lib/types/player';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGame } from '@/contexts/GameContext';
 import PlayingCard from './PlayingCard';
+import ActionButtons from './ActionButtons';
 
 interface PlayerSeatProps {
   player: PlayerStateDTO | null;
@@ -10,21 +12,22 @@ interface PlayerSeatProps {
   isCurrentPlayer: boolean;
 }
 
-// 9 seat positions around the table
+// 9 seat positions - perfectly symmetric around the table
 const SEAT_POSITIONS = [
-  'bottom-0 left-1/2 -translate-x-1/2 translate-y-full',  // 0: Bottom center (player)
-  'bottom-12 left-0 -translate-x-full',                    // 1: Bottom left
-  'top-1/2 left-0 -translate-x-full -translate-y-1/2',    // 2: Middle left
-  'top-12 left-0 -translate-x-full',                       // 3: Top left
-  'top-0 left-1/2 -translate-x-1/2 -translate-y-full',    // 4: Top center
-  'top-12 right-0 translate-x-full',                       // 5: Top right
-  'top-1/2 right-0 translate-x-full -translate-y-1/2',    // 6: Middle right
-  'bottom-12 right-0 translate-x-full',                    // 7: Bottom right
-  'bottom-0 right-1/4 translate-y-full',                   // 8: Extra seat
+  'bottom-[-15%] left-1/2 -translate-x-1/2',              // 0: Bottom center (hero)
+  'bottom-[10%] left-[5%]',                               // 1: Bottom left  
+  'top-1/2 left-[-3%] -translate-y-1/2',                  // 2: Middle left
+  'top-[10%] left-[10%]',                                 // 3: Top left
+  'top-[-6%] left-1/2 -translate-x-1/2',                  // 4: Top center
+  'top-[10%] right-[10%]',                                // 5: Top right
+  'top-1/2 right-[-3%] -translate-y-1/2',                 // 6: Middle right
+  'bottom-[10%] right-[5%]',                              // 7: Bottom right
+  'bottom-[10%] right-[25%]',                             // 8: Bottom right-center
 ];
 
 export default function PlayerSeat({ player, position, isCurrentPlayer }: PlayerSeatProps) {
   const { playerId } = useAuth();
+  const { isPlayerTurn } = useGame();
 
   if (!player) {
     return (
@@ -45,7 +48,10 @@ export default function PlayerSeat({ player, position, isCurrentPlayer }: Player
       playerId: player.id,
       name: player.name,
       cards: player.cards,
-      cardsLength: player.cards?.length
+      cardsLength: player.cards?.length,
+      position,
+      isPlayerTurn,
+      isFolded
     });
   }
 
@@ -53,9 +59,10 @@ export default function PlayerSeat({ player, position, isCurrentPlayer }: Player
     <div className={`absolute ${SEAT_POSITIONS[position]}`}>
       <div
         className={`
-          bg-black/60 backdrop-blur-sm rounded-2xl p-3 min-w-[150px] max-w-[200px]
-          border-3 transition-all
-          ${isCurrentPlayer ? 'border-yellow-400 shadow-lg shadow-yellow-400/50 animate-pulse' : 'border-white/30'}
+          bg-black/80 backdrop-blur-sm rounded-xl p-3
+          ${isYou ? 'w-[300px] sm:w-[340px]' : 'min-w-[140px] w-[140px]'}
+          border-2 transition-all shadow-lg
+          ${isCurrentPlayer ? 'border-yellow-400 shadow-yellow-400/50' : 'border-white/30'}
           ${isYou ? 'ring-2 ring-green-500' : ''}
           ${isFolded ? 'opacity-50 grayscale' : ''}
         `}
@@ -79,12 +86,19 @@ export default function PlayerSeat({ player, position, isCurrentPlayer }: Player
 
         {/* Player cards (only show for current player) */}
         {isYou && player.cards && player.cards.length > 0 && (
-          <div className="flex gap-1 justify-center">
+          <div className="flex gap-1 justify-center mb-2">
             {player.cards.map((card, index) => (
               <div key={index} className="scale-75">
                 <PlayingCard card={card} />
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Action buttons integrated for your seat */}
+        {isYou && !isFolded && (
+          <div className="mt-2">
+            <ActionButtons compact={true} />
           </div>
         )}
 

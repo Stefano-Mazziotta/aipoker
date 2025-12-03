@@ -143,15 +143,19 @@ public class PlayerActionUseCase {
             return true;
         }
 
-        // All active players must have acted
+        // Check if all active players have acted OR are all-in
         for (Player player : activePlayers) {
             String playerId = player.getId().getValue().toString();
-            if (!game.getPlayersActedThisRound().contains(playerId)) {
+            boolean hasActed = game.getPlayersActedThisRound().contains(playerId);
+            boolean isAllIn = player.getChipsAmount() == 0;
+            
+            // Player must have acted OR be all-in
+            if (!hasActed && !isAllIn) {
                 return false;
             }
         }
 
-        // All active players must have equal bets (or be all-in)
+        // Check if all active players have matching bets (considering all-ins)
         int currentBet = round.getCurrentBet();
         for (Player player : activePlayers) {
             int playerBet = round.getPlayerBet(player);
@@ -258,12 +262,18 @@ public class PlayerActionUseCase {
 
     private void publishGameStateChanged(Game game, String gameId) {
         Player currentPlayer = game.getCurrentPlayer();
+        List<String> communityCardsStr = game.getCommunityCards().stream()
+            .map(card -> card.getRank().name() + card.getSuit().getSymbol())
+            .collect(Collectors.toList());
+        
         GameStateChangedEvent event = new GameStateChangedEvent(
             gameId,
             game.getState().name(),
             currentPlayer != null ? currentPlayer.getId().getValue().toString() : null,
             currentPlayer != null ? currentPlayer.getName() : null,
-            game.getCurrentPot().getAmount()
+            game.getCurrentPot().getAmount(),
+            game.getCurrentRound().getCurrentBet(),
+            communityCardsStr
         );
         eventPublisher.publishToScope(gameId, event);
     }

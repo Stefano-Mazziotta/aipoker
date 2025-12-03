@@ -50,7 +50,9 @@ public class StartNewHandUseCase {
                     "FINISHED",
                     finalWinner.getId().getValue().toString(),
                     finalWinner.getName(),
-                    0
+                    0,
+                    0,
+                    List.of()
                 );
                 eventPublisher.publishToScope(command.gameId(), event);
                 
@@ -139,12 +141,18 @@ public class StartNewHandUseCase {
         eventPublisher.publishToScope(command.lobbyId(), gameStartedEvent);
 
         // Publish initial state
+        List<String> communityCardsStr = game.getCommunityCards().stream()
+            .map(card -> card.getRank().name() + card.getSuit().getSymbol())
+            .collect(Collectors.toList());
+        
         GameStateChangedEvent stateChangedEvent = new GameStateChangedEvent(
             gameId,
             game.getState().name(),
             currentPlayerId,
             currentPlayerName,
-            game.getCurrentPot().getAmount()
+            game.getCurrentPot().getAmount(),
+            game.getCurrentRound().getCurrentBet(),
+            communityCardsStr
         );
         eventPublisher.publishToScope(gameId, stateChangedEvent);
 

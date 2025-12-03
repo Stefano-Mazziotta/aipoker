@@ -5,12 +5,26 @@ import { useGame } from '@/contexts/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { PLAYER_ACTIONS } from '@/lib/constants/player-actions';
 
-export default function ActionButtons() {
+interface ActionButtonsProps {
+  compact?: boolean;
+}
+
+export default function ActionButtons({ compact = false }: ActionButtonsProps) {
   const { gameState, isPlayerTurn, performAction } = useGame();
-  const { playerChips } = useAuth();
+  const { playerId, playerChips } = useAuth();
   const [raiseAmount, setRaiseAmount] = useState(0);
 
   if (!gameState || !isPlayerTurn) {
+    if (compact) {
+      return (
+        <div className="text-center py-2">
+          <p className="text-gray-400 text-sm">
+            {gameState ? 'Waiting for your turn...' : 'Game not started'}
+          </p>
+        </div>
+      );
+    }
+    
     return (
       <div className="bg-black/60 backdrop-blur-sm p-4 rounded-xl border border-white/20">
         <p className="text-center text-gray-400">
@@ -20,13 +34,18 @@ export default function ActionButtons() {
     );
   }
 
+  // Find current player's state
+  const currentPlayer = gameState.players.find(p => p.id === playerId);
+  const playerCurrentBet = currentPlayer?.bet || 0;
+  
   const currentBet = gameState.currentBet;
-  const canCheck = currentBet === 0;
-  const callAmount = currentBet;
+  // Player can check if they've already matched the current bet (or if current bet is 0)
+  const canCheck = playerCurrentBet >= currentBet;
+  const callAmount = currentBet - playerCurrentBet; // Amount needed to match the bet
   const minRaise = currentBet + (currentBet || 20); // Min raise is current bet + 1 big blind
 
   const handleCheck = () => performAction(PLAYER_ACTIONS.CHECK);
-  const handleCall = () => performAction(PLAYER_ACTIONS.CALL, callAmount);
+  const handleCall = () => performAction(PLAYER_ACTIONS.CALL, currentBet); // Send the total bet amount to match
   const handleRaise = () => {
     if (raiseAmount < minRaise) {
       alert(`Minimum raise is $${minRaise}`);
@@ -45,6 +64,75 @@ export default function ActionButtons() {
       performAction(PLAYER_ACTIONS.ALL_IN);
     }
   };
+
+  if (compact) {
+    return (
+      <div className="space-y-1.5">
+        <div className="text-center py-1 bg-linear-to-r from-yellow-600 to-orange-600 rounded-lg shadow-lg">
+          <p className="text-white font-bold text-xs tracking-wide">🎯 YOUR TURN</p>
+        </div>
+        
+        {/* Main action buttons */}
+        <div className="grid grid-cols-2 gap-1.5">
+          {canCheck ? (
+            <button
+              onClick={handleCheck}
+              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs shadow-md"
+            >
+              ✓ CHECK
+            </button>
+          ) : (
+            <button
+              onClick={handleCall}
+              className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs shadow-md"
+            >
+              💰 CALL ${callAmount}
+            </button>
+          )}
+          
+          <button
+            onClick={handleFold}
+            className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs shadow-md"
+          >
+            ✕ FOLD
+          </button>
+          
+          <button
+            onClick={handleRaise}
+            disabled={raiseAmount < minRaise}
+            className="bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs shadow-md"
+          >
+            ↑ RAISE
+          </button>
+          
+          <button
+            onClick={handleAllIn}
+            className="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs shadow-md"
+          >
+            🔥 ALL IN
+          </button>
+        </div>
+
+        {/* Raise amount input */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-white text-[10px] whitespace-nowrap">Raise:</span>
+          <input
+            type="number"
+            value={raiseAmount}
+            onChange={(e) => setRaiseAmount(parseInt(e.target.value) || minRaise)}
+            min={minRaise}
+            max={playerChips}
+            className="flex-1 px-2 py-1 bg-black/70 border border-yellow-500/50 rounded text-white text-center text-xs focus:outline-none focus:border-yellow-500"
+            placeholder={`${minRaise}`}
+          />
+        </div>
+        
+        <div className="text-center text-[10px] text-gray-300 bg-black/40 py-0.5 rounded">
+          Chips: ${playerChips}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black/60 backdrop-blur-sm p-4 rounded-xl border border-yellow-500/50">

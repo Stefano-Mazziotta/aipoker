@@ -3,7 +3,6 @@
 import { useGame } from '@/contexts/GameContext';
 import PlayerSeat from './PlayerSeat';
 import CommunityCards from './CommunityCards';
-import ActionButtons from './ActionButtons';
 import { PhaseIndicator } from './PhaseIndicator';
 import { WinnerModal } from './WinnerModal';
 
@@ -29,7 +28,7 @@ export default function GameTable() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 overflow-x-auto overflow-y-auto">
       {/* Winner Modal */}
       {winner && (
         <WinnerModal
@@ -40,39 +39,31 @@ export default function GameTable() {
         />
       )}
 
-      {/* Game info header */}
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-yellow-500 mb-2">
-          ♠️ Texas Hold&apos;em ♥️
-        </h1>
-        
+      {/* Minimalist game header */}
+      <div className="mb-2 sm:mb-3 text-center w-full max-w-[95vw] sm:max-w-[600px] mx-auto">
         {/* Phase Indicator */}
         <PhaseIndicator currentPhase={gameState.round} />
         
-        <div className="flex gap-6 justify-center text-white">
-          <div className="bg-black/60 px-4 py-2 rounded-lg">
-            <span className="text-gray-400">Pot:</span>
-            <span className="ml-2 text-green-400 font-bold text-xl">
-              ${gameState.pot}
-            </span>
+        {/* Compact game stats */}
+        <div className="flex gap-2 justify-center items-center text-white mt-2">
+          <div className="flex items-center gap-1 bg-black/70 px-2 py-1 rounded-md border border-green-500/30">
+            <span className="text-green-400 font-bold text-sm sm:text-base">${gameState.pot}</span>
+            <span className="text-gray-400 text-[10px] sm:text-xs">POT</span>
           </div>
-          <div className="bg-black/60 px-4 py-2 rounded-lg">
-            <span className="text-gray-400">Current Bet:</span>
-            <span className="ml-2 text-yellow-400 font-bold text-xl">
-              ${gameState.currentBet}
-            </span>
+          
+          <div className="flex items-center gap-1 bg-black/70 px-2 py-1 rounded-md border border-yellow-500/30">
+            <span className="text-yellow-400 font-bold text-sm sm:text-base">${gameState.currentBet}</span>
+            <span className="text-gray-400 text-[10px] sm:text-xs">BET</span>
           </div>
-          <div className="bg-black/60 px-4 py-2 rounded-lg">
-            <span className="text-gray-400">Round:</span>
-            <span className="ml-2 text-blue-400 font-bold uppercase">
-              {gameState.round}
-            </span>
+          
+          <div className="flex items-center gap-1 bg-black/70 px-2 py-1 rounded-md border border-blue-500/30">
+            <span className="text-blue-400 font-bold text-xs sm:text-sm uppercase">{gameState.round}</span>
           </div>
         </div>
       </div>
 
       {/* Poker table */}
-      <div className="relative w-full max-w-[900px] aspect-3/2 mb-6">
+      <div className="relative w-full min-w-[600px] max-w-[95vw] sm:max-w-[800px] md:max-w-[1100px] aspect-4/3 sm:aspect-3/2 mb-4 sm:mb-6 px-4 sm:px-8 py-8 sm:py-12">
         <div className="absolute inset-0 bg-linear-to-br from-green-900 to-green-950 border-8 border-amber-900 rounded-[50%] shadow-2xl">
           {/* Table felt texture */}
           <div className="absolute inset-4 border-4 border-amber-900/30 rounded-[50%]" />
@@ -90,11 +81,6 @@ export default function GameTable() {
             />
           ))}
         </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="w-full max-w-[600px]">
-        <ActionButtons />
       </div>
     </div>
   );

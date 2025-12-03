@@ -199,6 +199,7 @@ public class Game {
         deck.dealCard(); // Burn card
         communityCards.add(deck.dealCard());
         this.state = GameState.RIVER;
+        startNewBettingRound();
     }
 
     public Player determineWinner() {
@@ -259,15 +260,22 @@ public class Game {
     }
     
     /**
-     * Advance to next active (non-folded) player
+     * Advance to next active (non-folded, non-all-in) player who can act
      */
     private void advanceTurn() {
-        int startIndex = currentPlayerIndex;
+        int attempts = 0;
         do {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-            // Avoid infinite loop if all players folded
-            if (currentPlayerIndex == startIndex) break;
-        } while (players.get(currentPlayerIndex).isFolded());
+            attempts++;
+            // Avoid infinite loop if all players folded or all-in
+            if (attempts >= players.size()) break;
+            
+            Player currentPlayer = players.get(currentPlayerIndex);
+            // Player can act if not folded AND has chips remaining
+            if (!currentPlayer.isFolded() && currentPlayer.getChipsAmount() > 0) {
+                break;
+            }
+        } while (true);
     }
     
     /**
@@ -310,9 +318,15 @@ public class Game {
         currentRound.setCurrentBet(0);
         // First to act after flop/turn/river is left of dealer
         currentPlayerIndex = (dealerPosition + 1) % players.size();
-        // Skip folded players
-        while (players.get(currentPlayerIndex).isFolded() && currentRound.hasMultipleActivePlayers()) {
+        // Skip folded and all-in players
+        int attempts = 0;
+        while (attempts < players.size()) {
+            Player currentPlayer = players.get(currentPlayerIndex);
+            if (!currentPlayer.isFolded() && currentPlayer.getChipsAmount() > 0) {
+                break;
+            }
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+            attempts++;
         }
     }
 

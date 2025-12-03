@@ -114,6 +114,8 @@ interface GameStateChangedDTO {
   currentPlayerId: string;
   currentPlayerName: string;
   pot: number;
+  currentBet?: number;
+  communityCards?: string[];
 }
 
 export interface GameStateChangedEvent extends DomainEvent<GameStateChangedDTO> {

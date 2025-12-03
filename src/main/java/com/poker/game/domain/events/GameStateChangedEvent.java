@@ -1,5 +1,7 @@
 package com.poker.game.domain.events;
 
+import java.util.List;
+
 import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.domain.events.DomainEvent;
 
@@ -14,10 +16,12 @@ public class GameStateChangedEvent extends DomainEvent {
         String newState, 
         String currentPlayerId,
         String currentPlayerName,
-        int pot
+        int pot,
+        int currentBet,
+        List<String> communityCards
     ) {
         super(EventTypeEnum.GAME_STATE_CHANGED);
-        this.data = new GameStateChangedEventData(gameId, newState, currentPlayerId, currentPlayerName, pot);
+        this.data = new GameStateChangedEventData(gameId, newState, currentPlayerId, currentPlayerName, pot, currentBet, communityCards);
     }
 
     @Override

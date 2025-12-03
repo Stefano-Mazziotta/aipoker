@@ -95,12 +95,18 @@ public class StartGameUseCase {
         eventPublisher.publishToScope(lobbyIdStr, gameStartedEvent);
 
         // Publish GAME_STATE_CHANGED event to game scope (initial state)
+        List<String> communityCardsStr = game.getCommunityCards().stream()
+            .map(card -> card.getRank().name() + card.getSuit().getSymbol())
+            .collect(Collectors.toList());
+        
         GameStateChangedEvent stateChangedEvent = new GameStateChangedEvent(
             gameId,
             game.getState().name(),
             currentPlayerId,
             currentPlayerName,
-            game.getCurrentPot().getAmount()
+            game.getCurrentPot().getAmount(),
+            game.getCurrentRound().getCurrentBet(),
+            communityCardsStr
         );
         eventPublisher.publishToScope(gameId, stateChangedEvent);
 
