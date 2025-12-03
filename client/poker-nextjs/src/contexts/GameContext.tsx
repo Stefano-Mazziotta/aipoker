@@ -11,6 +11,7 @@ import {
 } from '@/lib/types/events';
 import { WebSocketCommand } from '@/lib/types/commands';
 import { ALL_GAME_EVENT_TYPES } from '@/lib/constants/event-types';
+import { PLAYER_ACTIONS } from '@/lib/constants/player-actions';
 
 interface WinnerData {
   winnerName: string;
@@ -74,7 +75,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             hasActed: false,
             isFolded: player.isFolded,
             isAllIn: player.isAllIn,
-            cards: []
+            cards: [],
+            bet: player.currentBet, // Assuming `bet` corresponds to `currentBet`
+            isActive: !player.isFolded, // Assuming `isActive` is true if not folded
+            folded: player.isFolded // Assuming `folded` corresponds to `isFolded`
           }))
         };
         console.log('Initializing game state from GAME_STARTED:', initialState);
@@ -96,7 +100,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // PLAYER_ACTION – someone folded, raised, etc.
       if (EventGuards.isPlayerActionEvent(event)) {
         console.log('Player action received:', event);
-        // Update game state optimistically
+        
+        // Skip if this is our own action - we already got the sync response
+        if (event.data.playerId === playerId) {
+          console.log('Ignoring PLAYER_ACTION for own action (already handled by sync response)');
+          return;
+        }
+        
+        // Update game state for other players' actions
         if (gameState) {
           setGameState({
             ...gameState,
@@ -160,23 +171,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     let command: WebSocketCommand<unknown>;
     switch (action) {
-      case 'CHECK':
+      case PLAYER_ACTIONS.CHECK:
         command = commands.check(gameId, playerId);
         break;
-      case 'CALL':
-        command = commands.call(gameId, playerId);
+      case PLAYER_ACTIONS.CALL:
+        if (amount === undefined) {
+          console.error('CALL action requires an amount');
+          return;
+        }
+        command = commands.call(gameId, playerId, amount);
         break;
-      case 'RAISE':
+      case PLAYER_ACTIONS.RAISE:
         if (amount === undefined) {
           console.error('RAISE action requires an amount');
           return;
         }
         command = commands.raise(gameId, playerId, amount);
         break;
-      case 'FOLD':
+      case PLAYER_ACTIONS.FOLD:
         command = commands.fold(gameId, playerId);
         break;
-      case 'ALL_IN':
+      case PLAYER_ACTIONS.ALL_IN:
         command = commands.allIn(gameId, playerId);
         break;
       default:

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { PLAYER_ACTIONS } from '@/lib/constants/player-actions';
 
 export default function ActionButtons() {
   const { gameState, isPlayerTurn, performAction } = useGame();
@@ -24,24 +25,24 @@ export default function ActionButtons() {
   const callAmount = currentBet;
   const minRaise = currentBet + (currentBet || 20); // Min raise is current bet + 1 big blind
 
-  const handleCheck = () => performAction('CHECK');
-  const handleCall = () => performAction('CALL');
+  const handleCheck = () => performAction(PLAYER_ACTIONS.CHECK);
+  const handleCall = () => performAction(PLAYER_ACTIONS.CALL, callAmount);
   const handleRaise = () => {
     if (raiseAmount < minRaise) {
       alert(`Minimum raise is $${minRaise}`);
       return;
     }
-    performAction('RAISE', raiseAmount);
+    performAction(PLAYER_ACTIONS.RAISE, raiseAmount);
     setRaiseAmount(minRaise);
   };
   const handleFold = () => {
     if (confirm('Are you sure you want to fold?')) {
-      performAction('FOLD');
+      performAction(PLAYER_ACTIONS.FOLD);
     }
   };
   const handleAllIn = () => {
     if (confirm('Are you sure you want to go ALL IN?')) {
-      performAction('ALL_IN');
+      performAction(PLAYER_ACTIONS.ALL_IN);
     }
   };
 

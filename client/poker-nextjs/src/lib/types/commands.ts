@@ -3,6 +3,8 @@
  * These ensure type safety for commands sent from client to server.
  */
 
+import { PlayerAction, PLAYER_ACTIONS } from '../constants/player-actions';
+
 // ============================================================================
 // Base Command Structure
 // ============================================================================
@@ -68,7 +70,7 @@ export interface GetPlayerCardsData {
 export interface PlayerActionData {
   gameId: string;
   playerId: string;
-  action: 'FOLD' | 'CHECK' | 'CALL' | 'RAISE' | 'ALL_IN';
+  action: PlayerAction;
   amount?: number;
 }
 
@@ -90,11 +92,11 @@ export const CommandType = {
   // Game
   GET_GAME_STATE: 'GET_GAME_STATE',
   GET_PLAYER_CARDS: 'GET_PLAYER_CARDS',
-  FOLD: 'FOLD',
-  CHECK: 'CHECK',
-  CALL: 'CALL',
-  RAISE: 'RAISE',
-  ALL_IN: 'ALL_IN',
+  FOLD: PLAYER_ACTIONS.FOLD,
+  CHECK: PLAYER_ACTIONS.CHECK,
+  CALL: PLAYER_ACTIONS.CALL,
+  RAISE: PLAYER_ACTIONS.RAISE,
+  ALL_IN: PLAYER_ACTIONS.ALL_IN,
 } as const;
 
 export type CommandTypeValue = typeof CommandType[keyof typeof CommandType];
@@ -167,7 +169,7 @@ export function createGetPlayerCardsCommand(gameId: string, playerId: string): W
 export function createPlayerActionCommand(
   gameId: string,
   playerId: string,
-  action: 'FOLD' | 'CHECK' | 'CALL' | 'RAISE' | 'ALL_IN',
+  action: PlayerAction,
   amount?: number
 ): WebSocketCommand<PlayerActionData> {
   return {
@@ -178,21 +180,21 @@ export function createPlayerActionCommand(
 
 // Convenience functions for specific actions
 export function createFoldCommand(gameId: string, playerId: string): WebSocketCommand<PlayerActionData> {
-  return createPlayerActionCommand(gameId, playerId, 'FOLD');
+  return createPlayerActionCommand(gameId, playerId, PLAYER_ACTIONS.FOLD);
 }
 
 export function createCheckCommand(gameId: string, playerId: string): WebSocketCommand<PlayerActionData> {
-  return createPlayerActionCommand(gameId, playerId, 'CHECK');
+  return createPlayerActionCommand(gameId, playerId, PLAYER_ACTIONS.CHECK);
 }
 
-export function createCallCommand(gameId: string, playerId: string): WebSocketCommand<PlayerActionData> {
-  return createPlayerActionCommand(gameId, playerId, 'CALL');
+export function createCallCommand(gameId: string, playerId: string, amount: number): WebSocketCommand<PlayerActionData> {
+  return createPlayerActionCommand(gameId, playerId, PLAYER_ACTIONS.CALL, amount);
 }
 
 export function createRaiseCommand(gameId: string, playerId: string, amount: number): WebSocketCommand<PlayerActionData> {
-  return createPlayerActionCommand(gameId, playerId, 'RAISE', amount);
+  return createPlayerActionCommand(gameId, playerId, PLAYER_ACTIONS.RAISE, amount);
 }
 
 export function createAllInCommand(gameId: string, playerId: string): WebSocketCommand<PlayerActionData> {
-  return createPlayerActionCommand(gameId, playerId, 'ALL_IN');
+  return createPlayerActionCommand(gameId, playerId, PLAYER_ACTIONS.ALL_IN);
 }

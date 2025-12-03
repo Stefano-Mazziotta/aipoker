@@ -1,5 +1,6 @@
 // src/types/events.ts
 import { PlayerDTO } from './player';
+import { PlayerAction } from '../constants/player-actions';
 
 import {
   AUTH_EVENTS,
@@ -120,8 +121,9 @@ export interface GameStateChangedEvent extends DomainEvent<GameStateChangedDTO> 
 }
 interface PlayerActionDTO {
   gameId: string;
-  player: PlayerDTO
-  action: 'FOLD' | 'CHECK' | 'CALL' | 'RAISE' | 'ALL_IN';
+  playerId: string;
+  playerName: string;
+  action: PlayerAction;
   amount: number;
   newPot: number;
   currentBet: number;

@@ -49,7 +49,7 @@ export const commands = {
   
   check: (gameId: string, playerId: string) => createCheckCommand(gameId, playerId),
   
-  call: (gameId: string, playerId: string) => createCallCommand(gameId, playerId),
+  call: (gameId: string, playerId: string, amount: number) => createCallCommand(gameId, playerId, amount),
   
   raise: (gameId: string, playerId: string, amount: number) => 
     createRaiseCommand(gameId, playerId, amount),
