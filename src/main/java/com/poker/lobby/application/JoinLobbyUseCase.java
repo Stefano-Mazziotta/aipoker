@@ -45,17 +45,6 @@ public class JoinLobbyUseCase {
         // Save updated lobby
         lobbyRepository.save(lobby);
 
-        // Publish domain event to notify all lobby subscribers
-        PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(
-            lobby.getId().getValue(),
-            playerId.getValue().toString(),
-            player.getName(),
-            player.getChips().getAmount(),
-            lobby.getPlayers().size(),
-            lobby.getMaxPlayers()
-        );
-        eventPublisher.publishToScope(lobby.getId().getValue(), event);
-
         List<PlayerDTO> players = lobby.getPlayers().stream()
             .map(p -> new PlayerDTO(
                 p.getId().getValue().toString(),
@@ -64,7 +53,7 @@ public class JoinLobbyUseCase {
             ))
             .collect(Collectors.toList());
 
-        return LobbyDTO.fromDomain(
+        LobbyDTO dto = LobbyDTO.fromDomain(
             lobby.getId().getValue(),
             lobby.getName(),
             lobby.getPlayers().size(),
@@ -73,6 +62,12 @@ public class JoinLobbyUseCase {
             lobby.getAdminPlayerId().getValue().toString(),
             players
         );
+
+        // Publish domain event to notify all lobby subscribers
+        PlayerJoinedLobbyEvent event = new PlayerJoinedLobbyEvent(dto);
+        eventPublisher.publishToScope(lobby.getId().getValue(), event);
+
+        return dto;
     }
 
     public record JoinLobbyCommand(String lobbyId, String playerId) {}

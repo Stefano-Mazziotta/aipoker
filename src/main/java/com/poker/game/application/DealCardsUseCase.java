@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.poker.game.application.dto.DealCardsDTO;
-import com.poker.game.domain.events.CardsDealtEvent;
+import com.poker.game.domain.events.DealtCardsEvent;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
@@ -71,7 +71,7 @@ public class DealCardsUseCase {
             .map(card -> card.getRank().name() + card.getSuit().getSymbol())
             .collect(Collectors.toList());
         
-        CardsDealtEvent event = new CardsDealtEvent(
+        DealtCardsEvent event = new DealtCardsEvent(
             game.getId().getValue().toString(),
             phase,
             newCards,
