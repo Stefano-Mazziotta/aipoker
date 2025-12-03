@@ -16,7 +16,7 @@ public class PlayerLeftLobbyEvent extends DomainEvent {
         int currentPlayerCount, 
         int maxPlayers
     ) {
-        super();
+        super(EventTypeEnum.PLAYER_LEFT_LOBBY);
         this.data = new PlayerLeftLobbyEventData(lobbyId, playerId, playerName, currentPlayerCount, maxPlayers);
     }
 

@@ -16,7 +16,7 @@ public class WinnerDeterminedEvent extends DomainEvent {
         String handRank, 
         int amountWon
     ) {
-        super();
+        super(EventTypeEnum.WINNER_DETERMINED);
         this.data = new WinnerDeterminedEventData(gameId, winnerId, winnerName, handRank, amountWon);
     }
 

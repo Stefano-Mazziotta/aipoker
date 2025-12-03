@@ -18,7 +18,7 @@ public class PlayerActionEvent extends DomainEvent {
         int newPot, 
         int currentBet
     ) {
-        super();
+        super(EventTypeEnum.PLAYER_ACTION);
         this.data = new PlayerActionEventData(gameId, playerId, playerName, action, amount, newPot, currentBet);
     }
 

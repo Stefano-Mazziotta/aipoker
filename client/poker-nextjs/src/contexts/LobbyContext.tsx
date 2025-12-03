@@ -54,22 +54,22 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
 
       // PLAYER_JOINED_LOBBY – broadcast when any player (including yourself) joins
       if (EventGuards.isPlayerJoinedLobby(event)) {
-        const { player, maxPlayers } = event.data;
-
-        console.log('Player joined lobby:', player)
-
-        setLobbyPlayers(prev => {
-          const alreadyExists = prev.some(p => p.playerId === playerId);
-
-          if (alreadyExists) {
-            console.log('Player already in list - skipping duplicate');
-            return prev;
-          };
-
-          return [...prev, player];
+        const { lobbyId: eventLobbyId, players, maxPlayers: eventMaxPlayers, adminPlayerId } = event.data;
+        
+        // If we're not in a lobby yet, this must be us joining
+        if (!lobbyId) {
+          setLobbyId(eventLobbyId);
+          setIsLobbyAdmin(playerId === adminPlayerId);
+        }
+        
+        setLobbyPlayers(players);
+        setMaxPlayers(eventMaxPlayers);
+        
+        console.log('Player joined lobby:', { 
+          lobbyId: eventLobbyId, 
+          players: players.length,
+          isAdmin: playerId === adminPlayerId 
         });
-
-        setMaxPlayers(maxPlayers);
       }
 
       // PLAYER_LEFT_LOBBY – someone left the lobby

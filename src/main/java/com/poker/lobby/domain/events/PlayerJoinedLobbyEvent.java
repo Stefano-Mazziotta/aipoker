@@ -14,7 +14,7 @@ public class PlayerJoinedLobbyEvent extends DomainEvent {
     public PlayerJoinedLobbyEvent(String lobbyId, String lobbyName, int currentPlayers,
                                   int maxPlayers, boolean isOpen, String adminPlayerId,
                                   List<PlayerJoinedLobbyEventData.PlayerData> players) {
-        super();
+        super(EventTypeEnum.PLAYER_JOINED_LOBBY);
         this.data = new PlayerJoinedLobbyEventData(lobbyId, lobbyName, currentPlayers,
                                                     maxPlayers, isOpen, adminPlayerId, players);
     }

@@ -16,7 +16,7 @@ public class GameStateChangedEvent extends DomainEvent {
         String currentPlayerName,
         int pot
     ) {
-        super();
+        super(EventTypeEnum.GAME_STATE_CHANGED);
         this.data = new GameStateChangedEventData(gameId, newState, currentPlayerId, currentPlayerName, pot);
     }
 

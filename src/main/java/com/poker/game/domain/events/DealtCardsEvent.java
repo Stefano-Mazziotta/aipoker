@@ -12,7 +12,7 @@ public class DealtCardsEvent extends DomainEvent {
     private final DealtCardsEventData data;
 
     public DealtCardsEvent(String gameId, String phase, List<String> newCards, List<String> allCommunityCards) {
-        super();
+        super(EventTypeEnum.DEALT_CARDS);
         this.data = new DealtCardsEventData(gameId, phase, newCards, allCommunityCards);
     }
 
