@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.poker.game.application.dto.StartGameDTO;
+import com.poker.game.domain.events.GamePlayerData;
+import com.poker.game.domain.events.GameStartedEvent;
 import com.poker.game.domain.events.GameStateChangedEvent;
 import com.poker.game.domain.model.Blinds;
 import com.poker.game.domain.model.Game;
@@ -54,22 +56,76 @@ public class StartGameUseCase {
         // Save game
         gameRepository.save(game);
 
-        // Publish game started event
+        String gameId = game.getId().getValue().toString();
+        String lobbyIdStr = command.lobbyId().getValue();
+
+        // Prepare player data for event
+        List<GamePlayerData> playerDataList = game.getPlayers().stream()
+            .map(player -> new GamePlayerData(
+                player.getId().getValue().toString(),
+                player.getName(),
+                player.getChipsAmount(),
+                0, // currentBet - will be updated after first action
+                player.isFolded(),
+                player.isAllIn()
+            ))
+            .collect(Collectors.toList());
+
+        // Get current player information
         Player currentPlayer = game.getCurrentPlayer();
-        GameStateChangedEvent event = new GameStateChangedEvent(
-            game.getId().getValue().toString(),
+        String currentPlayerId = currentPlayer != null ? currentPlayer.getId().getValue().toString() : "";
+        String currentPlayerName = currentPlayer != null ? currentPlayer.getName() : "";
+        int currentBet = game.getCurrentRound() != null ? game.getCurrentRound().getCurrentBet() : 0;
+
+        // Publish GAME_STARTED event to lobby scope (all players in lobby receive it)
+        // This event contains complete game state so clients can render the game immediately
+        GameStartedEvent gameStartedEvent = new GameStartedEvent(
+            gameId,
+            lobbyIdStr,
+            playerDataList,
+            command.blinds().getSmallBlind(),
+            command.blinds().getBigBlind(),
+            game.getCurrentPot().getAmount(),
+            currentBet,
+            currentPlayerId,
+            currentPlayerName,
+            game.getState().name()
+        );
+        eventPublisher.publishToScope(lobbyIdStr, gameStartedEvent);
+
+        // Publish GAME_STATE_CHANGED event to game scope (initial state)
+        GameStateChangedEvent stateChangedEvent = new GameStateChangedEvent(
+            gameId,
             game.getState().name(),
-            currentPlayer != null ? currentPlayer.getId().getValue().toString() : null,
-            currentPlayer != null ? currentPlayer.getName() : null,
+            currentPlayerId,
+            currentPlayerName,
             game.getCurrentPot().getAmount()
         );
-        eventPublisher.publishToScope(game.getId().getValue().toString(), event);
+        eventPublisher.publishToScope(gameId, stateChangedEvent);
+
+        // Build response DTO with same structure as event data
+        List<StartGameDTO.PlayerGameStateDTO> playerDTOs = playerDataList.stream()
+            .map(p -> new StartGameDTO.PlayerGameStateDTO(
+                p.getPlayerId(),
+                p.getPlayerName(),
+                p.getChips(),
+                p.getCurrentBet(),
+                p.isFolded(),
+                p.isAllIn()
+            ))
+            .collect(Collectors.toList());
 
         return StartGameDTO.fromDomain(
-            game.getId().getValue().toString(),
-            game.getState().name(),
-            game.getPlayers().stream().map(p -> p.getName()).collect(Collectors.toList()),
-            game.getCurrentPot().getAmount()
+            gameId,
+            lobbyIdStr,
+            playerDTOs,
+            command.blinds().getSmallBlind(),
+            command.blinds().getBigBlind(),
+            game.getCurrentPot().getAmount(),
+            currentBet,
+            currentPlayerId,
+            currentPlayerName,
+            game.getState().name()
         );
     }
 
