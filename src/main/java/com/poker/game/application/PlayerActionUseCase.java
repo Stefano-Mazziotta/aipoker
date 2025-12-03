@@ -85,6 +85,9 @@ public class PlayerActionUseCase {
         );
         eventPublisher.publishToScope(command.gameId(), event);
 
+        // Publish game state change to update whose turn it is
+        publishGameStateChanged(game, command.gameId());
+
         // Check if betting round is complete and automatically progress game
         checkAndProgressGame(game, command.gameId());
 

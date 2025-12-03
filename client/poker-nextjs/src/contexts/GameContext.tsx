@@ -88,13 +88,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // GAME_STATE_CHANGED – full or partial state update from server
       if (EventGuards.isGameStateChangedEvent(event)) {
         console.log('Game state changed:', event);
-        // const dto:GameStateDTO ={
-        //   gameId: event.data.gameId,
-        //   currentPlayerId: event.data.currentPlayerId,
-        //   currentPlayerName: event.data.currentPlayerName,
-        //   pot: event.data.pot,
-        // } 
-        setGameState(event.data as any); // todo: fix it
+        
+        // Merge partial state update with existing game state
+        if (gameState) {
+          setGameState({
+            ...gameState,
+            currentPlayerId: event.data.currentPlayerId,
+            pot: event.data.pot,
+            round: event.data.newState.toLowerCase().replace('_', '-') as any,
+          });
+        }
       }
 
       // PLAYER_ACTION – someone folded, raised, etc.
