@@ -1,5 +1,6 @@
 package com.poker.game.domain.events;
 
+import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.domain.events.DomainEvent;
 
 /**
@@ -14,8 +15,15 @@ public class PlayerActionEvent extends DomainEvent {
     private final int newPot;
     private final int currentBet;
 
-    public PlayerActionEvent(String gameId, String playerId, String playerName, 
-                            String action, int amount, int newPot, int currentBet) {
+    public PlayerActionEvent(
+        String gameId, 
+        String playerId, 
+        String playerName,
+        String action, 
+        int amount, 
+        int newPot, 
+        int currentBet
+    ) {
         super();
         this.gameId = gameId;
         this.playerId = playerId;
@@ -27,8 +35,13 @@ public class PlayerActionEvent extends DomainEvent {
     }
 
     @Override
-    public String eventType() {
-        return "PLAYER_ACTION";
+    public EventTypeEnum eventType() {
+        return EventTypeEnum.PLAYER_ACTION;
+    }
+
+    @Override
+    public Object getData() {
+        return this;
     }
 
     public String gameId() { return gameId; }

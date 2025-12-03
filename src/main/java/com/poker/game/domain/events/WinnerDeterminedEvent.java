@@ -1,5 +1,6 @@
 package com.poker.game.domain.events;
 
+import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.domain.events.DomainEvent;
 
 /**
@@ -12,8 +13,13 @@ public class WinnerDeterminedEvent extends DomainEvent {
     private final String handRank;
     private final int amountWon;
 
-    public WinnerDeterminedEvent(String gameId, String winnerId, String winnerName, 
-                                 String handRank, int amountWon) {
+    public WinnerDeterminedEvent(
+        String gameId, 
+        String winnerId, 
+        String winnerName,
+        String handRank, 
+        int amountWon
+    ) {
         super();
         this.gameId = gameId;
         this.winnerId = winnerId;
@@ -23,8 +29,13 @@ public class WinnerDeterminedEvent extends DomainEvent {
     }
 
     @Override
-    public String eventType() {
-        return "WINNER_DETERMINED";
+    public EventTypeEnum eventType() {
+        return EventTypeEnum.WINNER_DETERMINED;
+    }
+
+    @Override
+    public Object getData() {
+        return this;
     }
 
     public String gameId() { return gameId; }

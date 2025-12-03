@@ -1,5 +1,6 @@
 package com.poker.lobby.domain.events;
 
+import com.poker.shared.domain.enums.EventTypeEnum;
 import com.poker.shared.domain.events.DomainEvent;
 
 /**
@@ -12,8 +13,13 @@ public class PlayerLeftLobbyEvent extends DomainEvent {
     private final int currentPlayerCount;
     private final int maxPlayers;
 
-    public PlayerLeftLobbyEvent(String lobbyId, String playerId, String playerName,
-                                int currentPlayerCount, int maxPlayers) {
+    public PlayerLeftLobbyEvent(
+        String lobbyId, 
+        String playerId, 
+        String playerName,
+        int currentPlayerCount, 
+        int maxPlayers
+    ) {
         super();
         this.lobbyId = lobbyId;
         this.playerId = playerId;
@@ -23,8 +29,13 @@ public class PlayerLeftLobbyEvent extends DomainEvent {
     }
 
     @Override
-    public String eventType() {
-        return "PLAYER_LEFT_LOBBY";
+    public EventTypeEnum eventType() {
+        return EventTypeEnum.PLAYER_LEFT_LOBBY;
+    }
+
+    @Override
+    public Object getData() {
+        return this;
     }
 
     public String lobbyId() { return lobbyId; }
