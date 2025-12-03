@@ -38,6 +38,16 @@ export default function PlayerSeat({ player, position, isCurrentPlayer }: Player
 
   const isYou = player.id === playerId;
   const isFolded = player.folded;
+  
+  // Debug logging
+  if (isYou) {
+    console.log('PlayerSeat rendering for YOU:', {
+      playerId: player.id,
+      name: player.name,
+      cards: player.cards,
+      cardsLength: player.cards?.length
+    });
+  }
 
   return (
     <div className={`absolute ${SEAT_POSITIONS[position]}`}>

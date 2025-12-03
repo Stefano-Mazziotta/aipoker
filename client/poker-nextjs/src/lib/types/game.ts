@@ -46,3 +46,28 @@ export const SUIT_COLORS: Record<string, string> = {
   CLUBS: 'text-black',
   SPADES: 'text-black',
 };
+
+// Map backend suit symbols to suit names
+export const SYMBOL_TO_SUIT: Record<string, string> = {
+  '♥': 'HEARTS',
+  '♦': 'DIAMONDS',
+  '♣': 'CLUBS',
+  '♠': 'SPADES',
+};
+
+/**
+ * Parse card string from backend format (e.g., "ACE♥" or "ACE_HEARTS") to standard format
+ */
+export function parseCard(card: string): string {
+  if (!card) return '';
+  
+  // Already in format "RANK_SUIT"
+  if (card.includes('_')) return card;
+  
+  // Parse "RANK♥" format
+  const lastChar = card.slice(-1);
+  const suit = SYMBOL_TO_SUIT[lastChar];
+  const rank = card.slice(0, -1);
+  
+  return suit ? `${rank}_${suit}` : card;
+}

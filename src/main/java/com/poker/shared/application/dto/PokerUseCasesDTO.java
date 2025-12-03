@@ -1,7 +1,6 @@
 package com.poker.shared.application.dto;
 
 import com.poker.game.application.DealCardsUseCase;
-import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
 import com.poker.lobby.application.CreateLobbyUseCase;
@@ -19,7 +18,6 @@ final public class PokerUseCasesDTO {
     final private JoinLobbyUseCase joinLobby;
     final private LeaveLobbyUseCase leaveLobby;
     final private GetLeaderboardUseCase getLeaderboard;
-    final private GetPlayerCardsUseCase getPlayerCards;
 
     public PokerUseCasesDTO(
         RegisterPlayerUseCase registerPlayer,
@@ -29,8 +27,7 @@ final public class PokerUseCasesDTO {
         CreateLobbyUseCase createLobby,
         JoinLobbyUseCase joinLobby,
         LeaveLobbyUseCase leaveLobby,
-        GetLeaderboardUseCase getLeaderboard,
-        GetPlayerCardsUseCase getPlayerCards
+        GetLeaderboardUseCase getLeaderboard
     ) {
         this.registerPlayer = registerPlayer;
         this.startGame = startGame;
@@ -40,7 +37,6 @@ final public class PokerUseCasesDTO {
         this.joinLobby = joinLobby;
         this.leaveLobby = leaveLobby;
         this.getLeaderboard = getLeaderboard;
-        this.getPlayerCards = getPlayerCards;
     }
 
     public RegisterPlayerUseCase getRegisterPlayer() {
@@ -69,10 +65,6 @@ final public class PokerUseCasesDTO {
 
     public GetLeaderboardUseCase getGetLeaderboard() {
         return getLeaderboard;
-    }
-
-    public GetPlayerCardsUseCase getGetPlayerCards() {
-        return getPlayerCards;
     }
 
     public DealCardsUseCase getDealCards() {

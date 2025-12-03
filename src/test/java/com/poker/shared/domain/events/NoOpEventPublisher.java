@@ -12,6 +12,11 @@ public class NoOpEventPublisher implements DomainEventPublisher {
     }
     
     @Override
+    public void publishToPlayer(String playerId, DomainEvent event) {
+        // No-op for tests
+    }
+    
+    @Override
     public void unsubscribeFromScope(String scopeId, String playerId) {
         // No-op for tests
     }

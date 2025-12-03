@@ -1,7 +1,6 @@
 package com.poker;
 
 import com.poker.game.application.DealCardsUseCase;
-import com.poker.game.application.GetPlayerCardsUseCase;
 import com.poker.game.application.PlayerActionUseCase;
 import com.poker.game.application.StartGameUseCase;
 import com.poker.game.domain.repository.GameRepository;
@@ -58,7 +57,6 @@ public class PokerApplication {
         // Game use cases (now with event publisher injected)
         StartGameUseCase startGame = new StartGameUseCase(gameRepository, playerRepository, eventPublisher);
         PlayerActionUseCase playerAction = new PlayerActionUseCase(gameRepository, eventPublisher);
-        GetPlayerCardsUseCase getPlayerCards = new GetPlayerCardsUseCase(gameRepository);
         DealCardsUseCase dealCards = new DealCardsUseCase(gameRepository, eventPublisher);
         
         // Lobby use cases
@@ -74,8 +72,7 @@ public class PokerApplication {
             createLobby,
             joinLobby,
             leaveLobby,
-            getLeaderboard,
-            getPlayerCards
+            getLeaderboard
         );
 
         startWebSocketServer(dto, eventPublisher);

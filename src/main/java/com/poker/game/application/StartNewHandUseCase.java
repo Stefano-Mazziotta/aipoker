@@ -7,6 +7,7 @@ import com.poker.game.application.dto.StartGameDTO;
 import com.poker.game.domain.events.GamePlayerData;
 import com.poker.game.domain.events.GameStartedEvent;
 import com.poker.game.domain.events.GameStateChangedEvent;
+import com.poker.game.domain.events.PlayerCardsDealtEvent;
 import com.poker.game.domain.model.Game;
 import com.poker.game.domain.model.GameId;
 import com.poker.game.domain.repository.GameRepository;
@@ -146,6 +147,20 @@ public class StartNewHandUseCase {
             game.getCurrentPot().getAmount()
         );
         eventPublisher.publishToScope(gameId, stateChangedEvent);
+
+        // Publish individual player cards to each player (private events)
+        remainingPlayers.forEach(player -> {
+            List<String> playerCards = player.getHand().getCards().stream()
+                .map(card -> card.getRank().name() + card.getSuit().getSymbol())
+                .collect(Collectors.toList());
+            
+            PlayerCardsDealtEvent cardsEvent = new PlayerCardsDealtEvent(
+                gameId,
+                player.getId().getValue().toString(),
+                playerCards
+            );
+            eventPublisher.publishToPlayer(player.getId().getValue().toString(), cardsEvent);
+        });
 
         // Build response DTO with same structure as event data
         List<StartGameDTO.PlayerGameStateDTO> playerDTOs = playerDataList.stream()

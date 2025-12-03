@@ -1,6 +1,6 @@
 'use client';
 
-import { SUIT_SYMBOLS, SUIT_COLORS } from '@/lib/types/game';
+import { SUIT_SYMBOLS, SUIT_COLORS, parseCard } from '@/lib/types/game';
 
 interface CardProps {
   card: string | null;
@@ -16,8 +16,19 @@ export default function PlayingCard({ card }: CardProps) {
     );
   }
 
-  // Parse card string (e.g., "ACE_HEARTS")
-  const [rank, suit] = card.split('_');
+  // Parse card to standard format
+  const standardCard = parseCard(card);
+  const [rank, suit] = standardCard.split('_');
+  
+  if (!rank || !suit) {
+    // Invalid card format
+    return (
+      <div className="w-16 h-24 md:w-20 md:h-28 bg-gray-700/50 border-2 border-gray-600 rounded-lg flex items-center justify-center">
+        <span className="text-sm text-gray-400">{card}</span>
+      </div>
+    );
+  }
+  
   const suitSymbol = SUIT_SYMBOLS[suit] || '?';
   const suitColor = SUIT_COLORS[suit] || 'text-gray-500';
 
@@ -27,6 +38,14 @@ export default function PlayingCard({ card }: CardProps) {
                       rank === 'QUEEN' ? 'Q' :
                       rank === 'JACK' ? 'J' :
                       rank === 'TEN' ? '10' :
+                      rank === 'NINE' ? '9' :
+                      rank === 'EIGHT' ? '8' :
+                      rank === 'SEVEN' ? '7' :
+                      rank === 'SIX' ? '6' :
+                      rank === 'FIVE' ? '5' :
+                      rank === 'FOUR' ? '4' :
+                      rank === 'THREE' ? '3' :
+                      rank === 'TWO' ? '2' :
                       rank.charAt(0);
 
   return (

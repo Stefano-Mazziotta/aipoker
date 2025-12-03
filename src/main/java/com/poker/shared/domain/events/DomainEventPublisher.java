@@ -11,6 +11,11 @@ public interface DomainEventPublisher {
     void publishToScope(String scopeId, DomainEvent event);
     
     /**
+     * Publish an event to a specific player only.
+     */
+    void publishToPlayer(String playerId, DomainEvent event);
+    
+    /**
      * Unsubscribe a player from a specific scope (e.g., when leaving a game or lobby).
      */
     void unsubscribeFromScope(String scopeId, String playerId);

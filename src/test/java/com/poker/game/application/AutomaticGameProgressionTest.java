@@ -394,6 +394,11 @@ class AutomaticGameProgressionTest {
         }
 
         @Override
+        public void publishToPlayer(String playerId, DomainEvent event) {
+            publishedEvents.add(event);
+        }
+
+        @Override
         public void unsubscribeFromScope(String scopeId, String playerId) {
             // No-op for testing
         }

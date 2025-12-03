@@ -153,6 +153,15 @@ export interface CardsDealtEvent extends DomainEvent<CardsDealtDTO> {
   eventType: typeof GAME_EVENTS.CARDS_DEALT;
 }
 
+interface PlayerCardsDealtDTO {
+  gameId: string;
+  playerId: string;
+  cards: string[];
+}
+export interface PlayerCardsDealtEvent extends DomainEvent<PlayerCardsDealtDTO> {
+  eventType: typeof GAME_EVENTS.PLAYER_CARDS_DEALT;
+}
+
 interface WinnerDeterminedDTO {
   gameId: string;
   winnerId: string;
@@ -181,6 +190,7 @@ export type ServerEvent =
   | PlayerActionEvent
   | RoundCompletedEvent
   | CardsDealtEvent
+  | PlayerCardsDealtEvent
   | WinnerDeterminedEvent;
 
 /* ==========================================================================
@@ -218,6 +228,8 @@ export const EventGuards = {
     e.eventType === GAME_EVENTS.ROUND_COMPLETED,
   isCardsDealtEvent: (e: ServerEvent): e is CardsDealtEvent =>
     e.eventType === GAME_EVENTS.CARDS_DEALT,
+  isPlayerCardsDealtEvent: (e: ServerEvent): e is PlayerCardsDealtEvent =>
+    e.eventType === GAME_EVENTS.PLAYER_CARDS_DEALT,
   isWinnerDeterminedEvent: (e: ServerEvent): e is WinnerDeterminedEvent =>
     e.eventType === GAME_EVENTS.WINNER_DETERMINED,
 };

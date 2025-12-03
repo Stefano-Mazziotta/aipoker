@@ -121,6 +121,25 @@ public class WebSocketEventPublisher implements DomainEventPublisher {
         );
     }
 
+    @Override
+    public void publishToPlayer(String playerId, DomainEvent event) {
+        Session session = getSessionByPlayerId(playerId);
+        
+        if (session == null || !session.isOpen()) {
+            LOGGER.warning(() -> String.format("Cannot publish to player %s: no active session", playerId));
+            return;
+        }
+
+        String json = gson.toJson(event);
+        
+        try {
+            session.getBasicRemote().sendText(json);
+            LOGGER.info(() -> String.format("Published %s event to player %s", event.eventType(), playerId));
+        } catch (IOException e) {
+            LOGGER.warning(() -> String.format("Failed to send event to player %s: %s", playerId, e.getMessage()));
+        }
+    }
+
     /**
      * Remove all subscriptions for a closed session.
      */

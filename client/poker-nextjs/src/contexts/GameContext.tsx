@@ -57,32 +57,41 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const { gameId, players, pot, currentBet, currentPlayerId, currentPlayerName, gameState } = event.data;
         console.log('Game started event received:', event);
 
-        setGameId(gameId);
-        
-        // Initialize game state from GAME_STARTED event with complete data
-        const initialState: GameStateDTO = {
-          gameId: gameId,
-          currentPlayerId: currentPlayerId || '',
-          pot: pot,
-          currentBet: currentBet,
-          round: (gameState || 'PRE_FLOP').toLowerCase().replace('_', '-') as any,
-          communityCards: [],
-          players: players.map(player => ({
-            id: player.playerId,
-            name: player.playerName,
-            chips: player.chips,
-            currentBet: player.currentBet,
-            hasActed: false,
-            isFolded: player.isFolded,
-            isAllIn: player.isAllIn,
-            cards: [],
-            bet: player.currentBet, // Assuming `bet` corresponds to `currentBet`
-            isActive: !player.isFolded, // Assuming `isActive` is true if not folded
-            folded: player.isFolded // Assuming `folded` corresponds to `isFolded`
-          }))
-        };
-        console.log('Initializing game state from GAME_STARTED:', initialState);
-        setGameState(initialState);
+        // If game state is already initialized for this gameId, don't reinitialize
+        // This prevents overwriting player cards that were already dealt
+        setGameState(prevState => {
+          if (prevState && prevState.gameId === gameId) {
+            console.log('Game state already initialized for this gameId, skipping GAME_STARTED');
+            return prevState;
+          }
+
+          setGameId(gameId);
+          
+          // Initialize game state from GAME_STARTED event with complete data
+          const initialState: GameStateDTO = {
+            gameId: gameId,
+            currentPlayerId: currentPlayerId || '',
+            pot: pot,
+            currentBet: currentBet,
+            round: (gameState || 'PRE_FLOP').toLowerCase().replace('_', '-') as any,
+            communityCards: [],
+            players: players.map(player => ({
+              id: player.playerId,
+              name: player.playerName,
+              chips: player.chips,
+              currentBet: player.currentBet,
+              hasActed: false,
+              isFolded: player.isFolded,
+              isAllIn: player.isAllIn,
+              cards: [],
+              bet: player.currentBet, // Assuming `bet` corresponds to `currentBet`
+              isActive: !player.isFolded, // Assuming `isActive` is true if not folded
+              folded: player.isFolded // Assuming `folded` corresponds to `isFolded`
+            }))
+          };
+          console.log('Initializing game state from GAME_STARTED:', initialState);
+          return initialState;
+        });
       }
 
       // GAME_STATE_CHANGED – full or partial state update from server
@@ -148,6 +157,43 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             communityCards: event.data.allCommunityCards,
             phase: event.data.phase,
           } as any;
+        });
+      }
+
+      // PLAYER_CARDS_DEALT – player's private hole cards
+      if (EventGuards.isPlayerCardsDealtEvent(event)) {
+        console.log('==== PLAYER_CARDS_DEALT EVENT ====');
+        console.log('Event data:', event.data);
+        console.log('Current playerId:', playerId);
+        console.log('Event playerId:', event.data.playerId);
+        console.log('Cards:', event.data.cards);
+        
+        // Update current player's cards in the game state
+        setGameState(prevState => {
+          if (!prevState) {
+            console.log('ERROR: No prevState, skipping card update');
+            return prevState;
+          }
+          
+          console.log('Previous state players:', prevState.players.map(p => ({ id: p.id, name: p.name, cards: p.cards })));
+          
+          const updatedPlayers = prevState.players.map(player => {
+            if (player.id === event.data.playerId) {
+              console.log(`✓ Updating cards for player ${player.name} (${player.id}) with cards:`, event.data.cards);
+              return { ...player, cards: event.data.cards };
+            }
+            return player;
+          });
+          
+          const newState = {
+            ...prevState,
+            players: updatedPlayers,
+          };
+          
+          console.log('New state players:', newState.players.map(p => ({ id: p.id, name: p.name, cards: p.cards })));
+          console.log('==== END PLAYER_CARDS_DEALT ====');
+          
+          return newState;
         });
       }
 
